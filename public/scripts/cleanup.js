@@ -15,6 +15,7 @@
     // Remove session data
     localStorage.removeItem('eaudit_logged_in');
     localStorage.removeItem('eaudit_login_time');
+    localStorage.removeItem('eaudit_username');
     
     // Remove old AionUi data
     const keysToRemove = [];
@@ -31,6 +32,23 @@
     }
     
     console.log('[E-audit Cleanup] Session cleared. Login page should appear.');
+  }
+  
+  // Clean up old AionUi data only (not session data)
+  function cleanupOldData() {
+    console.log('[E-audit Cleanup] Cleaning old AionUi data...');
+    const keysToRemove = [];
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i);
+      if (key && (key.includes('aionui') || key.includes('AionUi'))) {
+        keysToRemove.push(key);
+      }
+    }
+    
+    if (keysToRemove.length > 0) {
+      console.log('[E-audit Cleanup] Removing old keys:', keysToRemove);
+      keysToRemove.forEach(key => localStorage.removeItem(key));
+    }
   }
   
   // Enable right-click globally
@@ -103,9 +121,22 @@
       
       document.getElementById('eaudit-check-status').addEventListener('click', function() {
         const statusDiv = document.getElementById('eaudit-status');
+        const loggedIn = localStorage.getItem('eaudit_logged_in');
+        const loginTime = localStorage.getItem('eaudit_login_time');
+        const username = localStorage.getItem('eaudit_username');
+        
+        let timeInfo = 'N/A';
+        if (loginTime) {
+          const elapsed = Date.now() - parseInt(loginTime, 10);
+          const hours = Math.floor(elapsed / (1000 * 60 * 60));
+          const minutes = Math.floor((elapsed % (1000 * 60 * 60)) / (1000 * 60));
+          timeInfo = `${hours}h ${minutes}m ago`;
+        }
+        
         statusDiv.innerHTML = `
-          <div>Logged in: ${localStorage.getItem('eaudit_logged_in')}</div>
-          <div>Login time: ${localStorage.getItem('eaudit_login_time')}</div>
+          <div>Logged in: ${loggedIn || 'false'}</div>
+          <div>Username: ${username || 'N/A'}</div>
+          <div>Login time: ${timeInfo}</div>
           <div>URL: ${window.location.hash}</div>
         `;
       });
@@ -116,8 +147,15 @@
     addButtons();
   }
   
-  // Run cleanup immediately
+  // FORCE CLEANUP IMMEDIATELY - For testing login page
+  // This will clear the session EVERY TIME the app starts
+  // Remove this block after testing is complete!
+  console.log('[E-audit Cleanup] FORCING CLEANUP ON EVERY START (TESTING MODE)');
   forceCleanup();
+  
+  // Clean up old data
+  cleanupOldData();
+  
   enableRightClick();
   
   // Add debug buttons after DOM loads

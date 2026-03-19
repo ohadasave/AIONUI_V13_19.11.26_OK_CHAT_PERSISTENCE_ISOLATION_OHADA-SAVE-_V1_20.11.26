@@ -373,24 +373,48 @@ const MENU_DATA: LogicielItem[] = [
             label: 'Synthèse des Frap',
             norme: '14.2 Analyses et constats potentiels de la mission',
             icon: <FileSearch className="w-4 h-4" />,
-            command: `[Command] = /Table synthese
+            modes: [
+              {
+                id: 'normal',
+                label: 'Normal',
+                command: `[Command] = Table_Template
+[Node] = Frap`
+              },
+              {
+                id: 'avance',
+                label: 'Avancé',
+                command: `[Command] = /Table synthese
 [Command Manuel] = Étape mission
 [Étape précédente] = Frap
 [Étape mission] = Synthèse des Frap
 [Modèle] = 
 [Pièces jointes] = Frap de la mission`
+              }
+            ]
           },
           {
             id: 'rapport-provisoire',
             label: 'Rapport provisoire',
             norme: '14.5 Conclusions de la mission',
             icon: <FileText className="w-4 h-4" />,
-            command: `[Command] = /Table rapport_provisoire
+            modes: [
+              {
+                id: 'normal',
+                label: 'Normal',
+                command: `[Command] = Table_Template
+[Node] = Synthèse`
+              },
+              {
+                id: 'avance',
+                label: 'Avancé',
+                command: `[Command] = /Table rapport_provisoire
 [Command Manuel] = Étape mission
 [Étape précédente] = Synthèse des Frap
 [Étape mission] = Rapport provisoire
 [Modèle] = 
 [Pièces jointes] = Synthèse des Frap`
+              }
+            ]
           },
           {
             id: 'reunion-cloture',
@@ -406,24 +430,48 @@ const MENU_DATA: LogicielItem[] = [
             label: 'Rapport final',
             norme: '15.1 Communication des résultats définitifs de la mission',
             icon: <FileCheck className="w-4 h-4" />,
-            command: `[Command] = /Table rapport_final
+            modes: [
+              {
+                id: 'normal',
+                label: 'Normal',
+                command: `[Command] = Table_Template
+[Node] = Rapport provisoire`
+              },
+              {
+                id: 'avance',
+                label: 'Avancé',
+                command: `[Command] = /Table rapport_final
 [Command Manuel] = Étape mission
 [Étape précédente] = Rapport provisoire
 [Étape mission] = Rapport final
 [Modèle] = 
 [Pièces jointes] = Rapport provisoire`
+              }
+            ]
           },
           {
             id: 'suivi-recos',
             label: 'Suivi des recos',
             norme: '15.2 Suivi des recommandations',
             icon: <CheckSquare className="w-4 h-4" />,
-            command: `[Command] = /Table suivi_recos
+            modes: [
+              {
+                id: 'normal',
+                label: 'Normal',
+                command: `[Command] = Table_Template
+[Node] = Rapport final`
+              },
+              {
+                id: 'avance',
+                label: 'Avancé',
+                command: `[Command] = /Table suivi_recos
 [Command Manuel] = Étape mission
 [Étape précédente] = Rapport final
 [Étape mission] = Suivi des recos
 [Modèle] = 
 [Pièces jointes] = Rapport final`
+              }
+            ]
           }
         ]
       }
@@ -1982,12 +2030,8 @@ Contenu de [Contexte de base]
               {
                 id: 'normal',
                 label: 'Normal',
-                command: `[Command] = /Table synthese
-[Command Manuel] = Étape mission
-[Étape précédente] = Frap
-[Étape mission] = Synthèse des Frap
-[Modèle] = 
-[Pièces jointes] = Frap de la mission`
+                command: `[Command] = Table_Template
+[Node] = Frap`
               },
               {
                 id: 'avance',
@@ -2011,12 +2055,8 @@ Contenu de [Contexte de base]
               {
                 id: 'normal',
                 label: 'Normal',
-                command: `[Command] = /Table rapport_provisoire
-[Command Manuel] = Étape mission
-[Étape précédente] = Synthèse des Frap
-[Étape mission] = Rapport provisoire
-[Modèle] = 
-[Pièces jointes] = Synthèse des Frap`
+                command: `[Command] = Table_Template
+[Node] = Synthèse`
               },
               {
                 id: 'avance',
@@ -2040,12 +2080,8 @@ Contenu de [Contexte de base]
               {
                 id: 'normal',
                 label: 'Normal',
-                command: `[Command] = /Table rapport_final
-[Command Manuel] = Étape mission
-[Étape précédente] = Rapport provisoire
-[Étape mission] = Rapport final
-[Modèle] = 
-[Pièces jointes] = Rapport provisoire`
+                command: `[Command] = Table_Template
+[Node] = Rapport provisoire`
               },
               {
                 id: 'avance',
@@ -2069,12 +2105,8 @@ Contenu de [Contexte de base]
               {
                 id: 'normal',
                 label: 'Normal',
-                command: `[Command] = /Table suivi_recos
-[Command Manuel] = Étape mission
-[Étape précédente] = Rapport final
-[Étape mission] = Suivi des recos
-[Modèle] = 
-[Pièces jointes] = Rapport final`
+                command: `[Command] = Table_Template
+[Node] = Rapport final`
               },
               {
                 id: 'avance',
@@ -2087,6 +2119,649 @@ Contenu de [Contexte de base]
 [Pièces jointes] = Rapport final
 [Variable 1] = Contenu de [Variable 1]
 [Variable 2] = Contenu de [Variable 2]`
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  {
+    id: 'e-audit-plan',
+    label: 'E-audit plan',
+    icon: <ClipboardList className="w-4 h-4" />,
+    phases: [
+      {
+        id: 'analyse-risques',
+        label: 'Analyse des risques',
+        etapes: [
+          {
+            id: 'eap-cartographie-processus',
+            label: 'Cartographie des processus',
+            icon: <Target className="w-4 h-4" />,
+            modes: [
+              {
+                id: 'normal',
+                label: 'Normal',
+                command: `[Command] = Etape de mission
+[Logiciel] = E-audit plan
+[Cycle] = Tresorerie
+[Processus] = rapprochements bancaires
+[Etape précédente] = Prise de connaissance
+[Etape de mission] = Cartographie des processus
+[Modele] = Cycle, processus, sous processus, operations
+[Nb de lignes] = 50`
+              },
+              {
+                id: 'avance',
+                label: 'Avancé',
+                command: `[Command] = Etape de mission
+[Logiciel] = E-audit plan
+[Cycle] = Tresorerie
+[Processus] = rapprochements bancaires
+[Etape précédente] = Prise de connaissance
+[Etape de mission] = Cartographie des processus
+[Modele] = Cycle, processus, sous processus, operations
+[Variable 1] = Contenu de [Variable 1]
+[Variable 2] = Contenu de [Variable 2]
+[Nb de lignes] = 50`
+              },
+              {
+                id: 'database',
+                label: 'Database',
+                command: `[Command] = Etape de mission
+[Logiciel] = E-audit plan
+[Cycle] = Tresorerie
+[Processus] = rapprochements bancaires
+[Etape précédente] = Prise de connaissance
+[Etape de mission] = Cartographie des processus
+[Modele] = Cycle, processus, sous processus, operations
+[Variable 1] = Contenu de [Variable 1]
+[Variable 2] = Contenu de [Variable 2]
+[Router] = Database
+[User_id] = ohada
+[Database] = workspace_02
+[Nb de lignes] = 50`
+              },
+              {
+                id: 'document',
+                label: 'Document',
+                command: `[Command] = Etape de mission
+[Logiciel] = E-audit plan
+[Cycle] = Tresorerie
+[Processus] = rapprochements bancaires
+[Etape précédente] = Prise de connaissance
+[Etape de mission] = Cartographie des processus
+[Modele] = Cycle, processus, sous processus, operations
+[Variable 1] = Contenu de [Variable 1]
+[Variable 2] = Contenu de [Variable 2]
+[Router] = Document
+[Nb de lignes] = 50`
+              }
+            ]
+          },
+          {
+            id: 'eap-question-identification-risques',
+            label: 'Question Identification des risques',
+            icon: <HelpCircle className="w-4 h-4" />,
+            modes: [
+              {
+                id: 'normal',
+                label: 'Normal',
+                command: `[Command] = Etape de mission
+[Logiciel] = E-audit plan
+[Processus] = rapprochements bancaires
+[Etape précédente] = Cartographie des processus
+[Etape de mission] = Question Identification des risques
+[Modele] = Processus, sous processus, Questionnaire Identification des risques, Dispositif de maitrise des risques attendus
+[Nb de lignes] = 50`
+              },
+              {
+                id: 'avance',
+                label: 'Avancé',
+                command: `[Command] = Etape de mission
+[Logiciel] = E-audit plan
+[Processus] = rapprochements bancaires
+[Etape précédente] = Cartographie des processus
+[Etape de mission] = Question Identification des risques
+[Modele] = Processus, sous processus, Questionnaire Identification des risques, Dispositif de maitrise des risques attendus
+[Variable 1] = Contenu de [Variable 1]
+[Variable 2] = Contenu de [Variable 2]
+[Nb de lignes] = 50`
+              },
+              {
+                id: 'database',
+                label: 'Database',
+                command: `[Command] = Etape de mission
+[Logiciel] = E-audit plan
+[Processus] = rapprochements bancaires
+[Etape précédente] = Cartographie des processus
+[Etape de mission] = Question Identification des risques
+[Modele] = Processus, sous processus, Questionnaire Identification des risques, Dispositif de maitrise des risques attendus
+[Variable 1] = Contenu de [Variable 1]
+[Variable 2] = Contenu de [Variable 2]
+[Router] = Database
+[User_id] = ohada
+[Database] = workspace_02
+[Nb de lignes] = 50`
+              },
+              {
+                id: 'document',
+                label: 'Document',
+                command: `[Command] = Etape de mission
+[Logiciel] = E-audit plan
+[Processus] = rapprochements bancaires
+[Etape précédente] = Cartographie des processus
+[Etape de mission] = Question Identification des risques
+[Modele] = Processus, sous processus, Questionnaire Identification des risques, Dispositif de maitrise des risques attendus
+[Variable 1] = Contenu de [Variable 1]
+[Variable 2] = Contenu de [Variable 2]
+[Router] = Document
+[Nb de lignes] = 50`
+              }
+            ]
+          },
+          {
+            id: 'eap-identification-risques',
+            label: 'Identification des risques',
+            icon: <AlertTriangle className="w-4 h-4" />,
+            modes: [
+              {
+                id: 'normal',
+                label: 'Normal',
+                command: `[Command] = Etape de mission
+[Logiciel] = E-audit plan
+[Processus] = rapprochements bancaires
+[Etape précédente] = Question Identification des risques
+[Etape de mission] = Identification des risques
+[Modele] = sous processus, Point de controle, risque
+[Nb de lignes] = 50`
+              },
+              {
+                id: 'avance',
+                label: 'Avancé',
+                command: `[Command] = Etape de mission
+[Logiciel] = E-audit plan
+[Processus] = rapprochements bancaires
+[Etape précédente] = Question Identification des risques
+[Etape de mission] = Identification des risques
+[Modele] = sous processus, Point de controle, risque
+[Variable 1] = Contenu de [Variable 1]
+[Variable 2] = Contenu de [Variable 2]
+[Nb de lignes] = 50`
+              },
+              {
+                id: 'database',
+                label: 'Database',
+                command: `[Command] = Etape de mission
+[Logiciel] = E-audit plan
+[Processus] = rapprochements bancaires
+[Etape précédente] = Question Identification des risques
+[Etape de mission] = Identification des risques
+[Modele] = sous processus, Point de controle, risque
+[Variable 1] = Contenu de [Variable 1]
+[Variable 2] = Contenu de [Variable 2]
+[Router] = Database
+[User_id] = ohada
+[Database] = workspace_02
+[Nb de lignes] = 50`
+              },
+              {
+                id: 'document',
+                label: 'Document',
+                command: `[Command] = Etape de mission
+[Logiciel] = E-audit plan
+[Processus] = rapprochements bancaires
+[Etape précédente] = Question Identification des risques
+[Etape de mission] = Identification des risques
+[Modele] = sous processus, Point de controle, risque
+[Variable 1] = Contenu de [Variable 1]
+[Variable 2] = Contenu de [Variable 2]
+[Router] = Document
+[Nb de lignes] = 50`
+              }
+            ]
+          },
+          {
+            id: 'eap-evaluation-risques',
+            label: 'Évaluation des risques',
+            icon: <BarChart3 className="w-4 h-4" />,
+            modes: [
+              {
+                id: 'normal',
+                label: 'Normal',
+                command: `[Command] = Etape de mission
+[Logiciel] = E-audit plan
+[Processus] = rapprochements bancaires
+[Etape précédente] = Identification des risques
+[Etape de mission] = Evaluation des risques
+[Modele] = Point de controle, risque, évaluation risque, probabilité, impact
+[Nb de lignes] = 50`
+              },
+              {
+                id: 'avance',
+                label: 'Avancé',
+                command: `[Command] = Etape de mission
+[Logiciel] = E-audit plan
+[Processus] = rapprochements bancaires
+[Etape précédente] = Identification des risques
+[Etape de mission] = Evaluation des risques
+[Modele] = Point de controle, risque, évaluation risque, probabilité, impact
+[Variable 1] = Contenu de [Variable 1]
+[Variable 2] = Contenu de [Variable 2]
+[Nb de lignes] = 50`
+              },
+              {
+                id: 'database',
+                label: 'Database',
+                command: `[Command] = Etape de mission
+[Logiciel] = E-audit plan
+[Processus] = rapprochements bancaires
+[Etape précédente] = Identification des risques
+[Etape de mission] = Evaluation des risques
+[Modele] = Point de controle, risque, évaluation risque, probabilité, impact
+[Variable 1] = Contenu de [Variable 1]
+[Variable 2] = Contenu de [Variable 2]
+[Router] = Database
+[User_id] = ohada
+[Database] = workspace_02
+[Nb de lignes] = 50`
+              },
+              {
+                id: 'document',
+                label: 'Document',
+                command: `[Command] = Etape de mission
+[Logiciel] = E-audit plan
+[Processus] = rapprochements bancaires
+[Etape précédente] = Identification des risques
+[Etape de mission] = Evaluation des risques
+[Modele] = Point de controle, risque, évaluation risque, probabilité, impact
+[Variable 1] = Contenu de [Variable 1]
+[Variable 2] = Contenu de [Variable 2]
+[Router] = Document
+[Nb de lignes] = 50`
+              }
+            ]
+          },
+          {
+            id: 'eap-plan-action-couverture',
+            label: "Plan d'action de couverture des risques",
+            icon: <CheckSquare className="w-4 h-4" />,
+            modes: [
+              {
+                id: 'normal',
+                label: 'Normal',
+                command: `[Command] = Etape de mission
+[Logiciel] = E-audit plan
+[Processus] = rapprochements bancaires
+[Etape précédente] = Evaluation des risques
+[Etape de mission] = Plan d'action de couverture des risques
+[Modele] = Point de controle, risque, évaluation risque, probabilité, impact, Plan d'action de couverture des risques
+[Nb de lignes] = 50`
+              },
+              {
+                id: 'avance',
+                label: 'Avancé',
+                command: `[Command] = Etape de mission
+[Logiciel] = E-audit plan
+[Processus] = rapprochements bancaires
+[Etape précédente] = Evaluation des risques
+[Etape de mission] = Plan d'action de couverture des risques
+[Modele] = Point de controle, risque, évaluation risque, probabilité, impact, Plan d'action de couverture des risques
+[Variable 1] = Contenu de [Variable 1]
+[Variable 2] = Contenu de [Variable 2]
+[Nb de lignes] = 50`
+              },
+              {
+                id: 'database',
+                label: 'Database',
+                command: `[Command] = Etape de mission
+[Logiciel] = E-audit plan
+[Processus] = rapprochements bancaires
+[Etape précédente] = Evaluation des risques
+[Etape de mission] = Plan d'action de couverture des risques
+[Modele] = Point de controle, risque, évaluation risque, probabilité, impact, Plan d'action de couverture des risques
+[Variable 1] = Contenu de [Variable 1]
+[Variable 2] = Contenu de [Variable 2]
+[Router] = Database
+[User_id] = ohada
+[Database] = workspace_02
+[Nb de lignes] = 50`
+              },
+              {
+                id: 'document',
+                label: 'Document',
+                command: `[Command] = Etape de mission
+[Logiciel] = E-audit plan
+[Processus] = rapprochements bancaires
+[Etape précédente] = Evaluation des risques
+[Etape de mission] = Plan d'action de couverture des risques
+[Modele] = Point de controle, risque, évaluation risque, probabilité, impact, Plan d'action de couverture des risques
+[Variable 1] = Contenu de [Variable 1]
+[Variable 2] = Contenu de [Variable 2]
+[Router] = Document
+[Nb de lignes] = 50`
+              }
+            ]
+          },
+          {
+            id: 'eap-mise-a-jour-cartographie',
+            label: 'Mise à jour cartographie N-1',
+            icon: <FileText className="w-4 h-4" />,
+            modes: [
+              {
+                id: 'normal',
+                label: 'Normal',
+                command: `[Command] = Etape de mission
+[Logiciel] = E-audit plan
+[Processus] = rapprochements bancaires
+[Etape précédente] = Cartographie des risques N-1
+[Etape de mission] = Cartographie des risques
+[Modele] = Point de controle, risque, évaluation risque, probabilité, impact, controle audit
+[Extension] = objectif de controle, document
+[Nb de lignes] = 50`
+              },
+              {
+                id: 'avance',
+                label: 'Avancé',
+                command: `[Command] = Etape de mission
+[Logiciel] = E-audit plan
+[Processus] = rapprochements bancaires
+[Etape précédente] = Cartographie des risques N-1
+[Etape de mission] = Cartographie des risques
+[Modele] = Point de controle, risque, évaluation risque, probabilité, impact, controle audit
+[Extension] = objectif de controle, document
+[Variable 1] = Contenu de [Variable 1]
+[Variable 2] = Contenu de [Variable 2]
+[Nb de lignes] = 50`
+              },
+              {
+                id: 'database',
+                label: 'Database',
+                command: `[Command] = Etape de mission
+[Logiciel] = E-audit plan
+[Processus] = rapprochements bancaires
+[Etape précédente] = Cartographie des risques N-1
+[Etape de mission] = Cartographie des risques
+[Modele] = Point de controle, risque, évaluation risque, probabilité, impact, controle audit
+[Extension] = objectif de controle, document
+[Variable 1] = Contenu de [Variable 1]
+[Variable 2] = Contenu de [Variable 2]
+[Router] = Database
+[User_id] = ohada
+[Database] = workspace_02
+[Nb de lignes] = 50`
+              },
+              {
+                id: 'document',
+                label: 'Document',
+                command: `[Command] = Etape de mission
+[Logiciel] = E-audit plan
+[Processus] = rapprochements bancaires
+[Etape précédente] = Cartographie des risques N-1
+[Etape de mission] = Cartographie des risques
+[Modele] = Point de controle, risque, évaluation risque, probabilité, impact, controle audit
+[Extension] = objectif de controle, document
+[Variable 1] = Contenu de [Variable 1]
+[Variable 2] = Contenu de [Variable 2]
+[Router] = Document
+[Nb de lignes] = 50`
+              }
+            ]
+          },
+          {
+            id: 'eap-hierarchisation-risques',
+            label: 'Hiérarchisation des risques',
+            icon: <TrendingUp className="w-4 h-4" />,
+            modes: [
+              {
+                id: 'normal',
+                label: 'Normal',
+                command: `[Command] = Etape de mission
+[Logiciel] = E-audit plan
+[Processus] = rapprochements bancaires
+[Etape précédente] = Plan d'action de couverture des risques
+[Etape de mission] = Hiearchisation des risques
+[Modele] : Point de controle, risque, évaluation risque, probabilité, impact, Plan d'action de couverture des risques
+[Algorithme]= Hiearchisation
+[Nb de lignes] = 30`
+              },
+              {
+                id: 'avance',
+                label: 'Avancé',
+                command: `[Command] = Etape de mission
+[Logiciel] = E-audit plan
+[Processus] = rapprochements bancaires
+[Etape précédente] = Plan d'action de couverture des risques
+[Etape de mission] = Hiearchisation des risques
+[Modele] : Point de controle, risque, évaluation risque, probabilité, impact, Plan d'action de couverture des risques
+[Variable 1] = Contenu de [Variable 1]
+[Variable 2] = Contenu de [Variable 2]
+[Algorithme]= Hiearchisation
+[Nb de lignes] = 30`
+              },
+              {
+                id: 'database',
+                label: 'Database',
+                command: `[Command] = Etape de mission
+[Logiciel] = E-audit plan
+[Processus] = rapprochements bancaires
+[Etape précédente] = Plan d'action de couverture des risques
+[Etape de mission] = Hiearchisation des risques
+[Modele] : Point de controle, risque, évaluation risque, probabilité, impact, Plan d'action de couverture des risques
+[Variable 1] = Contenu de [Variable 1]
+[Variable 2] = Contenu de [Variable 2]
+[Algorithme]= Hiearchisation
+[Router] = Database
+[User_id] = ohada
+[Database] = workspace_02
+[Nb de lignes] = 30`
+              },
+              {
+                id: 'document',
+                label: 'Document',
+                command: `[Command] = Etape de mission
+[Logiciel] = E-audit plan
+[Processus] = rapprochements bancaires
+[Etape précédente] = Plan d'action de couverture des risques
+[Etape de mission] = Hiearchisation des risques
+[Modele] : Point de controle, risque, évaluation risque, probabilité, impact, Plan d'action de couverture des risques
+[Variable 1] = Contenu de [Variable 1]
+[Variable 2] = Contenu de [Variable 2]
+[Algorithme]= Hiearchisation
+[Router] = Document
+[Nb de lignes] = 30`
+              }
+            ]
+          },
+          {
+            id: 'eap-priorisation-risques',
+            label: 'Priorisation des risques',
+            icon: <Target className="w-4 h-4" />,
+            modes: [
+              {
+                id: 'normal',
+                label: 'Normal',
+                command: `[Command] = Etape de mission
+[Logiciel] = E-audit plan
+[Processus] = rapprochements bancaires
+[Etape précédente] = Hiearchisation des risques
+[Etape de mission] = Priorisation des risques
+[Modele] : Point de controle, risque, évaluation risque, probabilité, impact, Plan d'action de couverture des risques
+[Algorithme]= Priorisation
+[Nb de lignes] = 30`
+              },
+              {
+                id: 'avance',
+                label: 'Avancé',
+                command: `[Command] = Etape de mission
+[Logiciel] = E-audit plan
+[Processus] = rapprochements bancaires
+[Etape précédente] = Hiearchisation des risques
+[Etape de mission] = Priorisation des risques
+[Modele] : Point de controle, risque, évaluation risque, probabilité, impact, Plan d'action de couverture des risques
+[Algorithme]= Priorisation
+[Variable 1] = Contenu de [Variable 1]
+[Variable 2] = Contenu de [Variable 2]
+[Nb de lignes] = 30`
+              },
+              {
+                id: 'document',
+                label: 'Document',
+                command: `[Command] = Etape de mission
+[Logiciel] = E-audit plan
+[Processus] = rapprochements bancaires
+[Etape précédente] = Hiearchisation des risques
+[Etape de mission] = Priorisation des risques
+[Modele] : Point de controle, risque, évaluation risque, probabilité, impact, Plan d'action de couverture des risques
+[Algorithme]= Priorisation
+[Variable 1] = Contenu de [Variable 1]
+[Variable 2] = Contenu de [Variable 2]
+[Router] = Document
+[Nb de lignes] = 30`
+              },
+              {
+                id: 'database',
+                label: 'Database',
+                command: `[Command] = Etape de mission
+[Logiciel] = E-audit plan
+[Processus] = rapprochements bancaires
+[Etape précédente] = Hiearchisation des risques
+[Etape de mission] = Priorisation des risques
+[Modele] : Point de controle, risque, évaluation risque, probabilité, impact, Plan d'action de couverture des risques
+[Algorithme]= Priorisation
+[Variable 1] = Contenu de [Variable 1]
+[Variable 2] = Contenu de [Variable 2]
+[Router] = Database
+[User_id] = ohada
+[Database] = workspace_02
+[Nb de lignes] = 30`
+              }
+            ]
+          },
+          {
+            id: 'eap-plan-annuel-audit',
+            label: "Plan annuel d'audit interne",
+            icon: <BookOpen className="w-4 h-4" />,
+            modes: [
+              {
+                id: 'normal',
+                label: 'Normal',
+                command: `[Command] = Etape de mission
+[Logiciel] = E-audit plan
+[Processus] = rapprochements bancaires
+[Etape précédente] = Priorisation des risques
+[Etape de mission] = Plan annuel d'audit interne
+[Modele] : Point de controle, risque, évaluation risque, probabilité, impact, Plan d'action de couverture des risques
+[Algorithme]= Plan annuel d'audit
+[Nb de lignes] = 30`
+              },
+              {
+                id: 'avance',
+                label: 'Avancé',
+                command: `[Command] = Etape de mission
+[Logiciel] = E-audit plan
+[Processus] = rapprochements bancaires
+[Etape précédente] = Priorisation des risques
+[Etape de mission] = Plan annuel d'audit interne
+[Modele] : Point de controle, risque, évaluation risque, probabilité, impact, Plan d'action de couverture des risques
+[Algorithme] = Plan annuel d'audit
+[Variable 1] = Contenu de [Variable 1]
+[Variable 2] = Contenu de [Variable 2]
+[Nb de lignes] = 30`
+              },
+              {
+                id: 'document',
+                label: 'Document',
+                command: `[Command] = Etape de mission
+[Logiciel] = E-audit plan
+[Processus] = rapprochements bancaires
+[Etape précédente] = Priorisation des risques
+[Etape de mission] = Plan annuel d'audit interne
+[Modele] : Point de controle, risque, évaluation risque, probabilité, impact, Plan d'action de couverture des risques
+[Algorithme] = Plan annuel d'audit
+[Variable 1] = Contenu de [Variable 1]
+[Variable 2] = Contenu de [Variable 2]
+[Router] = Document
+[Nb de lignes] = 30`
+              },
+              {
+                id: 'database',
+                label: 'Database',
+                command: `[Command] = Etape de mission
+[Logiciel] = E-audit plan
+[Processus] = rapprochements bancaires
+[Etape précédente] = Priorisation des risques
+[Etape de mission] = Plan annuel d'audit interne
+[Modele] : Point de controle, risque, évaluation risque, probabilité, impact, Plan d'action de couverture des risques
+[Algorithme] = Plan annuel d'audit
+[Variable 1] = Contenu de [Variable 1]
+[Variable 2] = Contenu de [Variable 2]
+[Router] = Database
+[User_id] = ohada
+[Database] = workspace_02
+[Nb de lignes] = 30`
+              }
+            ]
+          },
+          {
+            id: 'eap-rapport-elaboration-plan',
+            label: "Rapport d'élaboration du plan annuel d'audit",
+            icon: <FileCheck className="w-4 h-4" />,
+            modes: [
+              {
+                id: 'normal',
+                label: 'Normal',
+                command: `[Command] = Etape de mission
+[Logiciel] = E-audit plan
+[Processus] = rapprochements bancaires
+[Etape précédente] = Plan annuel d'audit interne
+[Etape de mission] = Rapport d'élaboration du plan annuel d'audit
+[Modele] : Base
+[Nb de pages] = 5`
+              },
+              {
+                id: 'avance',
+                label: 'Avancé',
+                command: `[Command] = Etape de mission
+[Logiciel] = E-audit plan
+[Processus] = rapprochements bancaires
+[Etape précédente] = Plan annuel d'audit interne
+[Etape de mission] = Rapport d'élaboration du plan annuel d'audit
+[Modele] : Base
+[Variable 1] = Contenu de [Variable 1]
+[Variable 2] = Contenu de [Variable 2]
+[Nb de pages] = 5`
+              },
+              {
+                id: 'document',
+                label: 'Document',
+                command: `[Command] = Etape de mission
+[Logiciel] = E-audit plan
+[Processus] = rapprochements bancaires
+[Etape précédente] = Plan annuel d'audit interne
+[Etape de mission] = Rapport d'élaboration du plan annuel d'audit
+[Modele] : Base
+[Variable 1] = Contenu de [Variable 1]
+[Variable 2] = Contenu de [Variable 2]
+[Router] = Document
+[Nb de pages] = 5`
+              },
+              {
+                id: 'database',
+                label: 'Database',
+                command: `[Command] = Etape de mission
+[Logiciel] = E-audit plan
+[Processus] = rapprochements bancaires
+[Etape précédente] = Plan annuel d'audit interne
+[Etape de mission] = Rapport d'élaboration du plan annuel d'audit
+[Modele] : Base
+[Variable 1] = Contenu de [Variable 1]
+[Variable 2] = Contenu de [Variable 2]
+[Router] = Database
+[User_id] = ohada
+[Database] = workspace_02
+[Nb de pages] = 5`
               }
             ]
           }
@@ -2131,6 +2806,36 @@ Contenu de [Contexte de base]
 [Variable 1] = Contenu de [Variable 1]
 [Variable 2] = Contenu de [Variable 2]
 [Nb de lignes] = 50`
+              },
+              {
+                id: 'database',
+                label: 'Database',
+                command: `[Command] = Etape de mission
+[Cycle] = Tresorerie
+[Processus] = rapprochements bancaires
+[Etape précédente] = Prise de connaissance
+[Etape de mission] = Cartographie des processus
+[Modele] = Cycle, processus, sous processus, operations
+[Variable 1] = Contenu de [Variable 1]
+[Variable 2] = Contenu de [Variable 2]
+[Router] = Database
+[User_id] = ohada
+[Database] = workspace_02
+[Nb de lignes] = 50`
+              },
+              {
+                id: 'document',
+                label: 'Document',
+                command: `[Command] = Etape de mission
+[Cycle] = Tresorerie
+[Processus] = rapprochements bancaires
+[Etape précédente] = Prise de connaissance
+[Etape de mission] = Cartographie des processus
+[Modele] = Cycle, processus, sous processus, operations
+[Variable 1] = Contenu de [Variable 1]
+[Variable 2] = Contenu de [Variable 2]
+[Router] = Document
+[Nb de lignes] = 50`
               }
             ]
           },
@@ -2159,6 +2864,34 @@ Contenu de [Contexte de base]
 [Modele] = Processus, sous processus, Questionnaire Identification des risques, Dispositif de maitrise des risques attendus
 [Variable 1] = Contenu de [Variable 1]
 [Variable 2] = Contenu de [Variable 2]
+[Nb de lignes] = 50`
+              },
+              {
+                id: 'database',
+                label: 'Database',
+                command: `[Command] = Etape de mission
+[Processus] = rapprochements bancaires
+[Etape précédente] = Cartographie des processus
+[Etape de mission] = Question Identification des risques
+[Modele] = Processus, sous processus, Questionnaire Identification des risques, Dispositif de maitrise des risques attendus
+[Variable 1] = Contenu de [Variable 1]
+[Variable 2] = Contenu de [Variable 2]
+[Router] = Database
+[User_id] = ohada
+[Database] = workspace_02
+[Nb de lignes] = 50`
+              },
+              {
+                id: 'document',
+                label: 'Document',
+                command: `[Command] = Etape de mission
+[Processus] = rapprochements bancaires
+[Etape précédente] = Cartographie des processus
+[Etape de mission] = Question Identification des risques
+[Modele] = Processus, sous processus, Questionnaire Identification des risques, Dispositif de maitrise des risques attendus
+[Variable 1] = Contenu de [Variable 1]
+[Variable 2] = Contenu de [Variable 2]
+[Router] = Document
 [Nb de lignes] = 50`
               }
             ]
@@ -2189,6 +2922,34 @@ Contenu de [Contexte de base]
 [Variable 1] = Contenu de [Variable 1]
 [Variable 2] = Contenu de [Variable 2]
 [Nb de lignes] = 50`
+              },
+              {
+                id: 'database',
+                label: 'Database',
+                command: `[Command] = Etape de mission
+[Processus] = rapprochements bancaires
+[Etape précédente] = Question Identification des risques
+[Etape de mission] = Identification des risques
+[Modele] = sous processus, Point de controle, risque
+[Variable 1] = Contenu de [Variable 1]
+[Variable 2] = Contenu de [Variable 2]
+[Router] = Database
+[User_id] = ohada
+[Database] = workspace_02
+[Nb de lignes] = 50`
+              },
+              {
+                id: 'document',
+                label: 'Document',
+                command: `[Command] = Etape de mission
+[Processus] = rapprochements bancaires
+[Etape précédente] = Question Identification des risques
+[Etape de mission] = Identification des risques
+[Modele] = sous processus, Point de controle, risque
+[Variable 1] = Contenu de [Variable 1]
+[Variable 2] = Contenu de [Variable 2]
+[Router] = Document
+[Nb de lignes] = 50`
               }
             ]
           },
@@ -2218,6 +2979,34 @@ Contenu de [Contexte de base]
 [Variable 1] = Contenu de [Variable 1]
 [Variable 2] = Contenu de [Variable 2]
 [Nb de lignes] = 50`
+              },
+              {
+                id: 'database',
+                label: 'Database',
+                command: `[Command] = Etape de mission
+[Processus] = rapprochements bancaires
+[Etape précédente] = Identification des risques
+[Etape de mission] = Evaluation des risques
+[Modele] = Point de controle, risque, évaluation risque, probabilité, impact
+[Variable 1] = Contenu de [Variable 1]
+[Variable 2] = Contenu de [Variable 2]
+[Router] = Database
+[User_id] = ohada
+[Database] = workspace_02
+[Nb de lignes] = 50`
+              },
+              {
+                id: 'document',
+                label: 'Document',
+                command: `[Command] = Etape de mission
+[Processus] = rapprochements bancaires
+[Etape précédente] = Identification des risques
+[Etape de mission] = Evaluation des risques
+[Modele] = Point de controle, risque, évaluation risque, probabilité, impact
+[Variable 1] = Contenu de [Variable 1]
+[Variable 2] = Contenu de [Variable 2]
+[Router] = Document
+[Nb de lignes] = 50`
               }
             ]
           },
@@ -2246,6 +3035,34 @@ Contenu de [Contexte de base]
 [Modele] = Point de controle, risque, évaluation risque, probabilité, impact, Plan d'action de couverture des risques
 [Variable 1] = Contenu de [Variable 1]
 [Variable 2] = Contenu de [Variable 2]
+[Nb de lignes] = 50`
+              },
+              {
+                id: 'database',
+                label: 'Database',
+                command: `[Command] = Etape de mission
+[Processus] = rapprochements bancaires
+[Etape précédente] = Evaluation des risques
+[Etape de mission] = Plan d'action de couverture des risques
+[Modele] = Point de controle, risque, évaluation risque, probabilité, impact, Plan d'action de couverture des risques
+[Variable 1] = Contenu de [Variable 1]
+[Variable 2] = Contenu de [Variable 2]
+[Router] = Database
+[User_id] = ohada
+[Database] = workspace_02
+[Nb de lignes] = 50`
+              },
+              {
+                id: 'document',
+                label: 'Document',
+                command: `[Command] = Etape de mission
+[Processus] = rapprochements bancaires
+[Etape précédente] = Evaluation des risques
+[Etape de mission] = Plan d'action de couverture des risques
+[Modele] = Point de controle, risque, évaluation risque, probabilité, impact, Plan d'action de couverture des risques
+[Variable 1] = Contenu de [Variable 1]
+[Variable 2] = Contenu de [Variable 2]
+[Router] = Document
 [Nb de lignes] = 50`
               }
             ]
@@ -2277,6 +3094,36 @@ Contenu de [Contexte de base]
 [Extension] = objectif de controle, document
 [Variable 1] = Contenu de [Variable 1]
 [Variable 2] = Contenu de [Variable 2]
+[Nb de lignes] = 50`
+              },
+              {
+                id: 'database',
+                label: 'Database',
+                command: `[Command] = Etape de mission
+[Processus] = rapprochements bancaires
+[Etape précédente] = Cartographie des risques N-1
+[Etape de mission] = Cartographie des risques
+[Modele] = Point de controle, risque, évaluation risque, probabilité, impact, controle audit
+[Extension] = objectif de controle, document
+[Variable 1] = Contenu de [Variable 1]
+[Variable 2] = Contenu de [Variable 2]
+[Router] = Database
+[User_id] = ohada
+[Database] = workspace_02
+[Nb de lignes] = 50`
+              },
+              {
+                id: 'document',
+                label: 'Document',
+                command: `[Command] = Etape de mission
+[Processus] = rapprochements bancaires
+[Etape précédente] = Cartographie des risques N-1
+[Etape de mission] = Cartographie des risques
+[Modele] = Point de controle, risque, évaluation risque, probabilité, impact, controle audit
+[Extension] = objectif de controle, document
+[Variable 1] = Contenu de [Variable 1]
+[Variable 2] = Contenu de [Variable 2]
+[Router] = Document
 [Nb de lignes] = 50`
               }
             ]
@@ -2431,12 +3278,8 @@ Contenu de [Contexte de base]
               {
                 id: 'normal',
                 label: 'Normal',
-                command: `[Command] = /Table synthese
-[Command Manuel] = Étape mission
-[Étape précédente] = Frap
-[Étape mission] = Synthèse des Frap
-[Modèle] = 
-[Pièces jointes] = Frap de la mission`
+                command: `[Command] = Table_Template
+[Node] = Frap`
               },
               {
                 id: 'avance',
@@ -2461,12 +3304,8 @@ Contenu de [Contexte de base]
               {
                 id: 'normal',
                 label: 'Normal',
-                command: `[Command] = /Table rapport_provisoire
-[Command Manuel] = Étape mission
-[Étape précédente] = Synthèse des Frap
-[Étape mission] = Rapport provisoire
-[Modèle] = 
-[Pièces jointes] = Synthèse des Frap`
+                command: `[Command] = Table_Template
+[Node] = Synthèse`
               },
               {
                 id: 'avance',
@@ -2515,12 +3354,8 @@ Contenu de [Contexte de base]
               {
                 id: 'normal',
                 label: 'Normal',
-                command: `[Command] = /Table rapport_final
-[Command Manuel] = Étape mission
-[Étape précédente] = Rapport provisoire
-[Étape mission] = Rapport final
-[Modèle] = 
-[Pièces jointes] = Rapport provisoire`
+                command: `[Command] = Table_Template
+[Node] = Rapport provisoire`
               },
               {
                 id: 'avance',
@@ -2545,12 +3380,8 @@ Contenu de [Contexte de base]
               {
                 id: 'normal',
                 label: 'Normal',
-                command: `[Command] = /Table suivi_recos
-[Command Manuel] = Étape mission
-[Étape précédente] = Rapport final
-[Étape mission] = Suivi des recos
-[Modèle] = 
-[Pièces jointes] = Rapport final`
+                command: `[Command] = Table_Template
+[Node] = Rapport final`
               },
               {
                 id: 'avance',
@@ -3285,6 +4116,8 @@ const getModeIcon = (modeId: string) => {
     case 'normal': return <User className="w-4 h-4" />;
     case 'demo': return <Play className="w-4 h-4" />;
     case 'avance': return <Zap className="w-4 h-4" />;
+    case 'database': return <Zap className="w-4 h-4" />;
+    case 'document': return <Zap className="w-4 h-4" />;
     case 'manuel': return <Settings className="w-4 h-4" />;
     default: return null;
   }
@@ -3383,7 +4216,7 @@ const DemarrerMenu: React.FC<DemarrerMenuProps> = ({ onInsertCommand, disabled =
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (menuRef.current && !menuRef.current.contains(event.target as Node) &&
-          buttonRef.current && !buttonRef.current.contains(event.target as Node)) {
+        buttonRef.current && !buttonRef.current.contains(event.target as Node)) {
         const target = event.target as HTMLElement;
         if (!target.closest('[data-submenu-portal]')) {
           closeMenu();
@@ -3451,7 +4284,7 @@ const DemarrerMenu: React.FC<DemarrerMenuProps> = ({ onInsertCommand, disabled =
   const formatCommandWithBullets = (command: string): string => {
     // Diviser la commande en lignes
     const lines = command.split('\n');
-    
+
     // Ajouter un tiret devant chaque ligne non vide qui commence par '['
     const formattedLines = lines.map(line => {
       const trimmedLine = line.trim();
@@ -3466,7 +4299,7 @@ const DemarrerMenu: React.FC<DemarrerMenuProps> = ({ onInsertCommand, disabled =
       // Pour les autres lignes (comme les objets JSON), les garder telles quelles
       return line;
     });
-    
+
     return formattedLines.join('\n');
   };
 
@@ -3474,16 +4307,16 @@ const DemarrerMenu: React.FC<DemarrerMenuProps> = ({ onInsertCommand, disabled =
     if (activeEtape) {
       // Si le mode a sa propre commande, l'utiliser, sinon utiliser l'ancienne logique
       const rawCommand = mode.command || (mode.prefix && activeEtape.command ? mode.prefix + activeEtape.command : activeEtape.command || '');
-      
+
       // Formater la commande avec des listes à puces
       const finalCommand = formatCommandWithBullets(rawCommand);
-      
+
       try {
         onInsertCommand(finalCommand);
       } catch (error) {
         console.error('[DemarrerMenu] Error calling onInsertCommand:', error);
       }
-      
+
       setTimeout(() => {
         closeMenu();
       }, 100);
@@ -3524,8 +4357,8 @@ const DemarrerMenu: React.FC<DemarrerMenuProps> = ({ onInsertCommand, disabled =
         onClick={toggleMenu}
         disabled={disabled}
         className={`flex items-center gap-2 px-3 py-2 rounded-full text-sm font-medium transition-all
-          ${isOpen 
-            ? 'bg-[#6b1102] text-white shadow-lg shadow-[#6b1102]/30' 
+          ${isOpen
+            ? 'bg-[#6b1102] text-white shadow-lg shadow-[#6b1102]/30'
             : 'bg-gray-100/80 dark:bg-gray-800/80 text-gray-700 dark:text-gray-300 hover:bg-[#6b1102]/10 dark:hover:bg-[#6b1102]/20 hover:text-[#6b1102] dark:hover:text-[#ff6b5b]'
           }
           ${disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}
@@ -3560,8 +4393,8 @@ const DemarrerMenu: React.FC<DemarrerMenuProps> = ({ onInsertCommand, disabled =
               <div key={logiciel.id}>
                 <button
                   className={`w-full flex items-center gap-3 px-4 py-3 text-left text-sm font-medium transition-colors border-b border-gray-100 dark:border-gray-700/50
-                    ${activeLogiciel === logiciel.id 
-                      ? 'bg-[#6b1102]/10 dark:bg-[#6b1102]/20 text-[#6b1102] dark:text-[#ff6b5b]' 
+                    ${activeLogiciel === logiciel.id
+                      ? 'bg-[#6b1102]/10 dark:bg-[#6b1102]/20 text-[#6b1102] dark:text-[#ff6b5b]'
                       : 'text-gray-800 dark:text-gray-100 hover:bg-gray-50 dark:hover:bg-gray-700/50'
                     }`}
                   onClick={() => {
@@ -3586,13 +4419,13 @@ const DemarrerMenu: React.FC<DemarrerMenuProps> = ({ onInsertCommand, disabled =
                         <div className="px-4 py-2 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider bg-gray-100 dark:bg-gray-800/50">
                           {phase.label}
                         </div>
-                        
+
                         {phase.etapes && phase.etapes.map(etape => (
                           <button
                             key={etape.id}
                             className={`w-full flex items-center gap-3 px-4 py-2.5 pl-6 text-left text-sm transition-colors
-                              ${activeEtape?.id === etape.id 
-                                ? 'bg-[#6b1102]/10 dark:bg-[#6b1102]/20 text-[#6b1102] dark:text-[#ff6b5b]' 
+                              ${activeEtape?.id === etape.id
+                                ? 'bg-[#6b1102]/10 dark:bg-[#6b1102]/20 text-[#6b1102] dark:text-[#ff6b5b]'
                                 : 'text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700'
                               }`}
                             onClick={(e) => handleEtapeClick(etape, e)}
@@ -3608,8 +4441,8 @@ const DemarrerMenu: React.FC<DemarrerMenuProps> = ({ onInsertCommand, disabled =
                           <div key={cycle.id}>
                             <button
                               className={`w-full flex items-center gap-3 px-4 py-2.5 pl-6 text-left text-sm transition-colors
-                                ${activeCycle?.id === cycle.id 
-                                  ? 'bg-[#6b1102]/10 dark:bg-[#6b1102]/20 text-[#6b1102] dark:text-[#ff6b5b]' 
+                                ${activeCycle?.id === cycle.id
+                                  ? 'bg-[#6b1102]/10 dark:bg-[#6b1102]/20 text-[#6b1102] dark:text-[#ff6b5b]'
                                   : 'text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700'
                                 }`}
                               onClick={() => handleCycleClick(cycle)}
@@ -3620,15 +4453,15 @@ const DemarrerMenu: React.FC<DemarrerMenuProps> = ({ onInsertCommand, disabled =
                               <span className="flex-1">{cycle.label}</span>
                               <ChevronRight className={`w-4 h-4 flex-shrink-0 transition-transform duration-200 ${activeCycle?.id === cycle.id ? 'rotate-90 text-[#6b1102] dark:text-[#ff6b5b]' : 'text-gray-400'}`} />
                             </button>
-                            
+
                             {activeCycle?.id === cycle.id && (
                               <div className="bg-gray-100 dark:bg-gray-800/30">
                                 {cycle.tests.map(test => (
                                   <button
                                     key={test.id}
                                     className={`w-full flex items-center gap-3 px-4 py-2 pl-12 text-left text-sm transition-colors
-                                      ${activeTest?.id === test.id 
-                                        ? 'bg-[#6b1102]/10 dark:bg-[#6b1102]/20 text-[#6b1102] dark:text-[#ff6b5b]' 
+                                      ${activeTest?.id === test.id
+                                        ? 'bg-[#6b1102]/10 dark:bg-[#6b1102]/20 text-[#6b1102] dark:text-[#ff6b5b]'
                                         : 'text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700'
                                       }`}
                                     onClick={(e) => handleTestClick(test, e)}

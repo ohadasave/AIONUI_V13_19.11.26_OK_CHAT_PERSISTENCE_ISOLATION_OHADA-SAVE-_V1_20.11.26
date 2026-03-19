@@ -72,44 +72,36 @@ export const AuthProvider: React.FC<React.PropsWithChildren> = ({ children }) =>
 
   const refresh = useCallback(async () => {
     if (isDesktopRuntime) {
-      // Check if login is required for desktop mode
-      try {
-        const loginEnabled = await ConfigStorage.get('security.loginEnabled');
-        
-        if (loginEnabled === true) {
-          // Check if user has a valid session
-          const loggedIn = localStorage.getItem('eaudit_logged_in');
-          const loginTime = localStorage.getItem('eaudit_login_time');
-          
-          if (loggedIn === 'true' && loginTime) {
-            const elapsed = Date.now() - parseInt(loginTime, 10);
-            const sessionDuration = 24 * 60 * 60 * 1000; // 24 hours
-            
-            if (elapsed < sessionDuration) {
-              // Valid session
-              setStatus('authenticated');
-              setUser({ id: 'desktop-user', username: 'Desktop User' });
-              setReady(true);
-              return;
-            } else {
-              // Session expired
-              localStorage.removeItem('eaudit_logged_in');
-              localStorage.removeItem('eaudit_login_time');
-            }
-          }
-          
-          // No valid session, require login
-          setStatus('unauthenticated');
-          setUser(null);
+      // Check if user is already logged in via localStorage
+      const loggedIn = localStorage.getItem('eaudit_logged_in') === 'true';
+      const loginTime = localStorage.getItem('eaudit_login_time');
+
+      if (loggedIn && loginTime) {
+        // Check if session is still valid (24 hours)
+        const now = Date.now();
+        const elapsed = now - parseInt(loginTime, 10);
+        const twentyFourHours = 24 * 60 * 60 * 1000;
+
+        if (elapsed < twentyFourHours) {
+          // Valid session exists
+          const username = localStorage.getItem('eaudit_username') || 'desktop-user';
+          console.log('[AuthContext] Desktop mode - valid session found');
+          setUser({ id: 'desktop-user', username });
+          setStatus('authenticated');
           setReady(true);
           return;
+        } else {
+          // Session expired - clear it
+          console.log('[AuthContext] Desktop mode - session expired');
+          localStorage.removeItem('eaudit_logged_in');
+          localStorage.removeItem('eaudit_login_time');
+          localStorage.removeItem('eaudit_username');
         }
-      } catch (error) {
-        console.error('Failed to check login settings:', error);
       }
-      
-      // Login not required, authenticate automatically
-      setStatus('authenticated');
+
+      // No valid session - require login
+      console.log('[AuthContext] Desktop mode - requiring login');
+      setStatus('unauthenticated');
       setUser(null);
       setReady(true);
       return;
@@ -150,9 +142,10 @@ export const AuthProvider: React.FC<React.PropsWithChildren> = ({ children }) =>
           };
         }
         
-        // Store login state
+        // Store login state with username
         localStorage.setItem('eaudit_logged_in', 'true');
         localStorage.setItem('eaudit_login_time', Date.now().toString());
+        localStorage.setItem('eaudit_username', username);
         
         setUser({ id: 'desktop-user', username });
         setStatus('authenticated');
@@ -217,6 +210,7 @@ export const AuthProvider: React.FC<React.PropsWithChildren> = ({ children }) =>
     if (isDesktopRuntime) {
       localStorage.removeItem('eaudit_logged_in');
       localStorage.removeItem('eaudit_login_time');
+      localStorage.removeItem('eaudit_username');
       setUser(null);
       setStatus('unauthenticated');
       setReady(true);
