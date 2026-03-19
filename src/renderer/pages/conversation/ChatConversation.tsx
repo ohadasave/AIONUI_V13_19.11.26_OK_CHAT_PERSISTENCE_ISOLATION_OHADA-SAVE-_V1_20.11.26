@@ -209,18 +209,19 @@ const ChatConversation: React.FC<{
 
   // 如果有预设助手信息，使用预设助手的 logo 和名称；加载中时不进入 fallback；否则使用 backend 的 logo
   // If preset assistant info exists, use preset logo/name; while loading, avoid fallback; otherwise use backend logo
-  const chatLayoutProps = presetAssistantInfo
-    ? {
-        agentName: presetAssistantInfo.name,
-        agentLogo: presetAssistantInfo.logo,
-        agentLogoIsEmoji: presetAssistantInfo.isEmoji,
-      }
-    : isLoadingPreset
-      ? {} // Still loading custom agents — avoid showing backend logo prematurely
+  const backend = conversation?.type === 'acp' ? conversation?.extra?.backend : conversation?.type === 'codex' ? 'codex' : conversation?.type === 'openclaw-gateway' ? 'openclaw-gateway' : conversation?.type === 'nanobot' ? 'nanobot' : conversation?.type === 'n8n' ? 'n8n' : undefined;
+  const chatLayoutProps = {
+    backend,
+    ...(presetAssistantInfo
+      ? {
+          agentName: presetAssistantInfo.name,
+          agentLogo: presetAssistantInfo.logo,
+          agentLogoIsEmoji: presetAssistantInfo.isEmoji,
+        }
       : {
-          backend: conversation?.type === 'acp' ? conversation?.extra?.backend : conversation?.type === 'codex' ? 'codex' : conversation?.type === 'openclaw-gateway' ? 'openclaw-gateway' : conversation?.type === 'nanobot' ? 'nanobot' : conversation?.type === 'n8n' ? 'n8n' : undefined,
           agentName: (conversation?.extra as { agentName?: string })?.agentName,
-        };
+        }),
+  };
 
   return (
     <ChatLayout title={conversation?.name} {...chatLayoutProps} headerLeft={modelSelector} headerExtra={conversation ? <CronJobManager conversationId={conversation.id} /> : undefined} siderTitle={sliderTitle} sider={<ChatSider conversation={conversation} />} workspaceEnabled={workspaceEnabled} conversationId={conversation?.id}>

@@ -29,11 +29,14 @@ export class N8nAgentManager {
   /**
    * Send message to n8n workflow (unified interface)
    */
-  async sendMessage({ content, msg_id }: { content: string; files?: string[]; msg_id: string }): Promise<void> {
+  async sendMessage({ content, msg_id, user_msg_id }: { content: string; files?: string[]; msg_id: string; user_msg_id?: string }): Promise<void> {
+    // Force status to running
+    (this as any).status = 'running';
+
     // Save user message to database
     const userMessage: TMessage = {
-      id: uuid(),
-      msg_id,
+      id: user_msg_id || uuid(),
+      msg_id: user_msg_id || msg_id,
       type: 'text',
       position: 'right',
       conversation_id: this.id,
@@ -43,6 +46,14 @@ export class N8nAgentManager {
       createdAt: Date.now(),
     };
     addMessage(this.id, userMessage);
+
+    // Emit user_content for real-time UI update (align with ACP pattern)
+    ipcBridge.conversation.responseStream.emit({
+      type: 'user_content',
+      conversation_id: this.id,
+      msg_id: userMessage.msg_id,
+      data: content,
+    });
 
     await this.execute(content, msg_id);
   }

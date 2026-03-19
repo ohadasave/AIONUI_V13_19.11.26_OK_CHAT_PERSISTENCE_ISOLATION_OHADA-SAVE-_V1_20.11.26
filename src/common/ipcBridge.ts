@@ -486,7 +486,8 @@ export interface ICreateCronJobParams {
 
 interface ISendMessageParams {
   input: string;
-  msg_id: string;
+  msg_id: string; // msg_id for assistant response
+  user_msg_id?: string; // Optional msg_id for user message
   conversation_id: string;
   files?: string[];
   loading_id?: string;

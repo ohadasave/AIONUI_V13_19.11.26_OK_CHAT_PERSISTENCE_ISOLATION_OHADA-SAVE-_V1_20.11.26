@@ -468,7 +468,7 @@ export function initConversationBridge(): void {
         await (task as NanoBotAgentManager).sendMessage({ content: other.input, files: workspaceFiles, msg_id: other.msg_id });
         return { success: true };
       } else if (task.type === 'n8n') {
-        await (task as N8nAgentManager).sendMessage({ content: other.input, files: workspaceFiles, msg_id: other.msg_id });
+        await (task as N8nAgentManager).sendMessage({ content: other.input, files: workspaceFiles, msg_id: other.msg_id, user_msg_id: other.user_msg_id });
         return { success: true };
       } else {
         return { success: false, msg: `Unsupported task type: ${task.type}` };

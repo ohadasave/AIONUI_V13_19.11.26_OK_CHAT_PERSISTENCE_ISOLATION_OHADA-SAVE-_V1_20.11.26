@@ -405,7 +405,7 @@ const ChatLayout: React.FC<{
       <ArcoLayout.Header className={classNames('h-36px flex items-center justify-between p-16px gap-16px !bg-1 chat-layout-header overflow-hidden', layout?.isMobile && 'chat-layout-header--mobile-unified')}>
         <div className='shrink-0'></div>
         <FlexFullContainer className='h-full min-w-0' containerClassName='flex items-center gap-16px'>
-          {!layout?.isMobile && !hasTabs && <span className='font-bold text-16px text-t-primary inline-block overflow-hidden text-ellipsis whitespace-nowrap max-w-full'>{props.title}</span>}
+          {!layout?.isMobile && !hasTabs && props.backend !== 'n8n' && <span className='font-bold text-16px text-t-primary inline-block overflow-hidden text-ellipsis whitespace-nowrap max-w-full'>{props.title}</span>}
         </FlexFullContainer>
         <div className='flex items-center gap-12px shrink-0'>
           {props.headerExtra}

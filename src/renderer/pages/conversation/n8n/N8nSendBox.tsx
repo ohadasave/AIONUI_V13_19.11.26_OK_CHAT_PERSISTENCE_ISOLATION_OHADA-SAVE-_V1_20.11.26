@@ -41,6 +41,19 @@ const N8nSendBox: React.FC<{
           },
           createdAt: Date.now(),
         } as TMessage);
+      } else if (message.type === 'user_content') {
+        // Add or update user message when backend confirms persistence
+        addOrUpdateMessage({
+          id: message.msg_id,
+          msg_id: message.msg_id,
+          type: 'text',
+          position: 'right',
+          conversation_id,
+          content: {
+            content: message.data,
+          },
+          createdAt: Date.now(),
+        } as TMessage);
       } else if (message.type === 'error') {
         // Update with error message
         addOrUpdateMessage({
@@ -67,30 +80,14 @@ const N8nSendBox: React.FC<{
 
       setSending(true);
 
-      const msg_id = uuid();
+      const assistant_msg_id = uuid();
       const user_msg_id = uuid();
-
-      // Add user message to UI immediately
-      addOrUpdateMessage(
-        {
-          id: user_msg_id,
-          msg_id: user_msg_id,
-          type: 'text',
-          position: 'right',
-          conversation_id,
-          content: {
-            content,
-          },
-          createdAt: Date.now(),
-        } as TMessage,
-        true
-      );
 
       // Add assistant message placeholder for immediate UI feedback
       addOrUpdateMessage(
         {
-          id: msg_id,
-          msg_id,
+          id: assistant_msg_id,
+          msg_id: assistant_msg_id,
           type: 'text',
           position: 'left',
           conversation_id,
@@ -107,7 +104,8 @@ const N8nSendBox: React.FC<{
         await ipcBridge.conversation.sendMessage.invoke({
           conversation_id,
           input: content,
-          msg_id,
+          msg_id: assistant_msg_id,
+          user_msg_id,
           files: [],
         });
       } catch (error) {
@@ -122,8 +120,8 @@ const N8nSendBox: React.FC<{
         }
 
         addOrUpdateMessage({
-          id: msg_id,
-          msg_id,
+          id: assistant_msg_id,
+          msg_id: assistant_msg_id,
           type: 'text',
           position: 'left',
           conversation_id,
@@ -139,6 +137,30 @@ const N8nSendBox: React.FC<{
     },
     [conversation_id, addOrUpdateMessage, sending, t]
   );
+
+  // Check for and send initial message from guid page
+  useEffect(() => {
+    const storageKey = `n8n_initial_message_${conversation_id}`;
+    const storedMessage = sessionStorage.getItem(storageKey);
+
+    if (!storedMessage) return;
+
+    // Clear immediately to prevent duplicate sends
+    sessionStorage.removeItem(storageKey);
+
+    const sendInitialMessage = async () => {
+      try {
+        const { input } = JSON.parse(storedMessage) as { input: string };
+        if (input) {
+          await handleSend(input);
+        }
+      } catch (error) {
+        console.error('Failed to parse n8n initial message:', error);
+      }
+    };
+
+    void sendInitialMessage();
+  }, [conversation_id, handleSend]);
 
   return <SendBox value={input} onChange={setInput} onSend={handleSend} disabled={sending} placeholder="Entrez votre requête pour le workflow n8n (ex: Génère un programme de travail pour l'inventaire de caisse)" />;
 };
