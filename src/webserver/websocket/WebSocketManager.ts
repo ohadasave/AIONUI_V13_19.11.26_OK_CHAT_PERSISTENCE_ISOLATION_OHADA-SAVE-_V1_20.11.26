@@ -10,6 +10,7 @@ import type { IncomingMessage } from 'http';
 import { TokenMiddleware } from '@/webserver/auth/middleware/TokenMiddleware';
 import { WEBSOCKET_CONFIG } from '../config/constants';
 import { SHOW_OPEN_REQUEST_EVENT } from '../../adapter/constant';
+import { ConfigStorage } from '@/common/storage';
 
 interface ClientInfo {
   token: string;
@@ -40,14 +41,14 @@ export class WebSocketManager {
    * Setup connection handler
    */
   setupConnectionHandler(onMessage: (name: string, data: any, ws: WebSocket) => void): void {
-    this.wss.on('connection', (ws: WebSocket, req: IncomingMessage) => {
+    this.wss.on('connection', async (ws: WebSocket, req: IncomingMessage) => {
       const token = TokenMiddleware.extractWebSocketToken(req);
 
-      if (!this.validateConnection(ws, token)) {
+      if (!(await this.validateConnection(ws, token))) {
         return;
       }
 
-      this.addClient(ws, token!);
+      this.addClient(ws, token || 'anonymous-session');
       this.setupMessageHandler(ws, onMessage);
       this.setupCloseHandler(ws);
       this.setupErrorHandler(ws);
@@ -60,7 +61,23 @@ export class WebSocketManager {
    * 验证连接
    * Validate connection
    */
-  private validateConnection(ws: WebSocket, token: string | null): boolean {
+  private async validateConnection(ws: WebSocket, token: string | null): Promise<boolean> {
+    // Check if login is enabled - read from ConfigStorage
+    let loginEnabled: boolean | undefined;
+    try {
+      const config = await ConfigStorage.get('security.loginEnabled');
+      loginEnabled = config;
+    } catch {
+      loginEnabled = undefined; // Default to disabled if config not found
+    }
+
+    if (loginEnabled === false || loginEnabled === undefined) {
+      // Login disabled: accept connection without token
+      console.log('[WebSocketManager] Login disabled, accepting connection without token');
+      return true;
+    }
+
+    // Login enabled: validate token as before
     if (!token) {
       ws.close(WEBSOCKET_CONFIG.CLOSE_CODES.POLICY_VIOLATION, 'No token provided');
       return false;
@@ -191,8 +208,17 @@ export class WebSocketManager {
    * 检查所有客户端
    * Check all clients
    */
-  private checkClients(): void {
+  private async checkClients(): Promise<void> {
     const now = Date.now();
+
+    // Check if login is enabled
+    let loginEnabled: boolean | undefined;
+    try {
+      const config = await ConfigStorage.get('security.loginEnabled');
+      loginEnabled = config;
+    } catch {
+      loginEnabled = undefined; // Default to disabled if config not found
+    }
 
     for (const [ws, clientInfo] of this.clients) {
       // Check if client timed out
@@ -203,13 +229,16 @@ export class WebSocketManager {
         continue;
       }
 
-      // Validate if WebSocket token is still valid
-      if (!TokenMiddleware.validateWebSocketToken(clientInfo.token)) {
-        console.log('[WebSocketManager] Token expired, closing connection');
-        ws.send(JSON.stringify({ name: 'auth-expired', data: { message: 'Token expired, please login again' } }));
-        ws.close(WEBSOCKET_CONFIG.CLOSE_CODES.POLICY_VIOLATION, 'Token expired');
-        this.clients.delete(ws);
-        continue;
+      // Only validate token if login is enabled
+      if (loginEnabled === true && clientInfo.token !== 'anonymous-session') {
+        // Validate if WebSocket token is still valid
+        if (!TokenMiddleware.validateWebSocketToken(clientInfo.token)) {
+          console.log('[WebSocketManager] Token expired, closing connection');
+          ws.send(JSON.stringify({ name: 'auth-expired', data: { message: 'Token expired, please login again' } }));
+          ws.close(WEBSOCKET_CONFIG.CLOSE_CODES.POLICY_VIOLATION, 'Token expired');
+          this.clients.delete(ws);
+          continue;
+        }
       }
 
       // Send heartbeat ping
