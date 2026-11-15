@@ -10,6 +10,7 @@ import { CodexAgentManager } from '@/agent/codex';
 import NanoBotAgentManager from './task/NanoBotAgentManager';
 import OpenClawAgentManager from './task/OpenClawAgentManager';
 import { N8nAgentManager } from './task/N8nAgentManager';
+import { N8nMultiWorkflowAgentManager } from './task/N8nMultiWorkflowAgentManager';
 // import type { AcpAgentTask } from './task/AcpAgentTask';
 import { ProcessChat } from './initStorage';
 import type AgentBaseTask from './task/BaseAgentManager';
@@ -18,7 +19,7 @@ import { getDatabase } from './database/export';
 
 const taskList: {
   id: string;
-  task: AgentBaseTask<unknown>;
+  task: any; // Allow different manager implementations
 }[] = [];
 
 /**
@@ -122,6 +123,13 @@ const buildConversation = (conversation: TChatConversation, options?: BuildConve
     }
     case 'n8n': {
       const task = new N8nAgentManager(conversation);
+      if (!options?.skipCache) {
+        taskList.push({ id: conversation.id, task });
+      }
+      return task;
+    }
+    case 'n8n-multi-workflow': {
+      const task = new N8nMultiWorkflowAgentManager(conversation);
       if (!options?.skipCache) {
         taskList.push({ id: conversation.id, task });
       }

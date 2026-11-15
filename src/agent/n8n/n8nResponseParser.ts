@@ -253,6 +253,8 @@ export function convertStructuredDataToMarkdown(data: any): string {
  * Main entry point for frontend
  */
 export function parseN8nResponse(data: any): string {
+  console.log('[n8nResponseParser] Parsing data type:', data?.type, 'hasContent:', !!data?.content);
+
   if (!data) {
     return '❌ Erreur: Aucune donnée reçue';
   }

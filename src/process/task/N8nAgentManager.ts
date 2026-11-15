@@ -65,10 +65,12 @@ export class N8nAgentManager {
     try {
       // Call n8n service
       const result = await executeN8nWorkflow({ userMessage });
+      console.log('[N8nAgentManager] Result received:', { success: result.success, hasData: !!result.data });
 
       if (result.success && result.data) {
         // Parse n8n response to markdown
         const markdown = parseN8nResponse(result.data);
+        console.log('[N8nAgentManager] Markdown generated:', markdown.substring(0, 200));
 
         // Save assistant message to database
         const assistantMessage: TMessage = {
@@ -83,8 +85,10 @@ export class N8nAgentManager {
           createdAt: Date.now(),
         };
         addMessage(this.id, assistantMessage);
+        console.log('[N8nAgentManager] Message saved to DB');
 
         // Emit response message for real-time UI update
+        console.log('[N8nAgentManager] Emitting message event to frontend...');
         ipcBridge.conversation.responseStream.emit({
           type: 'message',
           conversation_id: this.id,
@@ -92,13 +96,19 @@ export class N8nAgentManager {
           data: markdown,
         });
 
+        // Force flush to ensure the event is sent immediately
+        // Some IPC implementations batch events, so we wait a microtask
+        await new Promise((resolve) => setTimeout(resolve, 0));
+
         // Emit finish signal
+        console.log('[N8nAgentManager] Emitting finish event...');
         ipcBridge.conversation.responseStream.emit({
           type: 'finish',
           conversation_id: this.id,
           msg_id: msgId,
           data: null,
         });
+        console.log('[N8nAgentManager] All events emitted successfully');
       } else {
         // Handle error case
         const errorMessage = `❌ n8n workflow execution failed:\n\n${result.error || 'Unknown error'}`;

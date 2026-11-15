@@ -27,7 +27,7 @@ export type GuidSendDeps = {
   setLoading: React.Dispatch<React.SetStateAction<boolean>>;
 
   // Agent state
-  selectedAgent: AcpBackend | 'custom';
+  selectedAgent: AcpBackend | 'custom' | 'n8n' | 'n8n-multi-workflow';
   selectedAgentKey: string;
   selectedAgentInfo: AvailableAgent | undefined;
   isPresetAgent: boolean;
@@ -296,6 +296,50 @@ export const useGuidSend = (deps: GuidSendDeps): GuidSendResult => {
       } catch (error: unknown) {
         const errorMessage = error instanceof Error ? error.message : String(error);
         alert(`Failed to create n8n conversation: ${errorMessage}`);
+        throw error;
+      }
+      return;
+    }
+
+    // n8n-multi-workflow path
+    if (selectedAgent === 'n8n-multi-workflow' || (isPreset && finalEffectiveAgentType === 'n8n-multi-workflow')) {
+      try {
+        const conversation = await ipcBridge.conversation.create.invoke({
+          type: 'n8n-multi-workflow',
+          name: input,
+          model: currentModel!,
+          extra: {
+            defaultFiles: files,
+            workspace: finalWorkspace,
+            customWorkspace: isCustomWorkspace,
+            enabledSkills: isPreset ? enabledSkills : undefined,
+            presetAssistantId: isPreset ? agentInfo?.customAgentId : undefined,
+          },
+        });
+
+        if (!conversation || !conversation.id) {
+          alert('Failed to create n8n multi-workflow conversation. Please ensure backend is running.');
+          return;
+        }
+
+        if (isCustomWorkspace) {
+          closeAllTabs();
+          updateWorkspaceTime(finalWorkspace);
+          openTab(conversation);
+        }
+
+        emitter.emit('chat.history.refresh');
+
+        const initialMessage = {
+          input,
+          files: files.length > 0 ? files : undefined,
+        };
+        sessionStorage.setItem(`n8n_initial_message_${conversation.id}`, JSON.stringify(initialMessage));
+
+        await navigate(`/conversation/${conversation.id}`);
+      } catch (error: unknown) {
+        const errorMessage = error instanceof Error ? error.message : String(error);
+        alert(`Failed to create n8n-multi-workflow conversation: ${errorMessage}`);
         throw error;
       }
       return;

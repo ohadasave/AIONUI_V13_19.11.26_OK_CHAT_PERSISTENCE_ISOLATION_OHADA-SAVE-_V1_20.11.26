@@ -8,7 +8,7 @@ Write-Host "========================================" -ForegroundColor Cyan
 Write-Host ""
 
 # Start n8n backend in background
-Write-Host "[1/2] Starting n8n backend server (port 3458)..." -ForegroundColor Yellow
+Write-Host "[1/3] Starting n8n backend server (port 3458)..." -ForegroundColor Yellow
 $n8nJob = Start-Job -ScriptBlock {
     Set-Location $using:PWD
     npx ts-node --transpile-only src/agent/n8n/n8n-server.ts
@@ -28,7 +28,29 @@ if ($n8nJob.State -eq "Running") {
 }
 
 Write-Host ""
-Write-Host "[2/2] Starting Electron app..." -ForegroundColor Yellow
+Write-Host "[2/3] Starting n8n-multi-workflow backend server (port 3459)..." -ForegroundColor Yellow
+$n8nMultiJob = Start-Job -ScriptBlock {
+    Set-Location $using:PWD
+    npx ts-node --transpile-only src/agent/n8n-multi-workflow/n8n-multi-workflow-server.ts
+}
+
+# Wait a moment for n8n-multi-workflow to initialize
+Start-Sleep -Seconds 2
+
+# Check if n8n-multi-workflow started successfully
+if ($n8nMultiJob.State -eq "Running") {
+    Write-Host "  [OK] n8n-multi-workflow backend started (Job ID: $($n8nMultiJob.Id))" -ForegroundColor Green
+} else {
+    Write-Host "  [ERROR] n8n-multi-workflow backend failed to start" -ForegroundColor Red
+    Stop-Job -Job $n8nJob
+    Remove-Job -Job $n8nJob
+    Stop-Job -Job $n8nMultiJob
+    Remove-Job -Job $n8nMultiJob
+    exit 1
+}
+
+Write-Host ""
+Write-Host "[3/3] Starting Electron app..." -ForegroundColor Yellow
 Write-Host ""
 
 # Start Electron app (foreground)
@@ -36,7 +58,9 @@ npm run start:mem
 
 # Cleanup: Stop n8n backend when Electron app exits
 Write-Host ""
-Write-Host "Stopping n8n backend..." -ForegroundColor Yellow
+Write-Host "Stopping n8n backend and n8n-multi-workflow backend..." -ForegroundColor Yellow
 Stop-Job -Job $n8nJob
 Remove-Job -Job $n8nJob
+Stop-Job -Job $n8nMultiJob
+Remove-Job -Job $n8nMultiJob
 Write-Host "[OK] All processes stopped" -ForegroundColor Green

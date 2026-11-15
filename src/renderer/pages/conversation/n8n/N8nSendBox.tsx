@@ -6,7 +6,7 @@
 
 import { uuid } from '@/common/utils';
 import SendBox from '@/renderer/components/sendbox';
-import { useAddOrUpdateMessage } from '@/renderer/messages/hooks';
+import { useAddOrUpdateMessage, useUpdateMessageList } from '@/renderer/messages/hooks';
 import { Message } from '@arco-design/web-react';
 import React, { useCallback, useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -18,17 +18,28 @@ const N8nSendBox: React.FC<{
 }> = ({ conversation_id }) => {
   const { t } = useTranslation();
   const addOrUpdateMessage = useAddOrUpdateMessage();
+  const updateMessageList = useUpdateMessageList();
   const [sending, setSending] = useState(false);
   const [input, setInput] = useState('');
 
   // Listen to n8n response stream
   useEffect(() => {
+    console.log('[N8nSendBox] Setting up response stream listener for conversation:', conversation_id);
+
     return ipcBridge.conversation.responseStream.on((message) => {
+      console.log('[N8nSendBox] Received stream event:', {
+        type: message.type,
+        conversation_id: message.conversation_id,
+        matches: conversation_id === message.conversation_id,
+        dataLength: message.data?.length,
+      });
+
       if (conversation_id !== message.conversation_id) {
         return;
       }
 
       if (message.type === 'message') {
+        console.log('[N8nSendBox] Processing message event, updating UI...');
         // Update assistant message with n8n response
         addOrUpdateMessage({
           id: message.msg_id,
@@ -41,6 +52,7 @@ const N8nSendBox: React.FC<{
           },
           createdAt: Date.now(),
         } as TMessage);
+        console.log('[N8nSendBox] Message updated in UI');
       } else if (message.type === 'user_content') {
         // Add or update user message when backend confirms persistence
         addOrUpdateMessage({
@@ -69,6 +81,7 @@ const N8nSendBox: React.FC<{
         } as TMessage);
       } else if (message.type === 'finish') {
         // Stop loading state
+        console.log('[N8nSendBox] Received finish event, stopping loading state');
         setSending(false);
       }
     });
@@ -108,6 +121,27 @@ const N8nSendBox: React.FC<{
           user_msg_id,
           files: [],
         });
+        
+        // WORKAROUND: IPC stream events don't always reach the renderer reliably
+        // Reload messages from database after a short delay to ensure the response is shown
+        setTimeout(async () => {
+          try {
+            const messages = await ipcBridge.database.getConversationMessages.invoke({
+              conversation_id,
+              page: 0,
+              pageSize: 10000,
+            });
+            
+            if (messages && Array.isArray(messages)) {
+              updateMessageList(() => messages);
+            }
+          } catch (err) {
+            console.error('[N8nSendBox] Failed to reload messages:', err);
+          } finally {
+            setSending(false);
+          }
+        }, 1500); // Wait 1.5s for n8n workflow to complete
+        
       } catch (error) {
         // Handle error
         const errorMessage = error instanceof Error ? error.message : 'Erreur inconnue';

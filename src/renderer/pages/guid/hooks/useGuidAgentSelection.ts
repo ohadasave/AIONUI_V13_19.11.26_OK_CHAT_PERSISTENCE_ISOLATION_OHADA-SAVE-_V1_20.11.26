@@ -509,7 +509,7 @@ export const useGuidAgentSelection = ({ modelList, isGoogleAuth, localeKey }: Us
         return isGoogleAuth || (modelList != null && modelList.length > 0);
       }
       // n8n is always considered available (health check happens at conversation creation)
-      if (agentType === 'n8n') {
+      if (agentType === 'n8n' || agentType === 'n8n-multi-workflow') {
         return true;
       }
       return availableAgents?.some((agent) => agent.backend === agentType) ?? false;

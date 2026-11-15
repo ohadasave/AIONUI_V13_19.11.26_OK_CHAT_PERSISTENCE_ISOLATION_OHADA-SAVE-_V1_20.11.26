@@ -9,7 +9,7 @@ import path from 'path';
 import { ipcBridge } from '../../common';
 import type { IConfirmation } from '../../common/chatLib';
 
-type AgentType = 'gemini' | 'acp' | 'codex' | 'openclaw-gateway' | 'nanobot';
+type AgentType = 'gemini' | 'acp' | 'codex' | 'openclaw-gateway' | 'nanobot' | 'n8n' | 'n8n-multi-workflow';
 
 /**
  * @description agent任务基础类

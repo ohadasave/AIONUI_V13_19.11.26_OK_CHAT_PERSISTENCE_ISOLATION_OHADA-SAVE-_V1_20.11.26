@@ -12,8 +12,8 @@ import cors from 'cors';
 const app = express();
 const PORT = 3458;
 
-// n8n endpoint URL - Local n8n instance
-const N8N_ENDPOINT = 'http://localhost:5678/webhook/template';
+// n8n endpoint URL - Direct cloud instance
+const N8N_ENDPOINT = 'https://5ociivmf.rpcl.app/webhook/template';
 const N8N_TIMEOUT = 10 * 60 * 1000; // 10 minutes
 
 app.use(cors());

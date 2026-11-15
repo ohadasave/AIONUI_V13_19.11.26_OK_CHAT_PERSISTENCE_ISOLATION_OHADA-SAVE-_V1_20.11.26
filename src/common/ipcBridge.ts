@@ -502,7 +502,7 @@ export interface IConfirmMessageParams {
 }
 
 export interface ICreateConversationParams {
-  type: 'gemini' | 'acp' | 'codex' | 'openclaw-gateway' | 'nanobot';
+  type: 'gemini' | 'acp' | 'codex' | 'openclaw-gateway' | 'nanobot' | 'n8n' | 'n8n-multi-workflow';
   id?: string;
   name?: string;
   model: TProviderWithModel;

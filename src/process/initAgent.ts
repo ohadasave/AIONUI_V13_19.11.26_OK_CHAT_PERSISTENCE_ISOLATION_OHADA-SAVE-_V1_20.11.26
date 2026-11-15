@@ -204,3 +204,21 @@ export const createN8nAgent = async (options: ICreateConversationParams): Promis
     id: uuid(),
   };
 };
+
+export const createN8nMultiWorkflowAgent = async (options: ICreateConversationParams): Promise<TChatConversation> => {
+  const { extra } = options;
+  const { workspace, customWorkspace } = await buildWorkspaceWidthFiles(`n8n-multi-workflow-temp-${Date.now()}`, extra.workspace, extra.defaultFiles, extra.customWorkspace);
+  return {
+    type: 'n8n-multi-workflow',
+    extra: {
+      workspace: workspace,
+      customWorkspace,
+      enabledSkills: extra.enabledSkills,
+      presetAssistantId: extra.presetAssistantId,
+    },
+    createTime: Date.now(),
+    modifyTime: Date.now(),
+    name: workspace,
+    id: uuid(),
+  };
+};

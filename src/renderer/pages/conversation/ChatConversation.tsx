@@ -26,6 +26,7 @@ import NanobotChat from './nanobot/NanobotChat';
 import OpenClawChat from './openclaw/OpenClawChat';
 import GeminiChat from './gemini/GeminiChat';
 import N8nChat from './n8n/N8nChat';
+import N8nMultiWorkflowChat from './n8n-multi-workflow/N8nMultiWorkflowChat';
 import AcpModelSelector from '@/renderer/components/AcpModelSelector';
 import GeminiModelSelector from './gemini/GeminiModelSelector';
 import { useGeminiModelSelection } from './gemini/useGeminiModelSelection';
@@ -169,6 +170,8 @@ const ChatConversation: React.FC<{
         return <NanobotChat key={conversation.id} conversation_id={conversation.id} workspace={conversation.extra?.workspace} />;
       case 'n8n':
         return <N8nChat key={conversation.id} conversation_id={conversation.id} />;
+      case 'n8n-multi-workflow':
+        return <N8nMultiWorkflowChat key={conversation.id} conversation_id={conversation.id} />;
       default:
         return null;
     }
@@ -209,7 +212,7 @@ const ChatConversation: React.FC<{
 
   // 如果有预设助手信息，使用预设助手的 logo 和名称；加载中时不进入 fallback；否则使用 backend 的 logo
   // If preset assistant info exists, use preset logo/name; while loading, avoid fallback; otherwise use backend logo
-  const backend = conversation?.type === 'acp' ? conversation?.extra?.backend : conversation?.type === 'codex' ? 'codex' : conversation?.type === 'openclaw-gateway' ? 'openclaw-gateway' : conversation?.type === 'nanobot' ? 'nanobot' : conversation?.type === 'n8n' ? 'n8n' : undefined;
+  const backend = conversation?.type === 'acp' ? conversation?.extra?.backend : conversation?.type === 'codex' ? 'codex' : conversation?.type === 'openclaw-gateway' ? 'openclaw-gateway' : conversation?.type === 'nanobot' ? 'nanobot' : conversation?.type === 'n8n' ? 'n8n' : conversation?.type === 'n8n-multi-workflow' ? 'n8n-multi-workflow' : undefined;
   const chatLayoutProps = {
     backend,
     ...(presetAssistantInfo
