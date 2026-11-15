@@ -11,6 +11,7 @@ import { cleanupSiderTooltips, getSiderTooltipProps } from './utils/siderTooltip
 import { useLayoutContext } from './context/LayoutContext';
 import { blurActiveElement } from './utils/focus';
 import { useThemeContext } from './context/ThemeContext';
+import { useLastConversation } from './hooks/useLastConversation';
 
 const WorkspaceGroupedHistory = React.lazy(() => import('./pages/conversation/WorkspaceGroupedHistory'));
 const SettingsSider = React.lazy(() => import('./pages/settings/SettingsSider'));
@@ -30,12 +31,13 @@ const Sider: React.FC<SiderProps> = ({ onSessionClick, collapsed = false }) => {
   const navigate = useNavigate();
   const { closePreview } = usePreviewContext();
   const { theme, setTheme } = useThemeContext();
+  const { getLastConversationPath } = useLastConversation();
   const [isBatchMode, setIsBatchMode] = useState(false);
-  const isSettings = pathname.startsWith('/settings');
+  const isSettings = pathname.startsWith('/settings') || pathname.startsWith('/admin');
   const lastNonSettingsPathRef = useRef('/guid');
 
   useEffect(() => {
-    if (!pathname.startsWith('/settings')) {
+    if (!pathname.startsWith('/settings') && !pathname.startsWith('/admin')) {
       lastNonSettingsPathRef.current = `${pathname}${search}${hash}`;
     }
   }, [pathname, search, hash]);
@@ -44,7 +46,8 @@ const Sider: React.FC<SiderProps> = ({ onSessionClick, collapsed = false }) => {
     cleanupSiderTooltips();
     blurActiveElement();
     if (isSettings) {
-      const target = lastNonSettingsPathRef.current || '/guid';
+      // When leaving settings/admin, prefer last conversation over /guid
+      const target = getLastConversationPath();
       Promise.resolve(navigate(target)).catch((error) => {
         console.error('Navigation failed:', error);
       });
