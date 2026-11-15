@@ -260,15 +260,12 @@ export async function startWebServerWithInstance(port: number, allowRemote = fal
   setupBasicMiddleware(app);
   setupCors(app, port, allowRemote);
 
-  // Apply user status check middleware (after authentication)
-  app.use(checkUserStatus);
-
   // 注册路由 / Register routes
   registerAuthRoutes(app);
   registerApiRoutes(app);
   registerStaticRoutes(app);
 
-  // Mount admin routes
+  // Mount admin routes (with authentication and authorization middleware already applied in adminRoutes)
   app.use('/api/admin', adminRoutes);
 
   // 配置错误处理（必须最后）/ Setup error handler (must be last)

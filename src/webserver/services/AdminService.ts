@@ -8,6 +8,7 @@ import { getDatabase } from '@process/database/export';
 import type { IPaginatedResult } from '@process/database/types';
 import { AuditLogService } from './AuditLogService';
 import { AuthService } from '../auth/service/AuthService';
+import { UserRepository } from '../auth/repository/UserRepository';
 
 export interface UserFilters {
   status?: 'active' | 'blocked' | 'suspended';
@@ -34,6 +35,23 @@ export class AdminService {
     ipAddress?: string
   ): { success: boolean; error?: string } {
     try {
+      // Verify admin role (defense-in-depth)
+      const admin = UserRepository.findById(adminId);
+      if (!admin || admin.role !== 'admin') {
+        return {
+          success: false,
+          error: 'Admin access required',
+        };
+      }
+
+      // Prevent admin from blocking themselves
+      if (adminId === targetUserId) {
+        return {
+          success: false,
+          error: 'Cannot block your own account',
+        };
+      }
+
       const db = getDatabase();
       const now = Date.now();
 
@@ -62,7 +80,13 @@ export class AdminService {
       const updateSecretStmt = db['db'].prepare(`
         UPDATE users SET jwt_secret = ? WHERE id = ?
       `);
-      updateSecretStmt.run(newSecret, targetUserId);
+      const secretResult = updateSecretStmt.run(newSecret, targetUserId);
+
+      // Verify secret rotation succeeded
+      if (secretResult.changes === 0) {
+        console.error('[AdminService] Failed to rotate JWT secret for blocked user:', targetUserId);
+        throw new Error('Failed to rotate JWT secret for blocked user');
+      }
 
       // Log audit event
       AuditLogService.logAction({
@@ -94,6 +118,15 @@ export class AdminService {
     ipAddress?: string
   ): { success: boolean; error?: string } {
     try {
+      // Verify admin role (defense-in-depth)
+      const admin = UserRepository.findById(adminId);
+      if (!admin || admin.role !== 'admin') {
+        return {
+          success: false,
+          error: 'Admin access required',
+        };
+      }
+
       const db = getDatabase();
       const now = Date.now();
 
