@@ -157,6 +157,7 @@ export const createAuthMiddleware = (type: 'json' | 'html' = 'json') => {
     req.user = {
       id: user.id,
       username: user.username,
+      role: (user as any).role || 'user',
     };
 
     next();

@@ -149,9 +149,9 @@
   
   // FORCE CLEANUP IMMEDIATELY - For testing login page
   // This will clear the session EVERY TIME the app starts
-  // Remove this block after testing is complete!
-  console.log('[E-audit Cleanup] FORCING CLEANUP ON EVERY START (TESTING MODE)');
-  forceCleanup();
+  // DÉSACTIVÉ : Pour permettre la reconnexion avec credentials
+  // console.log('[E-audit Cleanup] FORCING CLEANUP ON EVERY START (TESTING MODE)');
+  // forceCleanup();
   
   // Clean up old data
   cleanupOldData();

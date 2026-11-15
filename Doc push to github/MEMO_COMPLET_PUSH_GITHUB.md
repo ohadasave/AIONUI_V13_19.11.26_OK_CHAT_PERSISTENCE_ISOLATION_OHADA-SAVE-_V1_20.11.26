@@ -2,7 +2,9 @@
 
 **Date**: 15 Novembre 2026  
 **Projet**: AIONUI Client  
-**Repository cible**: https://github.com/sekadalle2024/AIONUI_V5_15.11.26.git
+**Repositories de sauvegarde**:
+- V5: https://github.com/sekadalle2024/AIONUI_V5_15.11.26.git
+- V6: https://github.com/sekadalle2024/AIONUI_V6_15.11.26.git (NOUVEAU)
 
 ---
 
@@ -78,9 +80,10 @@ Au lieu de remplacer le remote `origin` existant, nous avons créé un remote `b
 
 **Configuration finale:**
 ```
-origin   → https://github.com/sekadalle2024/Aionui_client_windows_11_19.03.26_V0-Public.git
-backup   → https://github.com/sekadalle2024/AIONUI_V5_15.11.26.git
-upstream → https://github.com/iOfficeAI/AionUi.git
+origin     → https://github.com/sekadalle2024/Aionui_client_windows_11_19.03.26_V0-Public.git
+backup     → https://github.com/sekadalle2024/AIONUI_V5_15.11.26.git
+backup-v6  → https://github.com/sekadalle2024/AIONUI_V6_15.11.26.git (NOUVEAU)
+upstream   → https://github.com/iOfficeAI/AionUi.git
 ```
 
 ---
@@ -135,20 +138,32 @@ git push backup main
 Si vous voulez créer une nouvelle sauvegarde vers un autre repository:
 
 ```bash
-# Ajouter un nouveau remote (exemple: backup2)
-git remote add backup2 https://github.com/sekadalle2024/NOUVEAU_REPO.git
+# Push vers V5 (premier repository de sauvegarde)
+git push backup main
 
-# Push vers ce nouveau remote
-git push backup2 main
+# Push vers V6 (nouveau repository de sauvegarde)
+git push backup-v6 main
+
+# Ou ajouter un nouveau remote (exemple: backup-v7)
+git remote add backup-v7 https://github.com/sekadalle2024/NOUVEAU_REPO.git
+git push backup-v7 main
+```
+
+**Exemples de scripts disponibles:**
+- `push_to_github.ps1` / `push_to_github.bat` → Push vers backup (V5)
+- `push_to_backup_v6.ps1` / `push_to_v6.bat` → Push vers backup-v6 (V6)
 ```
 
 ---
 
 ## 📜 Scripts disponibles
 
-### Script 1: `push_to_github.ps1` (PowerShell)
+### Scripts pour backup (V5)
 
-**Localisation**: `g:\Aionui_client\push_to_github.ps1`
+#### Script 1: `push_to_github.ps1` (PowerShell)
+
+**Localisation**: `g:\Aionui_client\push_to_github.ps1`  
+**Remote cible**: `backup` (V5)
 
 **Fonctionnalités:**
 - ✅ Interface colorée et conviviale
@@ -162,9 +177,10 @@ git push backup2 main
 .\push_to_github.ps1
 ```
 
-### Script 2: `push_to_github.bat` (Batch)
+#### Script 2: `push_to_github.bat` (Batch)
 
-**Localisation**: `g:\Aionui_client\push_to_github.bat`
+**Localisation**: `g:\Aionui_client\push_to_github.bat`  
+**Remote cible**: `backup` (V5)
 
 **Fonctionnalités:**
 - ✅ Compatible avec tous les terminaux Windows
@@ -176,15 +192,57 @@ git push backup2 main
 .\push_to_github.bat
 ```
 
-### Script 3: `INSTRUCTIONS_PUSH_GITHUB.md`
+### Scripts pour backup-v6 (V6) ⭐ NOUVEAU
+
+#### Script 3: `push_to_backup_v6.ps1` (PowerShell)
+
+**Localisation**: `g:\Aionui_client\push_to_backup_v6.ps1`  
+**Remote cible**: `backup-v6` (V6)
+
+**Fonctionnalités:**
+- ✅ Interface colorée
+- ✅ Push automatique vers V6
+- ✅ Message de commit pré-configuré
+
+**Utilisation:**
+```powershell
+.\push_to_backup_v6.ps1
+```
+
+#### Script 4: `push_to_v6.bat` (Batch)
+
+**Localisation**: `g:\Aionui_client\push_to_v6.bat`  
+**Remote cible**: `backup-v6` (V6)
+
+**Fonctionnalités:**
+- ✅ Compatible tous terminaux
+- ✅ Push automatique vers V6
+
+**Utilisation:**
+```cmd
+.\push_to_v6.bat
+```
+
+### Documentation
+
+#### `INSTRUCTIONS_PUSH_GITHUB.md`
 
 **Localisation**: `g:\Aionui_client\INSTRUCTIONS_PUSH_GITHUB.md`
 
 **Contenu:**
-- Instructions manuelles pas à pas
+- Instructions manuelles pas à pas pour V5
 - Gestion des erreurs d'authentification
 - Alternative pour remplacer le remote origin
 - Conseils de vérification
+
+#### `PUSH_V6_INSTRUCTIONS.md` ⭐ NOUVEAU
+
+**Localisation**: `g:\Aionui_client\PUSH_V6_INSTRUCTIONS.md`
+
+**Contenu:**
+- Instructions pour push vers V6
+- Configuration du remote backup-v6
+- Stratégie multi-sauvegarde
 
 ---
 
@@ -198,12 +256,40 @@ git remote -v
 
 **Sortie:**
 ```
-backup   https://github.com/sekadalle2024/AIONUI_V5_15.11.26.git (fetch)
-backup   https://github.com/sekadalle2024/AIONUI_V5_15.11.26.git (push)
-origin   https://github.com/sekadalle2024/Aionui_client_windows_11_19.03.26_V0-Public.git (fetch)
-origin   https://github.com/sekadalle2024/Aionui_client_windows_11_19.03.26_V0-Public.git (push)
-upstream https://github.com/iOfficeAI/AionUi.git (fetch)
-upstream https://github.com/iOfficeAI/AionUi.git (push)
+backup     https://github.com/sekadalle2024/AIONUI_V5_15.11.26.git (fetch)
+backup     https://github.com/sekadalle2024/AIONUI_V5_15.11.26.git (push)
+backup-v6  https://github.com/sekadalle2024/AIONUI_V6_15.11.26.git (fetch)
+backup-v6  https://github.com/sekadalle2024/AIONUI_V6_15.11.26.git (push)
+origin     https://github.com/sekadalle2024/Aionui_client_windows_11_19.03.26_V0-Public.git (fetch)
+origin     https://github.com/sekadalle2024/Aionui_client_windows_11_19.03.26_V0-Public.git (push)
+upstream   https://github.com/iOfficeAI/AionUi.git (fetch)
+upstream   https://github.com/iOfficeAI/AionUi.git (push)
+```
+
+### Stratégie multi-sauvegarde ⭐
+
+Vous disposez maintenant de **plusieurs remotes de sauvegarde**:
+
+| Remote | Repository | Usage |
+|--------|------------|-------|
+| `origin` | Aionui_client_windows_11_19.03.26_V0-Public | Principal |
+| `backup` | AIONUI_V5_15.11.26 | Sauvegarde V5 |
+| `backup-v6` | AIONUI_V6_15.11.26 | Sauvegarde V6 ⭐ NOUVEAU |
+| `upstream` | iOfficeAI/AionUi | Source originale |
+
+**Push vers différents remotes:**
+```bash
+# Vers V5
+git push backup main
+
+# Vers V6
+git push backup-v6 main
+
+# Vers origin
+git push origin main
+
+# Vers tous les remotes de sauvegarde (manuel)
+git push backup main && git push backup-v6 main
 ```
 
 ### Gestion des remotes

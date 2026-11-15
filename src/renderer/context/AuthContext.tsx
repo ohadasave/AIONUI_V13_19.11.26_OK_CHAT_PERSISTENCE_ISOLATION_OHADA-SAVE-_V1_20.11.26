@@ -72,7 +72,9 @@ export const AuthProvider: React.FC<React.PropsWithChildren> = ({ children }) =>
 
   const refresh = useCallback(async () => {
     // Check if login is enabled (both Desktop and WebUI modes)
-    const loginEnabled = await ConfigStorage.get('security.loginEnabled');
+    // Use synchronous localStorage read to avoid race condition with router
+    const config = localStorage.getItem('app_config');
+    const loginEnabled = config ? JSON.parse(config)?.['security.loginEnabled'] : undefined;
 
     if (loginEnabled === false || loginEnabled === undefined) {
       // Login disabled: auto-authenticate for both modes

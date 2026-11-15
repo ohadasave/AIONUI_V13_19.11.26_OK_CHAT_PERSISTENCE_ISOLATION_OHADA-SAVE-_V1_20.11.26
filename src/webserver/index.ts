@@ -17,6 +17,8 @@ import { setupBasicMiddleware, setupCors, setupErrorHandler } from './setup';
 import { registerAuthRoutes } from './routes/authRoutes';
 import { registerApiRoutes } from './routes/apiRoutes';
 import { registerStaticRoutes } from './routes/staticRoutes';
+import { checkUserStatus } from './auth/middleware/checkUserStatus';
+import adminRoutes from './routes/adminRoutes';
 import { generateQRLoginUrlDirect } from '@/process/bridge/webuiBridge';
 
 // Express Request 类型扩展定义在 src/webserver/types/express.d.ts
@@ -258,10 +260,16 @@ export async function startWebServerWithInstance(port: number, allowRemote = fal
   setupBasicMiddleware(app);
   setupCors(app, port, allowRemote);
 
+  // Apply user status check middleware (after authentication)
+  app.use(checkUserStatus);
+
   // 注册路由 / Register routes
   registerAuthRoutes(app);
   registerApiRoutes(app);
   registerStaticRoutes(app);
+
+  // Mount admin routes
+  app.use('/api/admin', adminRoutes);
 
   // 配置错误处理（必须最后）/ Setup error handler (must be last)
   setupErrorHandler(app);

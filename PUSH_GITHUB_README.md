@@ -56,11 +56,13 @@ Ce fichier vous guide vers la documentation complète pour sauvegarder AIONUI su
 
 ## 📊 Configuration actuelle
 
-**Repository de sauvegarde:**  
-https://github.com/sekadalle2024/AIONUI_V5_15.11.26.git
+**Repositories de sauvegarde:**  
+- **V5**: https://github.com/sekadalle2024/AIONUI_V5_15.11.26.git
+- **V6**: https://github.com/sekadalle2024/AIONUI_V6_15.11.26.git ⭐ NOUVEAU
 
 **Remotes configurés:**
-- `backup` → AIONUI_V5_15.11.26 (sauvegarde)
+- `backup` → AIONUI_V5_15.11.26 (sauvegarde V5)
+- `backup-v6` → AIONUI_V6_15.11.26 (sauvegarde V6) ⭐ NOUVEAU
 - `origin` → Aionui_client_windows_11_19.03.26_V0-Public
 - `upstream` → iOfficeAI/AionUi
 

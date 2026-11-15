@@ -271,10 +271,23 @@ export class AuthService {
         audience: 'aionui-webui',
       }) as RawTokenPayload;
 
-      return {
+      const tokenPayload = {
         ...decoded,
         userId: this.normalizeUserId(decoded.userId),
       };
+
+      // Check user status after token validation
+      const user = UserRepository.findById(tokenPayload.userId);
+      if (!user) {
+        return null;
+      }
+
+      const userStatus = (user as any).status || 'active';
+      if (userStatus === 'blocked' || userStatus === 'suspended') {
+        return null;
+      }
+
+      return tokenPayload;
     } catch (error) {
       if (error instanceof jwt.TokenExpiredError || error instanceof jwt.JsonWebTokenError || error instanceof jwt.NotBeforeError) {
         return null;
