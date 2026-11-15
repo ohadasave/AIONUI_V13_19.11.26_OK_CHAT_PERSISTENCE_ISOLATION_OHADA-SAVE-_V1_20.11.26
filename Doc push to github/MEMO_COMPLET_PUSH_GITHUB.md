@@ -4,7 +4,8 @@
 **Projet**: AIONUI Client  
 **Repositories de sauvegarde**:
 - V5: https://github.com/sekadalle2024/AIONUI_V5_15.11.26.git
-- V6: https://github.com/sekadalle2024/AIONUI_V6_15.11.26.git (NOUVEAU)
+- V6: https://github.com/sekadalle2024/AIONUI_V6_15.11.26.git
+- V7: https://github.com/sekadalle2024/AIONUI_V7_15.11.26.git ⭐ NOUVEAU
 
 ---
 
@@ -82,7 +83,8 @@ Au lieu de remplacer le remote `origin` existant, nous avons créé un remote `b
 ```
 origin     → https://github.com/sekadalle2024/Aionui_client_windows_11_19.03.26_V0-Public.git
 backup     → https://github.com/sekadalle2024/AIONUI_V5_15.11.26.git
-backup-v6  → https://github.com/sekadalle2024/AIONUI_V6_15.11.26.git (NOUVEAU)
+backup-v6  → https://github.com/sekadalle2024/AIONUI_V6_15.11.26.git
+backup-v7  → https://github.com/sekadalle2024/AIONUI_V7_15.11.26.git ⭐ NOUVEAU
 upstream   → https://github.com/iOfficeAI/AionUi.git
 ```
 
@@ -141,17 +143,21 @@ Si vous voulez créer une nouvelle sauvegarde vers un autre repository:
 # Push vers V5 (premier repository de sauvegarde)
 git push backup main
 
-# Push vers V6 (nouveau repository de sauvegarde)
+# Push vers V6 (deuxième repository de sauvegarde)
 git push backup-v6 main
 
-# Ou ajouter un nouveau remote (exemple: backup-v7)
-git remote add backup-v7 https://github.com/sekadalle2024/NOUVEAU_REPO.git
+# Push vers V7 (troisième repository de sauvegarde)
 git push backup-v7 main
+
+# Ou ajouter un nouveau remote (exemple: backup-v8)
+git remote add backup-v8 https://github.com/sekadalle2024/NOUVEAU_REPO.git
+git push backup-v8 main
 ```
 
 **Exemples de scripts disponibles:**
 - `push_to_github.ps1` / `push_to_github.bat` → Push vers backup (V5)
 - `push_to_backup_v6.ps1` / `push_to_v6.bat` → Push vers backup-v6 (V6)
+- `push_to_backup_v7.ps1` / `push_to_v7.bat` → Push vers backup-v7 (V7) ⭐
 ```
 
 ---
