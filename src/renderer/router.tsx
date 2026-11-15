@@ -18,6 +18,8 @@ const ExtensionSettingsPage = React.lazy(() => import('./pages/settings/Extensio
 const LoginPage = React.lazy(() => import('./pages/login'));
 const ComponentsShowcase = React.lazy(() => import('./pages/test/ComponentsShowcase'));
 const N8nWorkflowPage = React.lazy(() => import('./pages/n8n-workflow/N8nWorkflowPage'));
+const UserManagement = React.lazy(() => import('./pages/admin/UserManagement'));
+const AuditLog = React.lazy(() => import('./pages/admin/AuditLog'));
 
 const withRouteFallback = (Component: React.LazyExoticComponent<React.ComponentType>) => (
   <Suspense fallback={<AppLoader />}>
@@ -51,6 +53,9 @@ const PanelRoute: React.FC<{ layout: React.ReactElement }> = ({ layout }) => {
           <Route path='/guid' element={withRouteFallback(Guid)} />
           <Route path='/conversation/:id' element={withRouteFallback(Conversation)} />
           <Route path='/n8n-workflow' element={withRouteFallback(N8nWorkflowPage)} />
+          <Route path='/admin/users' element={withRouteFallback(UserManagement)} />
+          <Route path='/admin/audit' element={withRouteFallback(AuditLog)} />
+          <Route path='/admin' element={<Navigate to='/admin/users' replace />} />
           <Route path='/settings/gemini' element={withRouteFallback(GeminiSettings)} />
           <Route path='/settings/model' element={withRouteFallback(ModeSettings)} />
           <Route path='/settings/agent' element={withRouteFallback(AgentSettings)} />
