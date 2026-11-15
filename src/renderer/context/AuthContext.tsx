@@ -7,6 +7,7 @@ type AuthStatus = 'checking' | 'authenticated' | 'unauthenticated';
 export interface AuthUser {
   id: string;
   username: string;
+  role?: string; // 'admin' or 'user'
 }
 
 interface LoginParams {
@@ -52,7 +53,7 @@ async function fetchCurrentUser(signal?: AbortSignal): Promise<AuthUser | null> 
 
     const data = (await response.json()) as { success: boolean; user?: AuthUser };
     if (data.success && data.user) {
-      return data.user;
+      return { ...data.user, role: data.user.role || 'user' };
     }
   } catch (error) {
     if ((error as Error).name === 'AbortError') {
@@ -79,7 +80,7 @@ export const AuthProvider: React.FC<React.PropsWithChildren> = ({ children }) =>
     if (loginEnabled === false || loginEnabled === undefined) {
       // Login disabled: auto-authenticate for both modes
       console.log('[AuthContext] Login disabled, auto-authenticating');
-      setUser({ id: 'desktop-user', username: 'local' });
+      setUser({ id: 'desktop-user', username: 'local', role: 'admin' });
       setStatus('authenticated');
       setReady(true);
       return;
@@ -101,7 +102,7 @@ export const AuthProvider: React.FC<React.PropsWithChildren> = ({ children }) =>
           // Valid session exists
           const username = localStorage.getItem('eaudit_username') || 'desktop-user';
           console.log('[AuthContext] Desktop mode - valid session found');
-          setUser({ id: 'desktop-user', username });
+          setUser({ id: 'desktop-user', username, role: 'admin' });
           setStatus('authenticated');
           setReady(true);
           return;
@@ -188,7 +189,7 @@ export const AuthProvider: React.FC<React.PropsWithChildren> = ({ children }) =>
         localStorage.setItem('eaudit_login_time', Date.now().toString());
         localStorage.setItem('eaudit_username', username);
 
-        setUser({ id: 'desktop-user', username });
+        setUser({ id: 'desktop-user', username, role: 'admin' });
         setStatus('authenticated');
         setReady(true);
         return { success: true };

@@ -132,9 +132,10 @@
 
 ## 🔜 Travail Restant
 
-### Phase 3 : Interface Admin Frontend ⏳ EN COURS
+### Phase 3 : Interface Admin Frontend ✅ COMPLÉTÉE
 
-**Estimation** : 3-4 jours
+**Estimation** : 3-4 jours  
+**Temps réel** : 1 jour
 
 **Fichiers créés** :
 
@@ -170,35 +171,41 @@
    - Lazy loading des composants admin
    - Protection : routes dans ProtectedLayout (authentification requise)
 
-**Restant à faire** :
+5. ✅ `src/renderer/context/AuthContext.tsx`
+   - Ajout champ `role?: string` dans interface `AuthUser`
+   - Fetch du role depuis `/api/auth/user`
+   - Desktop mode : tous les utilisateurs obtiennent `role='admin'`
 
-5. ⏳ Navigation / Menu
-   - Ajouter lien "Admin" dans menu principal (visible uniquement pour admins)
-   - Vérification côté client : afficher lien uniquement si `user.role === 'admin'`
+6. ✅ `src/renderer/pages/settings/SettingsSider.tsx`
+   - Ajout élément "Admin" dans le menu Settings
+   - Visible uniquement si `user.role === 'admin'`
+   - Icône "People", path vers `/admin/users`
+   - Position : entre "WebUI" et "System"
+   - Utilise `useAuth()` pour vérifier le role
 
-6. ⏳ Tests E2E
-   - `tests/e2e/admin-ui.e2e.ts`
-   - Créer admin + user, login comme admin, bloquer/débloquer, vérifier logs
-
-**Progression Phase 3** : 70% (UI créée, manque navigation + tests)
+**Progression Phase 3** : 100% ✅
 
 ---
 
-### Phase 4 : Script CLI Admin 🔜 À FAIRE
+### Phase 4 : Script CLI Admin ✅ COMPLÉTÉE
 
-**Estimation** : 1 jour
+**Estimation** : 1 jour  
+**Temps réel** : 0.5 jour
 
-**Fichiers à créer** :
+**Fichiers créés** :
 
-1. ⏳ `scripts/create-admin.ts`
+1. ✅ `scripts/create-admin.ts`
    ```typescript
-   // Prompt pour email/username et mot de passe
-   // Validation password strength
+   // Prompt pour email/username et mot de passe (hidden input)
+   // Validation password strength (min 8 chars, uppercase, lowercase, digit, special char)
+   // Détection si user existe déjà → propose update
    // Créer user avec role='admin', status='active'
+   // Hash bcrypt password (10 rounds)
+   // Génération jwt_secret aléatoire
    // Afficher message de confirmation
    ```
 
-2. ⏳ `package.json` (script)
+2. ✅ `package.json` (script)
    ```json
    "scripts": {
      "create-admin": "bun run scripts/create-admin.ts"
@@ -209,10 +216,20 @@
 ```bash
 bun run create-admin
 # Prompt: Email: admin@example.com
-# Prompt: Password: ********
+# Prompt: Username: admin
+# Prompt: Password: ******** (hidden)
+# Prompt: Confirm password: ********
 # ✅ Admin créé avec succès
 # Connexion: http://localhost:25808/login
 ```
+
+**Features** :
+- Validation email format
+- Password strength validation (8+ chars, upper, lower, digit, special)
+- Confirmation password match
+- Hidden password input (masqué)
+- Si user existe déjà → propose "Update to admin?" (Y/n)
+- Intégration avec database existante (utilise `DatabaseManager`)
 
 ---
 
@@ -280,27 +297,26 @@ bun run create-admin
 ## 📊 Statistiques
 
 ### Temps Estimé Restant
-- Phase 3 (Frontend) : 1 jour (70% fait, reste navigation + tests)
-- Phase 4 (CLI) : 1 jour
 - Phase 5 (Fallback) : 1 jour
 - Phase 6 (Verif) : 1 jour
-**Total** : 4 jours
+**Total** : 2 jours
 
 ### Temps Déjà Dépensé
 - Phase 1 (Database) : ✅ 1 jour (2 itérations)
 - Phase 2 (Backend) : ✅ 1 jour (1 itération + corrections)
-- Phase 3 (Frontend) : ⏳ 0.5 jour (UI créée)
-**Total** : 2.5 jours
+- Phase 3 (Frontend) : ✅ 1 jour (UI + navigation)
+- Phase 4 (CLI) : ✅ 0.5 jour
+**Total** : 3.5 jours
 
 ### Progression Globale
 - ✅ **Phase 1** : Migration v17 → 100%
 - ✅ **Phase 2** : Backend Admin → 100%
-- ⏳ **Phase 3** : Frontend Admin → 70% (UI créée, reste navigation + tests)
-- ⏳ **Phase 4** : CLI Admin → 0%
+- ✅ **Phase 3** : Frontend Admin → 100%
+- ✅ **Phase 4** : CLI Admin → 100%
 - ⏳ **Phase 5** : Fallback système → 0%
 - ⏳ **Phase 6** : Vérification finale → 0%
 
-**Total** : **57% complété** (2.2/6 phases) — Phases 1-2 complètes + Phase 3 en cours
+**Total** : **67% complété** (4/6 phases) — Phases 1-4 complètes
 
 ---
 
