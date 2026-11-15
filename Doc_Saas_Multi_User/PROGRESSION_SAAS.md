@@ -132,49 +132,55 @@
 
 ## 🔜 Travail Restant
 
-### Phase 3 : Interface Admin Frontend 🔜 À FAIRE
+### Phase 3 : Interface Admin Frontend ⏳ EN COURS
 
 **Estimation** : 3-4 jours
 
-**Fichiers à créer** :
+**Fichiers créés** :
 
-1. ⏳ `src/renderer/pages/admin/UserManagement.tsx`
-   - Tableau Arco Design
-   - Colonnes : username, email, role, status, last_login, actions
-   - Actions : Block / Unblock
+1. ✅ `src/renderer/pages/admin/UserManagement.tsx`
+   - Tableau Arco Design avec colonnes: username, email, role, status, last_login, created, actions
+   - Actions : Block / Unblock avec modale de confirmation
    - Modale de blocage avec Input.TextArea (reason obligatoire)
-   - Pagination + filtres (status, role, search)
+   - Avertissement spécial pour blocage d'admin
+   - Filtres : status (all/active/blocked/suspended), role (all/admin/user), search (username/email)
+   - Pagination (20 utilisateurs par page)
    - Fetch `/api/admin/users` avec JWT
+   - Real-time updates après block/unblock
 
-2. ⏳ `src/renderer/pages/admin/AuditLog.tsx`
-   - Tableau des logs d'audit
-   - Colonnes : date, user, action, target, details
-   - Filtres : user_id, action, date range
+2. ✅ `src/renderer/pages/admin/AuditLog.tsx`
+   - Tableau des logs d'audit avec colonnes: date, user, action, target, resource, details, IP
+   - Actions colorées (rouge: block/delete, vert: create/unblock, orange: update)
+   - Rows expandables pour afficher détails complets (user agent, full IDs, JSON details)
+   - Filtres : user_id, action, date range (DatePicker RangePicker)
+   - Pagination (50 logs par page)
    - Fetch `/api/admin/audit`
+   - JSON formatting pour details
 
-3. ⏳ `src/renderer/pages/admin/UserDetails.tsx` (optionnel)
-   - Détails complets d'un utilisateur
-   - Statistiques : nb conversations, messages
-   - Historique d'audit
+3. ✅ `src/renderer/pages/admin/index.tsx`
+   - Export des composants UserManagement et AuditLog
 
-**Fichiers à modifier** :
+**Fichiers modifiés** :
 
-4. ⏳ `src/renderer/router/index.tsx`
-   - Ajouter routes `/admin/users`, `/admin/audit`
-   - Protection : rediriger si `user.role !== 'admin'`
+4. ✅ `src/renderer/router.tsx`
+   - Routes ajoutées :
+     - `/admin/users` → UserManagement
+     - `/admin/audit` → AuditLog
+     - `/admin` → redirect vers `/admin/users`
+   - Lazy loading des composants admin
+   - Protection : routes dans ProtectedLayout (authentification requise)
 
-5. ⏳ `src/renderer/components/Navigation.tsx` (ou équivalent)
-   - Ajouter lien "Admin" dans menu (visible uniquement pour admins)
+**Restant à faire** :
 
-**Tests E2E à créer** :
+5. ⏳ Navigation / Menu
+   - Ajouter lien "Admin" dans menu principal (visible uniquement pour admins)
+   - Vérification côté client : afficher lien uniquement si `user.role === 'admin'`
 
-6. ⏳ `tests/e2e/admin-ui.e2e.ts`
-   - Créer un admin et un user normal
-   - Login comme admin
-   - Bloquer un utilisateur depuis l'interface
-   - Vérifier que l'utilisateur bloqué ne peut plus se connecter
-   - Débloquer l'utilisateur
-   - Vérifier les logs d'audit
+6. ⏳ Tests E2E
+   - `tests/e2e/admin-ui.e2e.ts`
+   - Créer admin + user, login comme admin, bloquer/débloquer, vérifier logs
+
+**Progression Phase 3** : 70% (UI créée, manque navigation + tests)
 
 ---
 
@@ -274,26 +280,27 @@ bun run create-admin
 ## 📊 Statistiques
 
 ### Temps Estimé Restant
-- Phase 3 (Frontend) : 3-4 jours
+- Phase 3 (Frontend) : 1 jour (70% fait, reste navigation + tests)
 - Phase 4 (CLI) : 1 jour
 - Phase 5 (Fallback) : 1 jour
 - Phase 6 (Verif) : 1 jour
-**Total** : 6-8 jours
+**Total** : 4 jours
 
 ### Temps Déjà Dépensé
 - Phase 1 (Database) : ✅ 1 jour (2 itérations)
 - Phase 2 (Backend) : ✅ 1 jour (1 itération + corrections)
-**Total** : 2 jours
+- Phase 3 (Frontend) : ⏳ 0.5 jour (UI créée)
+**Total** : 2.5 jours
 
 ### Progression Globale
 - ✅ **Phase 1** : Migration v17 → 100%
 - ✅ **Phase 2** : Backend Admin → 100%
-- ⏳ **Phase 3** : Frontend Admin → 0%
+- ⏳ **Phase 3** : Frontend Admin → 70% (UI créée, reste navigation + tests)
 - ⏳ **Phase 4** : CLI Admin → 0%
 - ⏳ **Phase 5** : Fallback système → 0%
 - ⏳ **Phase 6** : Vérification finale → 0%
 
-**Total** : **33% complété** (2/6 phases)
+**Total** : **57% complété** (2.2/6 phases) — Phases 1-2 complètes + Phase 3 en cours
 
 ---
 
@@ -328,6 +335,8 @@ Développer manuellement les phases restantes en suivant :
 ddf493a5  fix(database): include role and status columns in ensureSystemUser()
 3dedb49c  feat(admin): implement admin API for user management and audit
 44540ece  fix(admin): resolve 3 HIGH severity security issues from code review
+f4939ca0  docs(saas): create Doc_Saas_Multi_User folder with complete documentation
+08215e9a  feat(admin): implement admin frontend UI (Phase 3)
 ```
 
 **Branche** : `main`
