@@ -71,20 +71,20 @@ export const AuthProvider: React.FC<React.PropsWithChildren> = ({ children }) =>
   const abortRef = useRef<AbortController | null>(null);
 
   const refresh = useCallback(async () => {
+    // Check if login is enabled (both Desktop and WebUI modes)
+    const loginEnabled = await ConfigStorage.get('security.loginEnabled');
+
+    if (loginEnabled === false || loginEnabled === undefined) {
+      // Login disabled: auto-authenticate for both modes
+      console.log('[AuthContext] Login disabled, auto-authenticating');
+      setUser({ id: 'desktop-user', username: 'local' });
+      setStatus('authenticated');
+      setReady(true);
+      return;
+    }
+
     if (isDesktopRuntime) {
-      // Check if login is enabled
-      const loginEnabled = await ConfigStorage.get('security.loginEnabled');
-
-      if (loginEnabled === false || loginEnabled === undefined) {
-        // Login désactivé : authentifier automatiquement
-        console.log('[AuthContext] Desktop mode - login disabled, auto-authenticating');
-        setUser({ id: 'desktop-user', username: 'local' });
-        setStatus('authenticated');
-        setReady(true);
-        return;
-      }
-
-      // Login activé : vérifier la session existante
+      // Desktop mode with login enabled: check existing session
       console.log('[AuthContext] Desktop mode - login enabled, checking session');
       const loggedIn = localStorage.getItem('eaudit_logged_in') === 'true';
       const loginTime = localStorage.getItem('eaudit_login_time');
@@ -120,6 +120,7 @@ export const AuthProvider: React.FC<React.PropsWithChildren> = ({ children }) =>
       return;
     }
 
+    // WebUI mode with login enabled: fetch user from server
     abortRef.current?.abort();
     const controller = new AbortController();
     abortRef.current = controller;
