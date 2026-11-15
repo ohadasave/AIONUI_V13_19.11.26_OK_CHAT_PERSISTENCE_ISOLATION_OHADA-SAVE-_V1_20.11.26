@@ -24,9 +24,30 @@ export interface IUser {
   password_hash: string;
   avatar_path?: string;
   jwt_secret?: string | null;
+  role?: 'admin' | 'user';
+  status?: 'active' | 'blocked' | 'suspended';
+  blocked_at?: number | null;
+  blocked_by?: string | null;
+  blocked_reason?: string | null;
   created_at: number;
   updated_at: number;
   last_login?: number | null;
+}
+
+/**
+ * Audit log entry for tracking admin actions
+ */
+export interface IAuditLogRow {
+  id: string;
+  user_id: string;
+  target_user_id?: string | null;
+  action: string;
+  resource_type?: string | null;
+  resource_id?: string | null;
+  details?: string | null;
+  ip_address?: string | null;
+  user_agent?: string | null;
+  created_at: number;
 }
 
 // Image metadata removed - images are stored in filesystem and referenced via message.resultDisplay

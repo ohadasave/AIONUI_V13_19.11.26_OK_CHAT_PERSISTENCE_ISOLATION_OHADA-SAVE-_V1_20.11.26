@@ -981,13 +981,104 @@ const migration_v16: IMigration = {
 };
 
 /**
+ * Migration v16 -> v17: Add admin roles and audit log
+ * Adds user role management (admin/user) and audit logging for admin actions
+ */
+const migration_v17: IMigration = {
+  version: 17,
+  name: 'Add admin roles and audit log',
+  up: (db) => {
+    // 1. Add admin role columns to users table
+    const tableInfo = db.prepare('PRAGMA table_info(users)').all() as Array<{ name: string }>;
+    if (!tableInfo.some((col) => col.name === 'role')) {
+      db.exec(`ALTER TABLE users ADD COLUMN role TEXT DEFAULT 'user';`);
+    }
+    if (!tableInfo.some((col) => col.name === 'status')) {
+      db.exec(`ALTER TABLE users ADD COLUMN status TEXT DEFAULT 'active';`);
+    }
+    if (!tableInfo.some((col) => col.name === 'blocked_at')) {
+      db.exec(`ALTER TABLE users ADD COLUMN blocked_at INTEGER;`);
+    }
+    if (!tableInfo.some((col) => col.name === 'blocked_by')) {
+      db.exec(`ALTER TABLE users ADD COLUMN blocked_by TEXT;`);
+    }
+    if (!tableInfo.some((col) => col.name === 'blocked_reason')) {
+      db.exec(`ALTER TABLE users ADD COLUMN blocked_reason TEXT;`);
+    }
+
+    // 2. Create audit_log table
+    db.exec(`
+      CREATE TABLE IF NOT EXISTS audit_log (
+        id TEXT PRIMARY KEY,
+        user_id TEXT NOT NULL,
+        target_user_id TEXT,
+        action TEXT NOT NULL,
+        resource_type TEXT,
+        resource_id TEXT,
+        details TEXT,
+        ip_address TEXT,
+        user_agent TEXT,
+        created_at INTEGER NOT NULL,
+        FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL,
+        FOREIGN KEY (target_user_id) REFERENCES users(id) ON DELETE SET NULL
+      );
+    `);
+
+    // 3. Create indexes
+    db.exec(`
+      CREATE INDEX IF NOT EXISTS idx_users_status ON users(status);
+      CREATE INDEX IF NOT EXISTS idx_users_role ON users(role);
+      CREATE INDEX IF NOT EXISTS idx_audit_log_user_id ON audit_log(user_id);
+      CREATE INDEX IF NOT EXISTS idx_audit_log_action ON audit_log(action);
+      CREATE INDEX IF NOT EXISTS idx_audit_log_created_at ON audit_log(created_at);
+    `);
+
+    // 4. Set default values for existing users
+    db.exec(`
+      UPDATE users SET role = 'user' WHERE role IS NULL;
+      UPDATE users SET status = 'active' WHERE status IS NULL;
+    `);
+
+    console.log('[Migration v17] Added admin roles and audit log');
+  },
+  down: (db) => {
+    // Drop audit_log table and indexes
+    db.exec(`
+      DROP INDEX IF EXISTS idx_audit_log_created_at;
+      DROP INDEX IF EXISTS idx_audit_log_action;
+      DROP INDEX IF EXISTS idx_audit_log_user_id;
+      DROP INDEX IF EXISTS idx_users_role;
+      DROP INDEX IF EXISTS idx_users_status;
+      DROP TABLE IF EXISTS audit_log;
+    `);
+
+    // SQLite doesn't support DROP COLUMN directly, so we recreate the users table
+    db.exec(`
+      CREATE TABLE users_backup AS SELECT 
+        id, username, email, password_hash, avatar_path, jwt_secret, 
+        created_at, updated_at, last_login 
+      FROM users;
+      
+      DROP TABLE users;
+      
+      ALTER TABLE users_backup RENAME TO users;
+      
+      CREATE INDEX IF NOT EXISTS idx_users_username ON users(username);
+      CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);
+    `);
+
+    console.log('[Migration v17] Rolled back: Removed admin roles and audit log');
+  },
+};
+
+/**
  * All migrations in order
  */
 // prettier-ignore
 export const ALL_MIGRATIONS: IMigration[] = [
   migration_v1, migration_v2, migration_v3, migration_v4, migration_v5, migration_v6,
   migration_v7, migration_v8, migration_v9, migration_v10, migration_v11, migration_v12,
-  migration_v13, migration_v14, migration_v15, migration_v16,
+  migration_v13, migration_v14, migration_v15, migration_v16, migration_v17,
 ];
 
 /**
