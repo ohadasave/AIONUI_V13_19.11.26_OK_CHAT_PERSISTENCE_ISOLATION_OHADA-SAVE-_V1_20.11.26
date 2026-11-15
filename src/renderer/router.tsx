@@ -44,10 +44,16 @@ const ProtectedLayout: React.FC<{ layout: React.ReactElement }> = ({ layout }) =
 const PanelRoute: React.FC<{ layout: React.ReactElement }> = ({ layout }) => {
   const { status } = useAuth();
 
+  // Redirect after login to last conversation or /guid
+  const getPostLoginRedirect = () => {
+    const lastConversation = localStorage.getItem('last_conversation_path');
+    return lastConversation && lastConversation.startsWith('/conversation/') ? lastConversation : '/guid';
+  };
+
   return (
     <HashRouter>
       <Routes>
-        <Route path='/login' element={status === 'authenticated' ? <Navigate to='/guid' replace /> : withRouteFallback(LoginPage)} />
+        <Route path='/login' element={status === 'authenticated' ? <Navigate to={getPostLoginRedirect()} replace /> : withRouteFallback(LoginPage)} />
         <Route element={<ProtectedLayout layout={layout} />}>
           <Route index element={<Navigate to='/guid' replace />} />
           <Route path='/guid' element={withRouteFallback(Guid)} />
