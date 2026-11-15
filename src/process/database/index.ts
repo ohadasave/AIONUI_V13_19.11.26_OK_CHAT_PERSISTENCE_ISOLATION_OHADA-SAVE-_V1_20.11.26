@@ -104,8 +104,8 @@ export class AionUIDatabase {
     const now = Date.now();
     this.db
       .prepare(
-        `INSERT OR IGNORE INTO users (id, username, email, password_hash, avatar_path, created_at, updated_at, last_login, jwt_secret)
-         VALUES (?, ?, NULL, ?, NULL, ?, ?, NULL, NULL)`
+        `INSERT OR IGNORE INTO users (id, username, email, password_hash, avatar_path, created_at, updated_at, last_login, jwt_secret, role, status)
+         VALUES (?, ?, NULL, ?, NULL, ?, ?, NULL, NULL, 'user', 'active')`
       )
       .run(this.defaultUserId, this.defaultUserId, this.systemPasswordPlaceholder, now, now);
   }
