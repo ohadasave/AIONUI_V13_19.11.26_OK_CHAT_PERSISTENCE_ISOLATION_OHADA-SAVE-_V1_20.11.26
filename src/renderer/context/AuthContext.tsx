@@ -72,7 +72,20 @@ export const AuthProvider: React.FC<React.PropsWithChildren> = ({ children }) =>
 
   const refresh = useCallback(async () => {
     if (isDesktopRuntime) {
-      // Check if user is already logged in via localStorage
+      // Check if login is enabled
+      const loginEnabled = await ConfigStorage.get('security.loginEnabled');
+
+      if (loginEnabled === false || loginEnabled === undefined) {
+        // Login désactivé : authentifier automatiquement
+        console.log('[AuthContext] Desktop mode - login disabled, auto-authenticating');
+        setUser({ id: 'desktop-user', username: 'local' });
+        setStatus('authenticated');
+        setReady(true);
+        return;
+      }
+
+      // Login activé : vérifier la session existante
+      console.log('[AuthContext] Desktop mode - login enabled, checking session');
       const loggedIn = localStorage.getItem('eaudit_logged_in') === 'true';
       const loginTime = localStorage.getItem('eaudit_login_time');
 
@@ -141,12 +154,37 @@ export const AuthProvider: React.FC<React.PropsWithChildren> = ({ children }) =>
             code: 'invalidCredentials',
           };
         }
-        
+
+        // Check if credentials already exist (reconnection)
+        const storedCredentials = localStorage.getItem('eaudit_credentials');
+
+        if (storedCredentials) {
+          // Reconnection: validate credentials
+          try {
+            const { username: storedUsername, password: storedPassword } = JSON.parse(storedCredentials);
+
+            if (username !== storedUsername || password !== storedPassword) {
+              return {
+                success: false,
+                message: 'Identifiants incorrects',
+                code: 'invalidCredentials',
+              };
+            }
+          } catch (error) {
+            console.error('[AuthContext] Failed to parse stored credentials:', error);
+            // Clear invalid credentials
+            localStorage.removeItem('eaudit_credentials');
+          }
+        } else {
+          // First login: store credentials
+          localStorage.setItem('eaudit_credentials', JSON.stringify({ username, password }));
+        }
+
         // Store login state with username
         localStorage.setItem('eaudit_logged_in', 'true');
         localStorage.setItem('eaudit_login_time', Date.now().toString());
         localStorage.setItem('eaudit_username', username);
-        
+
         setUser({ id: 'desktop-user', username });
         setStatus('authenticated');
         setReady(true);
@@ -211,6 +249,7 @@ export const AuthProvider: React.FC<React.PropsWithChildren> = ({ children }) =>
       localStorage.removeItem('eaudit_logged_in');
       localStorage.removeItem('eaudit_login_time');
       localStorage.removeItem('eaudit_username');
+      // Note: on ne supprime PAS eaudit_credentials pour permettre la reconnexion
       setUser(null);
       setStatus('unauthenticated');
       setReady(true);

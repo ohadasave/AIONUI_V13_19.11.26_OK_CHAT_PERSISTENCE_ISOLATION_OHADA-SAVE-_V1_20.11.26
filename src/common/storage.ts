@@ -115,6 +115,8 @@ export interface IConfigStorageRefer {
     customAgentId?: string;
     name?: string;
   };
+  // Security: Login enabled flag / Sécurité: Activation de la page de connexion
+  'security.loginEnabled'?: boolean;
 }
 
 export interface IEnvStorageRefer {
