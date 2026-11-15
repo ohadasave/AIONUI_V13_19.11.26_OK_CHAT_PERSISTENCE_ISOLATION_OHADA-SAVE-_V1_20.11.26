@@ -1,0 +1,22 @@
+{
+  "verdict": "CHANGES_REQUESTED",
+  "findings": [
+    {
+      "severity": "HIGH",
+      "description": "AdminService.blockUser allows admin to block their own account (src/webserver/services/AdminService.ts:33-76). If sole admin blocks themselves, system becomes permanently inaccessible. Required fix: Add validation 'if (adminId === targetUserId) return error' at method start."
+    },
+    {
+      "severity": "HIGH",
+      "description": "checkUserStatus middleware applied globally before route registration (src/webserver/index.ts:264). While it has safety check 'if (!req.user) next()', this is inefficient and conceptually wrong. It runs on all public routes unnecessarily. Required fix: Remove global 'app.use(checkUserStatus)' and rely on explicit chaining in protected routes (already correct in adminRoutes)."
+    },
+    {
+      "severity": "HIGH",
+      "description": "Race condition in AdminService.blockUser between status update and JWT secret rotation (src/webserver/services/AdminService.ts:59-66). If secret rotation fails, user is blocked but tokens remain valid. No transaction wraps both operations. Required fix: Wrap both updates in transaction or add error handling to verify secret rotation succeeded."
+    },
+    {
+      "severity": "MEDIUM",
+      "description": "AdminService methods don't verify adminId has admin role (src/webserver/services/AdminService.ts). While requireAdmin middleware should prevent this, defense-in-depth requires service layer validation. Recommended fix: Add role verification at start of each admin method."
+    }
+  ],
+  "reviewDoc": "g:\\Aionui_client\\.agents\\tasks\\saas-multi-user\\phase2-review.md"
+}

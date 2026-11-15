@@ -81,14 +81,17 @@ Introduction générale, contexte du projet, technologies utilisées
 - Statistiques complètes
 - Chemins de lecture recommandés
 
-### 9. [ARCHITECTURE_MULTI_UTILISATEUR.md](./ARCHITECTURE_MULTI_UTILISATEUR.md) ✅ 🆕
-- **66 KB** - Analyse complète de l'architecture multi-utilisateur actuelle
-- État des lieux : base SQLite, tables users/conversations/messages
-- Isolation des données par `user_id` (déjà en place ✅)
-- Roadmap transformation SaaS : gestion admin, rôles, blocage utilisateurs
-- Migration v17 : ajout colonnes admin + table audit_log
-- Exemples de code : endpoints admin, middlewares, interface frontend
-- Estimation : 8-12 jours de développement
+### 9. [ARCHITECTURE_MULTI_UTILISATEUR.md](../Doc_Saas_Multi_User/ARCHITECTURE_MULTI_UTILISATEUR.md) ✅ 🆕  
+   **→ Déplacé vers Doc_Saas_Multi_User/**
+   - **66 KB** - Analyse complète de l'architecture multi-utilisateur actuelle
+   - État des lieux : base SQLite, tables users/conversations/messages
+   - Isolation des données par `user_id` (déjà en place ✅)
+   - Roadmap transformation SaaS : gestion admin, rôles, blocage utilisateurs
+   - Migration v17 : ajout colonnes admin + table audit_log
+   - Exemples de code : endpoints admin, middlewares, interface frontend
+   - Estimation : 8-12 jours de développement
+
+Voir le dossier complet : **[Doc_Saas_Multi_User/](../Doc_Saas_Multi_User/)** pour toute la documentation SaaS.
 
 ## 🚀 Démarrage Rapide
 
