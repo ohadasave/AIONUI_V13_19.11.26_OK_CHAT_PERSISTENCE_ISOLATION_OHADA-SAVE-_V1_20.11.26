@@ -7,11 +7,13 @@ Ce document décrit les modifications apportées pour désactiver la page de log
 ## Problèmes Résolus
 
 ### 1. Login activé par défaut
+
 **Avant** : L'application affichait toujours la page de login au démarrage, même quand l'option n'était pas activée dans les paramètres.
 
 **Après** : Le login est désactivé par défaut. L'application s'ouvre directement sans écran de connexion.
 
 ### 2. Impossibilité de se reconnecter
+
 **Avant** : Après création d'un compte, impossible de se reconnecter avec les mêmes credentials. L'erreur "username incorrect" s'affichait systématiquement.
 
 **Après** : Le système stocke les credentials lors de la première connexion et les valide lors des reconnexions.
@@ -30,6 +32,7 @@ Ajout de la clé `security.loginEnabled` dans l'interface `IConfigStorageRefer` 
 **Type** : `boolean` optionnel  
 **Valeur par défaut** : `undefined` (interprété comme `false`)  
 **Comportement** :
+
 - `undefined` ou `false` → Login désactivé, authentification automatique
 - `true` → Login activé, page de connexion requise
 
@@ -69,6 +72,7 @@ if (loginEnabled === false || loginEnabled === undefined) {
 La méthode gère maintenant deux cas distincts :
 
 **Première connexion** : Aucun credential stocké
+
 ```typescript
 if (!storedCredentials) {
   // First login: store credentials
@@ -77,11 +81,12 @@ if (!storedCredentials) {
 ```
 
 **Reconnexion** : Validation des credentials
+
 ```typescript
 if (storedCredentials) {
   // Reconnection: validate credentials
   const { username: storedUsername, password: storedPassword } = JSON.parse(storedCredentials);
-  
+
   if (username !== storedUsername || password !== storedPassword) {
     return {
       success: false,
@@ -106,24 +111,28 @@ localStorage.removeItem('eaudit_username');
 ## Valeurs Stockées dans localStorage
 
 ### 1. `eaudit_credentials` (nouveau)
+
 **Format** : JSON `{ username: string, password: string }`  
 **Création** : Lors de la première connexion  
 **Suppression** : Jamais (sauf erreur de parsing)  
 **Usage** : Validation des reconnexions
 
 ### 2. `eaudit_logged_in`
+
 **Format** : `"true"` ou absent  
 **Création** : Lors de la connexion réussie  
 **Suppression** : Lors de la déconnexion ou expiration  
 **Usage** : Indicateur de session active
 
 ### 3. `eaudit_login_time`
+
 **Format** : Timestamp en millisecondes (string)  
 **Création** : Lors de la connexion réussie  
 **Suppression** : Lors de la déconnexion ou expiration  
 **Usage** : Calcul de la validité de la session (24h)
 
 ### 4. `eaudit_username`
+
 **Format** : String  
 **Création** : Lors de la connexion réussie  
 **Suppression** : Lors de la déconnexion ou expiration  
@@ -179,45 +188,54 @@ localStorage.removeItem('eaudit_username');
 ## Tests à Effectuer
 
 ### Test 1 : Login désactivé par défaut
+
 1. Lancer l'application pour la première fois
 2. **Résultat attendu** : Application s'ouvre directement, pas de page de login
 
 ### Test 2 : Activation du login
+
 1. Ouvrir Paramètres > Sécurité
 2. Activer "Écran de connexion"
 3. Redémarrer l'application
 4. **Résultat attendu** : Page de login s'affiche
 
 ### Test 3 : Première connexion
+
 1. Entrer `username: "SEKA"` et `password: "LEADER00"`
 2. Cliquer sur "Se connecter"
 3. **Résultat attendu** : Connexion réussie, application s'ouvre
 
 ### Test 4 : Déconnexion
+
 1. Se déconnecter depuis l'interface
 2. **Résultat attendu** : Retour à la page de login
 
 ### Test 5 : Reconnexion avec credentials valides
+
 1. Entrer `username: "SEKA"` et `password: "LEADER00"` (mêmes credentials)
 2. Cliquer sur "Se connecter"
 3. **Résultat attendu** : Connexion réussie
 
 ### Test 6 : Reconnexion avec mauvais password
+
 1. Entrer `username: "SEKA"` et `password: "WRONGPASS"`
 2. Cliquer sur "Se connecter"
 3. **Résultat attendu** : Message d'erreur "Identifiants incorrects"
 
 ### Test 7 : Désactivation du login
+
 1. Dans Paramètres > Sécurité, désactiver "Écran de connexion"
 2. Redémarrer l'application
 3. **Résultat attendu** : Application s'ouvre directement, pas de page de login
 
 ### Test 8 : Session persistante (< 24h)
+
 1. Se connecter
 2. Redémarrer l'application dans les 24h
 3. **Résultat attendu** : Connexion automatique, pas de page de login
 
 ### Test 9 : Session expirée (> 24h)
+
 1. Se connecter
 2. Modifier manuellement `eaudit_login_time` dans localStorage (mettre un timestamp vieux de 25h)
 3. Redémarrer l'application
