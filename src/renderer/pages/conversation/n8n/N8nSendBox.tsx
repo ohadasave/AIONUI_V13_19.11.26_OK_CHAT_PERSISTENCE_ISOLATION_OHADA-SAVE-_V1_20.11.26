@@ -169,7 +169,7 @@ const N8nSendBox: React.FC<{
         setSending(false);
       }
     },
-    [conversation_id, addOrUpdateMessage, sending, t]
+    [conversation_id, addOrUpdateMessage, updateMessageList, sending, t]
   );
 
   // Check for and send initial message from guid page
