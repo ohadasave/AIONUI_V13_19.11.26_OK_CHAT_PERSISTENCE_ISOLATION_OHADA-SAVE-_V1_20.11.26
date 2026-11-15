@@ -176,7 +176,9 @@ const SettingsSider: React.FC<{ collapsed?: boolean; tooltipEnabled?: boolean }>
                 '!bg-aou-2 ': isSelected,
               })}
               onClick={() => {
-                Promise.resolve(navigate(`/settings/${item.path}`, { replace: true })).catch((error) => {
+                // For admin path, use full path since it already contains the prefix
+                const targetPath = item.path.startsWith('admin/') ? `/${item.path}` : `/settings/${item.path}`;
+                Promise.resolve(navigate(targetPath, { replace: true })).catch((error) => {
                   console.error('Navigation failed:', error);
                 });
               }}
