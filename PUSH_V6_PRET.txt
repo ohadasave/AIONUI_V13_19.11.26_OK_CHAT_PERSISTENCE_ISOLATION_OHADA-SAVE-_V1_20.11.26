@@ -1,0 +1,93 @@
+╔═══════════════════════════════════════════════════════════════════╗
+║              PUSH VERS AIONUI V6 - PRÊT À EXÉCUTER               ║
+╚═══════════════════════════════════════════════════════════════════╝
+
+📍 REPOSITORY CIBLE:
+   https://github.com/sekadalle2024/AIONUI_V6_15.11.26.git
+
+🔧 SCRIPTS CRÉÉS:
+
+   1. push_to_v6.bat (Script Batch)
+      └── Compatible tous terminaux Windows
+
+   2. push_to_backup_v6.ps1 (Script PowerShell)
+      └── Interface colorée
+
+   3. PUSH_V6_INSTRUCTIONS.md
+      └── Guide complet pour V6
+
+╔═══════════════════════════════════════════════════════════════════╗
+║                    COMMENT EXÉCUTER LE PUSH                       ║
+╚═══════════════════════════════════════════════════════════════════╝
+
+⚡ MÉTHODE RAPIDE:
+
+   1. Ouvrir PowerShell ou CMD
+   2. cd g:\Aionui_client
+   3. .\push_to_v6.bat
+   4. ✅ Terminé!
+
+📝 MÉTHODE MANUELLE:
+
+   cd g:\Aionui_client
+   git add .
+   git commit -m "Sauvegarde AIONUI V6 - Documentation Push GitHub complète"
+   git remote add backup-v6 https://github.com/sekadalle2024/AIONUI_V6_15.11.26.git
+   git push -u backup-v6 HEAD
+
+╔═══════════════════════════════════════════════════════════════════╗
+║                    CONFIGURATION FINALE                           ║
+╚═══════════════════════════════════════════════════════════════════╝
+
+Après ce push, vous aurez 4 REMOTES:
+
+   ✅ origin      → Aionui_client_windows_11_19.03.26_V0-Public
+   ✅ backup      → AIONUI_V5_15.11.26
+   ✅ backup-v6   → AIONUI_V6_15.11.26 (NOUVEAU)
+   ✅ upstream    → iOfficeAI/AionUi
+
+╔═══════════════════════════════════════════════════════════════════╗
+║                    AVANTAGES MULTI-REMOTE                         ║
+╚═══════════════════════════════════════════════════════════════════╝
+
+✅ Sauvegardes multiples (redondance)
+✅ Versions différentes (V5, V6, etc.)
+✅ Flexibilité (push vers le remote souhaité)
+✅ Sécurité (plusieurs copies)
+
+╔═══════════════════════════════════════════════════════════════════╗
+║                      FICHIERS DISPONIBLES                         ║
+╚═══════════════════════════════════════════════════════════════════╝
+
+📄 PUSH_V6_INSTRUCTIONS.md    → Guide complet
+📜 push_to_v6.bat             → Script Batch automatisé
+📜 push_to_backup_v6.ps1      → Script PowerShell automatisé
+📄 PUSH_V6_PRET.txt           → Ce fichier
+
+╔═══════════════════════════════════════════════════════════════════╗
+║                        PROCHAINES ÉTAPES                          ║
+╚═══════════════════════════════════════════════════════════════════╝
+
+1. ⚠️  EXÉCUTEZ MAINTENANT le push vers V6:
+      → Ouvrir un terminal
+      → cd g:\Aionui_client
+      → .\push_to_v6.bat
+
+2. 🔍 VÉRIFIEZ sur GitHub que le code est présent:
+      → https://github.com/sekadalle2024/AIONUI_V6_15.11.26
+
+3. ✅ CONFIRMEZ la configuration des remotes:
+      → git remote -v
+
+╔═══════════════════════════════════════════════════════════════════╗
+║                    EXÉCUTEZ MAINTENANT!                           ║
+╚═══════════════════════════════════════════════════════════════════╝
+
+   cd g:\Aionui_client
+   .\push_to_v6.bat
+
+═══════════════════════════════════════════════════════════════════
+
+Date: 15 Novembre 2026
+Créé par: Assistant IA Kiro
+Statut: ✅ PRÊT À EXÉCUTER
