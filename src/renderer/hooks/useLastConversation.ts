@@ -1,30 +1,42 @@
-/**
- * Hook to track and restore last conversation for better navigation
- */
-
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { useLocation } from 'react-router-dom';
 
-const LAST_CONVERSATION_KEY = 'last_conversation_path';
-
-export const useLastConversation = () => {
+/**
+ * Hook pour mémoriser la dernière conversation visitée
+ * Utilisé pour la navigation "Back to Chat" depuis Settings/Admin
+ */
+export function useLastConversation() {
   const location = useLocation();
+  const { pathname } = location;
+  const lastConversationIdRef = useRef<string | null>(null);
 
   useEffect(() => {
-    // Save conversation path when user is on a conversation page
-    if (location.pathname.startsWith('/conversation/')) {
-      localStorage.setItem(LAST_CONVERSATION_KEY, location.pathname);
+    // Mémoriser l'ID de conversation quand on visite une page de conversation
+    if (pathname.startsWith('/conversation/')) {
+      const convId = pathname.split('/conversation/')[1];
+      if (convId) {
+        lastConversationIdRef.current = convId;
+        // Sauvegarder le path complet dans localStorage pour persistance (utilisé par router.tsx)
+        localStorage.setItem('last_conversation_path', pathname);
+      }
     }
-  }, [location.pathname]);
+  }, [pathname]);
 
-  return {
-    getLastConversationPath: (): string => {
-      const lastPath = localStorage.getItem(LAST_CONVERSATION_KEY);
-      // Return last conversation if it exists, otherwise fallback to /guid
-      return lastPath && lastPath.startsWith('/conversation/') ? lastPath : '/guid';
-    },
-    clearLastConversation: () => {
-      localStorage.removeItem(LAST_CONVERSATION_KEY);
-    },
+  const getLastConversationPath = (): string => {
+    // Priorité 1: Conversation mémorisée dans ce composant
+    if (lastConversationIdRef.current) {
+      return `/conversation/${lastConversationIdRef.current}`;
+    }
+
+    // Priorité 2: Conversation sauvegardée dans localStorage
+    const savedPath = localStorage.getItem('last_conversation_path');
+    if (savedPath && savedPath.startsWith('/conversation/')) {
+      return savedPath;
+    }
+
+    // Fallback: Page d'accueil
+    return '/guid';
   };
-};
+
+  return { getLastConversationPath };
+}

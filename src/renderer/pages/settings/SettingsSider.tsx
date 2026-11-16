@@ -98,7 +98,7 @@ const SettingsSider: React.FC<{ collapsed?: boolean; tooltipEnabled?: boolean }>
       tools: { id: 'tools', label: t('settings.tools'), icon: <Toolkit />, path: 'tools' },
       display: { id: 'display', label: t('settings.display'), icon: <Computer />, path: 'display' },
       webui: { id: 'webui', label: t('settings.webui'), icon: isDesktop ? <Earth /> : <Communication />, path: 'webui' },
-      admin: { id: 'admin', label: 'Admin', icon: <People />, path: 'admin/users' },
+      admin: { id: 'admin', label: 'Admin', icon: <People />, path: 'admin' },
       system: { id: 'system', label: t('settings.system'), icon: <System />, path: 'system' },
       security: { id: 'security', label: 'Sécurité', icon: <Puzzle />, path: 'security' },
       about: { id: 'about', label: t('settings.about'), icon: <Info />, path: 'about' },

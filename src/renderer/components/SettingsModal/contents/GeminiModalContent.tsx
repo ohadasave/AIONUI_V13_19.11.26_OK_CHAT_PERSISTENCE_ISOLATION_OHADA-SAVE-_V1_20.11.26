@@ -198,16 +198,28 @@ const GeminiModalContent: React.FC = () => {
                                   message.success(t('settings.googleLoginSuccess', { defaultValue: 'Successfully logged in' }));
                                 }
                               } else {
-                                // 登录失败，显示错误消息
-                                // Login failed, show error message
+                                // 登录失败，显示详细错误消息
+                                // Login failed, show detailed error message
                                 const errorMsg = result.msg || t('settings.googleLoginFailed', { defaultValue: 'Login failed. Please try again.' });
-                                message.error(errorMsg);
-                                console.error('[GoogleAuth] Login failed:', result.msg);
+                                const detailedMsg = `${errorMsg}${result.data?.error ? `\n\nDetails: ${result.data.error}` : ''}`;
+                                message.error({
+                                  content: detailedMsg,
+                                  duration: 5000,
+                                });
+                                console.error('[GoogleAuth] Login failed:', {
+                                  msg: result.msg,
+                                  error: result.data?.error,
+                                  fullResult: result,
+                                });
                               }
                             })
                             .catch((error) => {
-                              message.error(t('settings.googleLoginFailed', { defaultValue: 'Login failed. Please try again.' }));
-                              console.error('Failed to login to Google:', error);
+                              const errorMsg = error instanceof Error ? error.message : String(error);
+                              message.error({
+                                content: t('settings.googleLoginFailed', { defaultValue: 'Login failed. Please try again.' }) + `\n\nError: ${errorMsg}`,
+                                duration: 5000,
+                              });
+                              console.error('[GoogleAuth] Login exception:', error);
                             })
                             .finally(() => {
                               setGoogleAccountLoading(false);
