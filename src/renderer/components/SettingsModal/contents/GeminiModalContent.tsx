@@ -8,7 +8,8 @@ import { ipcBridge } from '@/common';
 import { ConfigStorage } from '@/common/storage';
 import AionScrollArea from '@/renderer/components/base/AionScrollArea';
 import { useThemeContext } from '@/renderer/context/ThemeContext';
-import { Button, Divider, Form, Input, Message } from '@arco-design/web-react';
+import { isElectronDesktop } from '@/renderer/utils/platform';
+import { Button, Divider, Form, Input, Message, Tooltip } from '@arco-design/web-react';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import classNames from 'classnames';
@@ -35,6 +36,7 @@ const GeminiModalContent: React.FC = () => {
   const [message, messageContext] = Message.useMessage();
   const viewMode = useSettingsViewMode();
   const isPageMode = viewMode === 'page';
+  const isDesktop = isElectronDesktop();
 
   /**
    * 加载当前账号对应的 GOOGLE_CLOUD_PROJECT
@@ -183,51 +185,74 @@ const GeminiModalContent: React.FC = () => {
                         </Button>
                       </>
                     ) : (
-                      <Button
-                        type='primary'
-                        loading={googleAccountLoading}
-                        className='rd-100px'
-                        onClick={() => {
-                          setGoogleAccountLoading(true);
-                          ipcBridge.googleAuth.login
-                            .invoke({ proxy: form.getFieldValue('proxy') })
-                            .then((result) => {
-                              if (result.success) {
-                                loadGoogleAuthStatus(form.getFieldValue('proxy'));
-                                if (result.data?.account) {
-                                  message.success(t('settings.googleLoginSuccess', { defaultValue: 'Successfully logged in' }));
-                                }
-                              } else {
-                                // 登录失败，显示详细错误消息
-                                // Login failed, show detailed error message
-                                const errorMsg = result.msg || t('settings.googleLoginFailed', { defaultValue: 'Login failed. Please try again.' });
-                                const detailedMsg = `${errorMsg}${result.data?.error ? `\n\nDetails: ${result.data.error}` : ''}`;
-                                message.error({
-                                  content: detailedMsg,
-                                  duration: 5000,
-                                });
-                                console.error('[GoogleAuth] Login failed:', {
-                                  msg: result.msg,
-                                  error: result.data?.error,
-                                  fullResult: result,
-                                });
-                              }
-                            })
-                            .catch((error) => {
-                              const errorMsg = error instanceof Error ? error.message : String(error);
+                      <Tooltip
+                        content={
+                          !isDesktop
+                            ? t('settings.googleLoginWebUINotSupported', {
+                                defaultValue: 'Google OAuth is only available in Desktop mode. Please use API Key authentication.',
+                              })
+                            : ''
+                        }
+                        disabled={isDesktop}
+                      >
+                        <Button
+                          type='primary'
+                          loading={googleAccountLoading}
+                          disabled={!isDesktop}
+                          className='rd-100px'
+                          onClick={() => {
+                            // WebUI mode: show error message
+                            if (!isDesktop) {
                               message.error({
-                                content: t('settings.googleLoginFailed', { defaultValue: 'Login failed. Please try again.' }) + `\n\nError: ${errorMsg}`,
+                                content: t('settings.googleLoginWebUINotSupported', {
+                                  defaultValue: 'Google OAuth is only available in Desktop mode. In WebUI mode, please use API Key authentication instead.',
+                                }),
                                 duration: 5000,
                               });
-                              console.error('[GoogleAuth] Login exception:', error);
-                            })
-                            .finally(() => {
-                              setGoogleAccountLoading(false);
-                            });
-                        }}
-                      >
-                        {t('settings.googleLogin')}
-                      </Button>
+                              return;
+                            }
+                            
+                            setGoogleAccountLoading(true);
+                            ipcBridge.googleAuth.login
+                              .invoke({ proxy: form.getFieldValue('proxy') })
+                              .then((result) => {
+                                if (result.success) {
+                                  loadGoogleAuthStatus(form.getFieldValue('proxy'));
+                                  if (result.data?.account) {
+                                    message.success(t('settings.googleLoginSuccess', { defaultValue: 'Successfully logged in' }));
+                                  }
+                                } else {
+                                  // 登录失败，显示详细错误消息
+                                  // Login failed, show detailed error message
+                                  const errorMsg = result.msg || t('settings.googleLoginFailed', { defaultValue: 'Login failed. Please try again.' });
+                                  const detailedMsg = `${errorMsg}${result.data?.error ? `\n\nDetails: ${result.data.error}` : ''}`;
+                                  message.error({
+                                    content: detailedMsg,
+                                    duration: 5000,
+                                  });
+                                  console.error('[GoogleAuth] Login failed:', {
+                                    msg: result.msg,
+                                    error: result.data?.error,
+                                    fullResult: result,
+                                  });
+                                }
+                              })
+                              .catch((error) => {
+                                const errorMsg = error instanceof Error ? error.message : String(error);
+                                message.error({
+                                  content: t('settings.googleLoginFailed', { defaultValue: 'Login failed. Please try again.' }) + `\n\nError: ${errorMsg}`,
+                                  duration: 5000,
+                                });
+                                console.error('[GoogleAuth] Login exception:', error);
+                              })
+                              .finally(() => {
+                                setGoogleAccountLoading(false);
+                              });
+                          }}
+                        >
+                          {t('settings.googleLogin')}
+                        </Button>
+                      </Tooltip>
                     )}
                   </div>
                 )}

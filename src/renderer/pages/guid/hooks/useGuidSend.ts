@@ -429,7 +429,9 @@ export const useGuidSend = (deps: GuidSendDeps): GuidSendResult => {
   }, [handleSend, setLoading, setInput, setMentionOpen, setMentionQuery, setMentionSelectorOpen, setMentionActiveIndex, setFiles, setDir]);
 
   // Calculate button disabled state
-  const isButtonDisabled = !input.trim() || ((((!selectedAgent || selectedAgent === 'gemini') && !isPresetAgent) || (isPresetAgent && currentEffectiveAgentInfo.agentType === 'gemini' && currentEffectiveAgentInfo.isAvailable)) && !currentModel && isGoogleAuth);
+  // Ne plus bloquer si pas de modèle - laisser l'initialisation se faire au premier message
+  // Don't block if no model - let initialization happen on first message
+  const isButtonDisabled = !input.trim();
 
   return {
     handleSend,
