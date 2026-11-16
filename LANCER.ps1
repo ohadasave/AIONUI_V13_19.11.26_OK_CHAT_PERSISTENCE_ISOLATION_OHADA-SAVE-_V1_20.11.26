@@ -33,5 +33,5 @@ Write-Host "L'application Electron va s'ouvrir..." -ForegroundColor Cyan
 Write-Host "Attendez quelques secondes..." -ForegroundColor Gray
 Write-Host ""
 
-# Lancer avec npx qui trouve automatiquement les binaires locaux
-npx electron-vite dev
+# Lancer directement via node (contourne le problème PATH et binaires manquants)
+node node_modules\electron-vite\bin\electron-vite.js dev

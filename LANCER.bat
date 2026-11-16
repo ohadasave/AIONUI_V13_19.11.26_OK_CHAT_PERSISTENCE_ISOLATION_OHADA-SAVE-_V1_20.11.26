@@ -31,7 +31,7 @@ echo Si rien ne se passe, appuyez sur Ctrl+C et
 echo executez: npx electron-vite dev
 echo.
 
-REM Lancer avec npx pour garantir le chemin
-npx electron-vite dev
+REM Lancer directement via node (contourne le probleme PATH)
+node node_modules\electron-vite\bin\electron-vite.js dev
 
 pause
