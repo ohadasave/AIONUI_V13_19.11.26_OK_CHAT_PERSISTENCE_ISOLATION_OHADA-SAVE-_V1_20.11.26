@@ -8,8 +8,17 @@ import { useState, useEffect } from 'react';
 import { Table, Button, Modal, Input, Message, Tag, Space, Select } from '@arco-design/web-react';
 import type { ColumnProps } from '@arco-design/web-react/es/Table';
 import { useTranslation } from 'react-i18next';
-import Cookies from 'js-cookie';
+// import Cookies from 'js-cookie';
 import { CONFIG } from '@/common/config';
+
+// Helper to get cookie value
+const getCookie = (name: string): string | undefined => {
+  const cookieValue = document.cookie
+    .split('; ')
+    .find((row) => row.startsWith(`${name}=`))
+    ?.split('=')[1];
+  return cookieValue;
+};
 
 interface IUser {
   id: string;
@@ -77,7 +86,7 @@ export function UserManagement() {
         params.append('search', searchQuery.trim());
       }
 
-      const token = Cookies.get(CONFIG.SESSION_COOKIE);
+      const token = getCookie(CONFIG.SESSION_COOKIE);
       const response = await fetch(`/api/admin/users?${params.toString()}`, {
         headers: {
           Authorization: `Bearer ${token}`,
@@ -116,7 +125,7 @@ export function UserManagement() {
 
     setBlocking(true);
     try {
-      const token = Cookies.get(CONFIG.SESSION_COOKIE);
+      const token = getCookie(CONFIG.SESSION_COOKIE);
       const response = await fetch(`/api/admin/users/${selectedUser.id}/block`, {
         method: 'POST',
         headers: {
@@ -146,7 +155,7 @@ export function UserManagement() {
 
   async function handleUnblock(user: IUser) {
     try {
-      const token = Cookies.get(CONFIG.SESSION_COOKIE);
+      const token = getCookie(CONFIG.SESSION_COOKIE);
       const response = await fetch(`/api/admin/users/${user.id}/unblock`, {
         method: 'POST',
         headers: {

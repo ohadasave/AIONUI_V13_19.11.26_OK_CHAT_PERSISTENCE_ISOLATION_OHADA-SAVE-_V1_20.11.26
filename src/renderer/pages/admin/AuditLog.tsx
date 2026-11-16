@@ -8,7 +8,7 @@ import { useState, useEffect } from 'react';
 import { Table, Button, Input, Message, Tag, DatePicker, Space } from '@arco-design/web-react';
 import type { ColumnProps } from '@arco-design/web-react/es/Table';
 import { useTranslation } from 'react-i18next';
-import Cookies from 'js-cookie';
+// import Cookies from 'js-cookie';
 import { CONFIG } from '@/common/config';
 
 interface IAuditLog {
@@ -80,7 +80,12 @@ export function AuditLog() {
         params.append('end_date', String(dateRange[1].getTime()));
       }
 
-      const token = Cookies.get(CONFIG.SESSION_COOKIE);
+      // Get token from cookie
+      const cookieValue = document.cookie
+        .split('; ')
+        .find((row) => row.startsWith(`${CONFIG.SESSION_COOKIE}=`))
+        ?.split('=')[1];
+      const token = cookieValue;
       const response = await fetch(`/api/admin/audit?${params.toString()}`, {
         headers: {
           Authorization: `Bearer ${token}`,
