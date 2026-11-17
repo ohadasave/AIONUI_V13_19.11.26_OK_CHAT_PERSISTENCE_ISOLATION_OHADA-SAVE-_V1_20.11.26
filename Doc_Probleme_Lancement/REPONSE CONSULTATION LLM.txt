@@ -1,0 +1,459 @@
+1. CLAUDE OPUS  
+
+Je n’ai pas accès à votre machine Windows (mon environnement est un Linux dans le cloud), donc je ne peux pas lancer les commandes à votre place. Je vous prépare un script de réparation qui applique le plan complet et teste chaque point de blocage.
+
+Le script repair-env.ps1 est prêt, mais je n’ai pas pu le tester : je n’ai pas accès à votre machine et PowerShell n’est pas installé ici. Vérifiez donc ses messages à la première exécution.
+
+Lancement : copiez-le dans G:\Aionui_client, ouvrez Windows Terminal (idéalement en administrateur) et lancez :
+
+powershell -NoProfile -ExecutionPolicy Bypass -File .\repair-env.ps1
+
+L’option -DiagOnly ne fait que le diagnostic réseau et ne modifie rien.
+
+Ce que je pense être arrivé
+Votre mémo traite les symptômes, pas la cause. Les @babel sans package.json, les dossiers .core-xxxx et l’absence de .bin/*.cmd viennent tous de la même chose : aucun npm install n’est jamais arrivé au bout. npm crée les liens .bin en toute dernière étape, donc .bin vide prouve que l’installation n’a jamais fini. Réparer 5 paquets ne suffit pas, et d’autres paquets sont probablement incomplets.
+npm install @babel/core n’installe pas 5 paquets. npm réconcilie tout l’arbre (~2 100 paquets) et lance leurs scripts. Le « petit » correctif relançait donc l’installation complète, d’où les timeouts de 6 minutes.
+Le blocage vient très probablement du réseau ou de l’antivirus, pas du cache, qui se vide bien en 30 secondes :
+Le postinstall d’Electron télécharge le binaire (~100 Mo) depuis GitHub, ce qui peut bloquer depuis Abidjan.
+Les modules natifs, s’il y en a, téléchargent aussi des binaires précompilés depuis GitHub, ou se compilent si aucun n’existe.
+Windows Defender scanne chaque fichier de node_modules.
+C’est une hypothèse : le diagnostic du script (étape 2) permet de la confirmer ou de l’écarter.
+Le Exit Code -1 sans sortie ressemble à un problème du terminal de l’outil ou de l’agent que vous utilisiez, plus qu’à PowerShell lui-même. De plus, nvm use sous Windows crée un lien symbolique dans C:\Program Files\nodejs, ce qui exige les droits administrateur, et échoue en silence sans eux. Le script contourne tout cela en plaçant node.exe en tête du PATH de la session, sans nvm use.
+Ce que fait le script
+Utilise Node 22.22.0 directement : il respecte >=22 <25 et pose moins de problèmes de binaires précompilés que Node 24. Changez avec -NodeVersion.
+Teste le registry npm et GitHub, et bascule sur les miroirs npmmirror (session seulement) si l’un des deux est lent ou inaccessible.
+Ajoute les exclusions Defender si vous êtes administrateur.
+Supprime node_modules avec rd /s /q, bien plus rapide que Remove-Item. Il garde package-lock.json : votre mémo propose de le supprimer, ce qui ferait changer les versions installées.
+Lance npm ci --ignore-scripts en surveillance : il s’arrête seul après 5 minutes sans activité ou 40 minutes au total, et écrit des logs npm-*.log. Le terminer à la main était justement ce qui laissait des paquets à moitié installés.
+Télécharge le binaire Electron à part, puis lance le postinstall du projet s’il existe.
+Vérifie que les 5 @babel et les .bin/*.cmd sont là et qu’aucun paquet n’est sans package.json, puis lance npm run dev.
+Si ça échoue
+Si le script s’arrête sur un blocage, relancez-le : il repart toujours d’un état propre.
+Si le postinstall signale une erreur de compilation, il faudra sans doute les Visual Studio Build Tools (modules natifs).
+Dans les autres cas, envoyez-moi npm-install.err.log et la sortie de l’étape 2.
+
+Pour éviter que cela se reproduise : ne faites jamais nvm use ni Ctrl+C pendant un npm install, utilisez npm ci plutôt que npm install, et gardez les exclusions Defender.
+
+voir le fichier repair-env.ps1 dans le dossier "Doc_Probleme_Lancement"
+
+
+
+
+2. CLAUDE SONNET 
+
+Je ne peux pas exécuter ces commandes sur ta machine (je n’ai que les deux documents), donc ce qui suit est un diagnostic raisonné et un plan à dérouler dans l’ordre. J’ai relevé trois points dans le mémo qui changent la stratégie.
+
+A. Diagnostic
+
+1. Les dossiers .core-Xrjs9gjm, .helpers-… sont probablement tes paquets d’origine, pas des déchets.
+Quand npm remplace un paquet, il déplace l’ancien dossier vers un nom .nom-XXXXXXXX (« retire »), installe le nouveau, puis supprime l’ancien. En cas d’échec, il le remet en place. Si le rollback est interrompu, l’original reste dans ce dossier caché. Ton mémo dit d’ailleurs que .core-Xrjs9gjm contient un package.json (section 6.1) mais ailleurs « sans package.json ». Vérifie, car si c’est vrai, la réparation se résume à un renommage. La commande de nettoyage Remove-Item node_modules\@babel\.* du mémo détruirait justement ce qui peut te sauver.
+
+2. Le mécanisme « npm écrit lib/ avant package.json » est douteux.
+npm extrait un tarball fichier par fichier, et package.json est en général parmi les premiers. Un dossier avec lib/, LICENSE, README.md mais sans package.json ressemble plus à une suppression ou un déplacement interrompu, un verrou de fichier ou un antivirus. L’absence de tous les .cmd dans .bin suggère que l’arbre est abîmé bien au-delà de 5 paquets. Il faut donc auditer tout node_modules.
+
+3. Le timeout n’est probablement pas spécifique à @babel.
+
+npm install <un paquet> charge et valide les ~2 100 paquets. Comme l’arbre est invalide, il tente de réparer beaucoup de choses.
+electron télécharge son binaire (~100 Mo) depuis GitHub dans son postinstall. Depuis Abidjan, c’est un candidat sérieux pour un blocage silencieux.
+Windows Defender qui scanne des milliers de petits fichiers sur G: est l’autre grand suspect. Vérifie aussi que G: n’est pas un disque externe, exFAT, réseau ou synchronisé (OneDrive, etc.).
+Le --fetch-timeout=60000 conseillé dans le mémo aggrave les choses sur un réseau lent : le défaut est de 5 min, et un timeout court provoque des échecs et relances en boucle.
+
+4. Le Exit Code -1 sans sortie vient probablement de l’outil qui lance les commandes, pas de PowerShell lui-même.
+nvm use (nvm-windows) doit recréer le lien symbolique C:\Program Files\nodejs, ce qui demande des droits admin. Dans un shell non interactif, ça déclenche une fenêtre UAC invisible ou échoue sans rien afficher. Conda (base) ralentit le démarrage du profil mais ne cause pas ça. Confiance : ~60 %. Test : ouvre toi-même Windows Terminal et lance pwsh -NoProfile.
+
+B. Plan d’action
+
+Phase 0 : retrouver Node sans passer par nvm (2 min)
+
+powershell
+pwsh -NoProfile                      # vrai terminal, pas l'outil
+$env:Path = "C:\Users\LEADER\AppData\Local\nvm\v24.21.0;$env:Path"
+node -v; npm -v                      # attendu : v24.21.0 / 11.x
+
+Cette étape contourne le symlink. Si elle échoue, vérifie que le dossier v24.21.0 contient bien node.exe.
+
+Phase 1 : diagnostic réseau et disque (5 min, chaque test limité à 60 s)
+
+powershell
+npm config get registry
+Measure-Command { npm view @babel/core version }    # OK si < 10 s
+curl.exe -I --max-time 20 https://registry.npmjs.org/
+curl.exe -I --max-time 20 https://github.com         # utile pour electron
+fsutil fsinfo volumeinfo G:                          # NTFS attendu
+
+Si le registre est lent, passe aux miroirs (voir C). Si GitHub est lent, utilise ELECTRON_MIRROR.
+
+Phase 2 : exclusions Defender (PowerShell admin, 1 min)
+
+powershell
+Add-MpPreference -ExclusionPath "G:\Aionui_client","$env:LOCALAPPDATA\npm-cache","C:\Users\LEADER\AppData\Local\nvm"
+
+Phase 3 : audit complet de node_modules (1 min)
+
+powershell
+cd G:\Aionui_client
+Get-ChildItem node_modules -Directory -Force |
+  ForEach-Object { if ($_.Name -like '@*') { Get-ChildItem $_.FullName -Directory -Force } else { $_ } } |
+  Where-Object { -not (Test-Path "$($_.FullName)\package.json") } |
+  Select-Object -ExpandProperty FullName
+
+Ignore .bin et .cache dans le résultat. Si la liste fait 5 à 10 lignes, la réparation ciblée est viable. Si elle en fait des dizaines ou des centaines, passe directement à la réinstallation propre (solution 4).
+
+Phase 4 : réparation par renommage (1 min)
+
+powershell
+Get-ChildItem node_modules\@babel -Directory -Force | Where-Object Name -like '.*' |
+  ForEach-Object { "$($_.Name) -> package.json: $(Test-Path "$($_.FullName)\package.json")" }
+# Pour chaque dossier caché AVEC package.json :
+Remove-Item -Recurse -Force node_modules\@babel\core
+Rename-Item node_modules\@babel\.core-Xrjs9gjm core
+
+Adapte les noms. @babel/parser, types et helpers n’ont peut-être pas de copie cachée saine, alors passe à la phase 5 pour ceux-là.
+
+Phase 5 : réinstallation ciblée, sans scripts (10 min max)
+
+powershell
+npm install @babel/core @babel/parser @babel/types @babel/helpers @babel/runtime --save-dev --ignore-scripts --no-audit --no-fund --loglevel http
+
+Garde le timeout par défaut. --ignore-scripts évite le téléchargement d’Electron et crée quand même les shims .bin. --loglevel http te montre où ça bloque. Si ça dépasse 10 min sans nouvelle ligne http fetch, c’est un problème de disque ou d’antivirus, pas de réseau.
+
+Ensuite, termine ce qui a été sauté :
+
+powershell
+$env:ELECTRON_MIRROR = "https://npmmirror.com/mirrors/electron/"   # si GitHub est lent
+npm rebuild electron esbuild
+npx electron-vite dev
+C. Alternatives classées
+#	Solution	Succès	Durée	Risques	Commande
+1	Renommer les .core-* sains	50 %	1 min	Faible	Rename-Item (phase 4)
+2	Réinstall ciblée --ignore-scripts	70 %	5-10 min	Faible	phase 5
+3	Tarball extrait à la main	85 %	5 min	Moyen : dépendances à vérifier	voir ci-dessous
+4	npm ci propre avec le lockfile existant	90 %	10-20 min	Faible, mais long	voir ci-dessous
+5	Miroir du registre	60 % si registre lent	1 min	Faible	npm config set registry https://registry.npmmirror.com
+6	pnpm (corepack enable)	85 %	10 min	Change le layout de node_modules	pnpm install --ignore-scripts
+
+Solution 3 (tarball sans passer par npm install) :
+
+powershell
+npm pack @babel/core@7.28.0           # utilise la version de ton lockfile
+mkdir node_modules\@babel\core -Force
+tar -xzf babel-core-*.tgz -C node_modules\@babel\core --strip-components=1
+
+Ne fais pas npm install ./fichier.tgz : ça réécrit ton package.json en file:.
+
+Solution 4 (réinstallation propre) :
+
+powershell
+robocopy (New-Item -ItemType Directory $env:TEMP\empty -Force) node_modules /MIR /NFL /NDL /NJH /NJS | Out-Null
+Remove-Item node_modules -Force
+npm ci --ignore-scripts --no-audit --no-fund --loglevel http
+npm rebuild electron esbuild
+npm ci plutôt que npm install : tu gardes ton package-lock.json. Le mémo (8.1) propose de le supprimer, ce qui est une mauvaise idée : tu perdrais les versions exactes qui fonctionnaient.
+robocopy supprime node_modules bien plus vite que Remove-Item.
+Durée : dans de bonnes conditions réseau et disque, npm ci sur 2 100 paquets prend plutôt 5 à 15 min que 40 min.
+D. Si tout échoue
+Contournement : copie un node_modules sain depuis une autre machine (zip), avec le même OS, la même architecture et la même version de Node.
+Autre outil : essaie pnpm, qui télécharge dans un store global et est plus tolérant aux interruptions.
+Investigation : lance Process Monitor (Sysinternals) filtré sur node.exe pour voir si Defender ou un verrou bloque, et regarde %LOCALAPPDATA%\npm-cache\_logs\.
+Escalade : ouvre une issue sur npm/cli avec le log --loglevel silly, ou sur coreybutler/nvm-windows pour le problème de symlink.
+Prévention
+Remplace nvm4w par Volta, ou lance au moins nvm use dans un terminal admin. Volta n’utilise pas de lien symbolique dans Program Files.
+Ajoute un .nvmrc et engine-strict=true dans .npmrc, pour que Node 20 ne puisse plus s’installer par erreur.
+Utilise toujours npm ci, ne tue jamais npm install en cours, et ne change pas de version de Node pendant une installation.
+Garde les exclusions Defender et un projet sur un disque NTFS local, hors dossier synchronisé.
+Ajoute fetch-retries=5 dans .npmrc, et fais npm ci --prefer-offline quand le cache est chaud.
+
+Si tu veux, je peux te mettre les phases 3 à 5 dans un seul script .ps1 avec les arrêts et vérifications. Si tu me colles la sortie de la phase 1 et de la phase 3, je pourrai affiner.
+
+
+
+3.GEMINI HYDROGEN 
+
+Voici un diagnostic complet de senior JS/Node/Electron/Windows. En croisant
+toutes les informations de MEMO_PROBLEME_LANCEMENT_EXHAUSTIF.md et
+PROMPT_CONSULTATION_MODELES.md, trois hypothèses du mémo doivent d’abord être
+corrigées, car elles expliquent directement pourquoi vous tournez en rond
+depuis 4 heures :
+
+1.  Pourquoi npm install @babel/core timeout même après avoir supprimé
+    @babel/core : Dans un projet existant, npm install @babel/core n’installe
+    pas seulement @babel/core. Arborist (reify) scanne et réconcilie
+    l’intégralité des ~2 100 packages de node_modules contre package.json /
+    package-lock.json, cherche à réparer tous les autres packages cassés, et
+    relance les scripts postinstall manquants — notamment electron (^37.0.0) qui
+    télécharge ~110 Mo depuis GitHub Releases sans afficher de sortie par
+    défaut.
+2.  Pourquoi les .cmd manquent et pourquoi .core-Xrjs9gjm existe : Le mécanisme
+    décrit dans le mémo (« npm crée lib/ avant package.json ») n’est qu’une
+    demi-vérité. .core-Xrjs9gjm, .helpers-DcpBISoi, .runtime-qka1XQry,
+    .types-hvFT9hsG sont des dossiers de retrait/staging d’Arborist
+    (.nom-8chars). Sur Windows, npm n’est pas transactionnel : quand une
+    installation est tuée ou bloquée (timeout, verrou Windows Defender /
+    processus ouvert / sync cloud), reify s’arrête en plein milieu avant l’étape
+    linkAllBins (d’où l’absence totale de .bin/*.cmd) et avant postinstall (ce
+    qui veut dire que node_modules/electron/dist/electron.exe et d’autres
+    packages sont très probablement cassés ou absents eux aussi).
+3.  npm cache clean qui réussit en 30 s ne prouve rien sur npm install : cache
+    clean est 100 % hors-ligne. Et le timeout exact à 360 s (6 min) correspond
+    soit au fetch-timeout par défaut de npm (5 min = 300 000 ms +
+    retries/backoff), soit au timeout d’exécution de votre wrapper de terminal.
+
+A. Diagnostic npm Timeout, PowerShell -1 et Corruption
+
+1. Diagnostic du blocage PowerShell (Exit Code: -1 sans sortie)
+
+  - Causes réelles (probabilité élevée) :
+    1.  Session ConPTY / terminal IDE / $PROFILE corrompu ou bloqué : Vous êtes
+        dans PowerShell 7 avec (base) Anaconda actif. À chaque ouverture de
+        session, $PROFILE lance le hook conda, et si un wrapper de terminal (IDE
+        / agent / ConPTY) perd son flux stdout ou tue un script long, toutes les
+        commandes (y compris Write-Host) renvoient -1 sans sortie. (Preuve :
+        plus tard à 19h30/19h45, Test-Path, Get-ChildItem, npm cache clean ont
+        bien répondu dans une autre exécution).
+    2.  Le piège UAC de nvm4w sur Windows 11 : NVM_SYMLINK pointe vers
+        C:\Program Files\nodejs (dossier système protégé). Après un redémarrage,
+        nvm use sans élévation Administrateur (ou dans un terminal
+        non-interactif qui ne peut pas afficher la popup UAC) échoue
+        silencieusement, bloque ou laisse la jonction C:\Program Files\nodejs
+        cassée/supprimée.
+  - Contournement immédiat (10 secondes) : Ne perdez pas de temps avec nvm use
+    maintenant. Node 24 est déjà physiquement présent sur disque dans
+    C:\Users\LEADER\AppData\Local\nvm\v24.21.0\. Il suffit de l’ajouter en tête
+    du PATH dans un nouveau PowerShell propre (powershell.exe -NoProfile) ou
+    cmd.exe (hors Anaconda).
+
+2. Diagnostic npm Timeout (6 min / 30 min)
+
+  - Causes probables classées par probabilité :
+    1.  Verrou / lenteur sur le lecteur G:\ (85 % de confiance) : Sur Windows,
+        G:\ est très souvent Google Drive Desktop, un disque USB externe ou un
+        partage réseau. Extraire 40 000+ petits fichiers node_modules sur un
+        lecteur synchronisé/lent provoque des timeouts de 30 min et des verrous
+        de fichiers au moment exact où Arborist renomme .core-Xrjs9gjm → core. À
+        défaut, Windows Defender (MsMpEng.exe) qui scanne 40 000 fichiers en
+        temps réel produit le même effet.
+    2.  Script postinstall d’electron (^37.0.0) ou esbuild bloqué
+        silencieusement (80 %) : npm masque la sortie des scripts postinstall
+        sans --foreground-scripts / --loglevel=verbose. Si le téléchargement
+        GitHub d’Electron (~110 Mo) gèle, npm reste figé sans rien afficher
+        jusqu’au timeout.
+    3.  Bug IPv6 / Happy Eyeballs de Node 20–24 sur Windows 11 (70 %) : Node
+        résout registry.npmjs.org ou objects.githubusercontent.com en IPv6
+        (AAAA) avant IPv4. Sur un routeur/VPN/FAI avec IPv6 bancal, chaque
+        requête pend 5 minutes.
+    4.  Arborist bloqué sur le node_modules / package-lock.json déjà corrompu
+        (70 %) : Les dossiers .pkg-* orphelins, la casse mixée Node 24 (npm 11)
+        ↔ Node 20 (npm 10) et la réconciliation de 2 100 packages font
+        boucler/ramper reify.
+  - Indice déjà présent sur votre disque (0 seconde réseau) : Vous avez déjà
+    npm-install-post-reboot.log et les logs dans %LocalAppData%\npm-cache\_logs\
+    — les 40 dernières lignes donnent la ligne exacte où npm a figé.
+
+B. Plan d’Action Rapide (Priorité Vitesse)
+
+Phase 0 : Ouvrir un terminal sain et contourner nvm4w + Anaconda (1 min)
+
+Ouvrez Windows Terminal (ou le menu Démarrer → cmd / pwsh, pas le terminal
+intégré bloqué) :
+
+# Lancer un PowerShell vierge sans profil (évite Anaconda et PSReadLine cassé)
+powershell.exe -NoProfile
+
+# Injecter Node 24 directement en tête du PATH (contourne nvm use et C:\Program Files\nodejs)
+$env:Path = "C:\Users\LEADER\AppData\Local\nvm\v24.21.0;" + $env:Path
+
+# Vérification immédiate (< 2 sec)
+where.exe node
+node -v
+npm -v
+
+  - OK si : v24.21.0 et 11.x s’affichent instantanément.
+  - Si Exit Code -1 ici aussi : Testez dans cmd.exe pur (set
+    "PATH=C:\Users\LEADER\AppData\Local\nvm\v24.21.0;%PATH%" && node -v). Si
+    C:\Users\LEADER\AppData\Local\nvm\v24.21.0\node.exe -v échoue aussi,
+    l’antivirus bloque l’exécutable ou v24.21.0 est corrompu → basculez sur
+    v22.22.0 (C:\Users\LEADER\AppData\Local\nvm\v22.22.0), qui respecte aussi
+    engines: ">=22 <25".
+
+Phase 1 : Diagnostic ciblé (< 5 min total, timeouts courts)
+
+Exécutez dans ce même PowerShell sain :
+
+cd G:\Aionui_client
+
+# TEST 1 : Vérifier le type de lecteur G:\ et les verrous actifs (5 sec)
+Get-CimInstance Win32_LogicalDisk -Filter "DeviceID='G:'" | Select-Object DeviceID,DriveType,FileSystem,VolumeName,ProviderName
+Get-Process node,electron,esbuild -ErrorAction SilentlyContinue | Select-Object Id,ProcessName
+
+# TEST 2 : Lire là où npm a vraiment bloqué lors du dernier échec (5 sec)
+Get-Content .\npm-install-post-reboot.log -Tail 35 -ErrorAction SilentlyContinue
+$lastLog = Get-ChildItem "$env:LocalAppData\npm-cache\_logs\*.log" -ErrorAction SilentlyContinue | Sort-Object LastWriteTime -Descending | Select-Object -First 1
+if ($lastLog) { $lastLog.FullName; Get-Content $lastLog.FullName -Tail 35 }
+
+  - Action si DriveType ≠ 3 (disque local NTFS) ou si G:\ est Google Drive /
+    OneDrive / réseau : STOP. Ne réinstallez plus rien sur G:\. Copiez le projet
+    (sans node_modules) vers C:\dev\Aionui_client (disque NTFS local) et
+    continuez là-bas.
+
+# TEST 3 : Auditer TOUT node_modules, pas seulement @babel (10 sec)
+$broken = @()
+Get-ChildItem .\node_modules -Directory -Force | ForEach-Object {
+  if ($_.Name -eq '.bin') { return }
+  if ($_.Name.StartsWith('@')) {
+    Get-ChildItem $_.FullName -Directory -Force | ForEach-Object {
+      if (-not $_.Name.StartsWith('.') -and -not (Test-Path (Join-Path $_.FullName 'package.json'))) { $broken += $_.FullName }
+    }
+  } elseif (-not $_.Name.StartsWith('.') -and -not (Test-Path (Join-Path $_.FullName 'package.json'))) {
+    $broken += $_.FullName
+  }
+}
+"Packages cassés sans package.json : $($broken.Count)"
+"Binaires .cmd : $((Get-ChildItem .\node_modules\.bin\*.cmd -ErrorAction SilentlyContinue).Count)"
+"electron.exe présent : $(Test-Path .\node_modules\electron\dist\electron.exe)"
+
+  - Interprétation : Si electron.exe est False ou Binaires .cmd est 0 ou
+    broken.Count > 5, la réparation chirurgicale des 5 packages @babel est
+    inutile : l’app plantera juste après sur electron ou un autre module.
+
+# TEST 4 : Isoler réseau (IPv4 vs IPv6 / Proxy / GitHub Electron) (20 sec)
+npm config list
+Get-ChildItem Env: | Where-Object { $_.Name -match 'PROXY|NPM|NODE|ELECTRON|SSL|CERT' }
+curl.exe -4 -s -o NUL -w "IPv4 npm: HTTP %{http_code} en %{time_total}s`n" --max-time 10 https://registry.npmjs.org/@babel/core
+curl.exe -6 -s -o NUL -w "IPv6 npm: HTTP %{http_code} en %{time_total}s`n" --max-time 5 https://registry.npmjs.org/@babel/core
+curl.exe -4 -I -s -L --max-time 10 https://github.com/electron/electron/releases | Select-Object -First 3
+
+  - KO si IPv6 bloque / timeout alors qu’IPv4 répond 200 en < 1s → Activez
+    immédiatement le forçage IPv4 pour Node :
+    $env:NODE_OPTIONS = "--dns-result-order=ipv4first"
+
+# TEST 5 : Test d'isolation npm HORS de G:\Aionui_client (30 sec max)
+New-Item -ItemType Directory -Force C:\Temp\npm-diag | Out-Null
+Push-Location C:\Temp\npm-diag
+npm init -y | Out-Null
+npm install @babel/core --loglevel=verbose --fetch-timeout=30000 --fetch-retries=1 --no-audit --no-fund
+Pop-Location
+
+  - OK en < 15 sec → Votre npm et votre réseau fonctionnent ! Le blocage
+    était 100 % causé par l’état corrompu de G:\Aionui_client\node_modules, les
+    verrous Windows/Defender sur G:\, ou le postinstall d’Electron.
+  - KO (bloque dans C:\Temp\npm-diag) → --loglevel=verbose vous affiche la ligne
+    bloquante :
+      - Si figé sur lecture/écriture cache → contournez le cache corrompu avec
+        --cache C:\Temp\npm-cache-fresh.
+      - Si figé sur registry.npmjs.org (même en IPv4) → passez en Phase 2
+        Solution #2 (mirror / yarn / pnpm).
+
+Phase 2 : Solution Recommandée (3 à 6 min)
+
+Solution #1 (Recommandée) : Suppression rapide + npm ci propre avec logs visibles
+
+Une fois le facteur bloquant identifié en Phase 1 (IPv4 forcé si nécessaire,
+lecteur local NTFS, et idéalement exclusion Windows Defender sur le dossier
+projet), ne faites pas npm install @babel/core --save-dev (qui salit
+package.json et réconcilie un arbre pourri). Supprimez node_modules proprement
+et faites une install propre :
+
+cd G:\Aionui_client   # (ou C:\dev\Aionui_client si G:\ était lent/cloud)
+
+# 1. Suppression 5x-10x plus rapide que Remove-Item sur Windows
+Rename-Item .\node_modules node_modules_old -ErrorAction SilentlyContinue
+Start-Process cmd -ArgumentList '/c rmdir /s /q node_modules_old' -WindowStyle Hidden
+
+# 2. Forcer IPv4 + logs en direct + cache neuf + timeout explicite
+$env:NODE_OPTIONS = "--dns-result-order=ipv4first"
+
+# Utilisez npm ci si package-lock.json est sain, sinon npm install
+npm ci --legacy-peer-deps --loglevel=verbose --foreground-scripts --no-audit --no-fund --fetch-timeout=60000 --fetch-retries=2 --cache C:\Temp\npm-cache-fresh
+
+  - Si vous voyez en direct avec --foreground-scripts que ça gèle spécifiquement
+    sur electron (node install.js) : Coupez (Ctrl+C), puis utilisez un miroir
+    Electron ou lancez Electron séparément :
+
+    # Option A : Miroir rapide pour le binaire Electron (~110 Mo)
+    $env:ELECTRON_MIRROR = "https://npmmirror.com/mirrors/electron/"
+    npm ci --legacy-peer-deps --foreground-scripts --no-audit --no-fund --cache C:\Temp\npm-cache-fresh
+
+    (Ou si npm ci échoue à cause d’un package-lock.json modifié sous Node 20,
+    supprimez package-lock.json et remplacez npm ci par npm install avec les
+    mêmes options).
+
+  - Lancement :
+
+    npm run start
+    # ou : .\node_modules\.bin\electron-vite.cmd dev
+
+Solution #2 (Si npm reste bloqué même dans C:\Temp\npm-diag) : Basculer sur yarn v1 ou pnpm (hoisted)
+
+N’installez pas yarn/pnpm via npm install -g si npm est bloqué. Utilisez winget
+ou l’installeur officiel :
+
+# Option 2A : Yarn Classic v1 (structure plate identique à npm, très compatible Electron)
+winget install Yarn.Yarn
+# Ouvrir nouveau powershell -NoProfile, remettre PATH Node 24, puis :
+Rename-Item .\node_modules node_modules_old -ErrorAction SilentlyContinue
+yarn install --ignore-engines --network-timeout 60000
+
+(Attention : si vous testez pnpm, Electron/electron-vite sur Windows détestent
+les symlinks stricts par défaut. Créez un .npmrc avec node-linker=hoisted avant
+pnpm install).
+
+Solution #3 (Dernier recours chirurgical si réseau très limité ET que Test 3 montre electron.exe = True)
+
+Uniquement si le reste de node_modules est sain (vérifié au Test 3) et que vous
+ne pouvez absolument pas re-télécharger 2 100 packages :
+
+1.  Lisez les versions exactes de @babel/core, @babel/helpers, @babel/parser,
+    @babel/runtime, @babel/types dans package-lock.json (pas latest!).
+2.  Supprimez les 5 dossiers cassés + tous les dossiers .core-*, .helpers-*,
+    .runtime-*, .types-*.
+3.  Installez ces 5 versions exactes dans un dossier isolé C:\Temp\babel-fix
+    (npm install --no-save @babel/core@<ver> ...), puis copiez les 5 dossiers
+    complets dans G:\Aionui_client\node_modules\@babel\ (et lancez node
+    node_modules\electron-vite\bin\electron-vite.js dev, puis npm rebuild si
+    .bin manque).
+
+C. Alternatives Classées (Évaluation de vos options A–E + Solutions Recommandées)
+
+| \#    | Solution                                                                    | Probabilité Succès         | Durée       | Risques / Pièges                                                                                          | Commande clé                                                          |
+| ----- | --------------------------------------------------------------------------- | -------------------------- | ----------- | --------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------- |
+| **1** | **Fix root cause (PATH Node 24 + IPv4 + SSD NTFS) + `npm ci` propre**       | **95 %**                   | **3–6 min** | Faible (si `package-lock.json` corrompu, utiliser `npm install`)                                          | `npm ci --legacy-peer-deps --foreground-scripts --no-audit --no-fund` |
+| **2** | **`yarn` v1 (installé via `winget`, `node_modules` neuf)**                  | **85 %**                   | **3–5 min** | Génère un `yarn.lock` à ne pas committer si le repo est sous npm                                          | `yarn install --ignore-engines`                                       |
+| **3** | **Changer registry + `ELECTRON_MIRROR`** *(Alt. D)*                         | **70 %** *(si réseau/ISP)* | **4–8 min** | Inutile si le blocage vient de `G:\`, Defender ou d’un verrou ; penser à restaurer le registry            | `npm config set registry https://registry.npmmirror.com`              |
+| **4** | **Réparation chirurgicale via dossier isolé `C:\Temp`** *(Var. saine de A)* | **45 %**                   | **5 min**   | Échoue si `electron.exe`, `.bin/*.cmd` ou d’autres packages sont aussi cassés                             | `npm install` en temp + copie ciblée des versions du lockfile         |
+| **5** | **`npm install ./core-7.24.0.tgz` dans le projet** *(Alt. A brute)*         | **15 %**                   | **Timeout** | **Piège** : déclenche quand même Arborist sur tout `node_modules` et modifie `package.json` en `file:...` | *(À éviter)*                                                          |
+| **6** | **Copier `@babel/core` d’un autre projet** *(Alt. C)*                       | **10 %**                   | **2 min**   | **Piège** : versions désynchronisées, sous-dépendances cassées, `.bin/*.cmd` toujours absents             | *(À éviter)*                                                          |
+
+D. Réparation Durable & Prévention Future
+
+1. Réparer nvm4w définitivement (ou le remplacer)
+
+Une fois débloqué, vérifiez la jonction nvm4w depuis un PowerShell lancé En tant
+qu’Administrateur :
+
+Get-Item "C:\Program Files\nodejs" -ErrorAction SilentlyContinue | Format-List LinkType,Target
+nvm use 24.21.0
+
+  - Si nvm use continue d’échouer à cause des permissions sur C:\Program Files,
+    soit activez le Mode Développeur Windows (permet les symlinks sans UAC),
+    soit remplacez nvm4w par fnm (Fast Node Manager) ou Node.js 24 LTS
+    standalone (plus aucun symlink admin cassé après redémarrage).
+  - Vérifiez aussi votre $PROFILE PowerShell (notepad $PROFILE) pour vérifier si
+    le hook Anaconda ralentit/bloque vos sessions, et gardez un profil terminal
+    « Dev JS » sans (base) activé par défaut.
+
+2. Règles d’or anti-corruption sur Windows + Electron
+
+1.  Jamais de node_modules sur un lecteur cloud/externe (Google Drive, OneDrive,
+    NAS) : travaillez sur un SSD NTFS local (C:\dev\...) et ajoutez une
+    exclusion Windows Defender sur node_modules.
+2.  Jamais de nvm use ou de Ctrl+C brutal pendant reify, et fermez Electron / VS
+    Code TS Server avant un npm ci majeur (Windows verrouille les fichiers .node
+    et .exe ouverts).
+3.  Diagnostic instantané avant d’attendre 30 min : lancez toujours les grosses
+    installs avec --foreground-scripts --loglevel=verbose ; si ça fige > 30 s,
+    vous voyez tout de suite quelle URL ou quel postinstall attend.
+4.  Si tout échoue malgré tout (même curl.exe -4 et yarn timeout dans C:\Temp
+    sur un SSD local) : vérifiez un éventuel proxy système Windows (netsh
+    winhttp show proxy), un pare-feu tiers / VPN, ou testez brièvement via un
+    partage de connexion mobile 4G/5G pour trancher à 100 % entre blocage
+    réseau/FAI et blocage machine.

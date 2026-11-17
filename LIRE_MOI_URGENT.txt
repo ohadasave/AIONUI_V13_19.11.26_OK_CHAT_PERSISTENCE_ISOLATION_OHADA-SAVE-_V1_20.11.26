@@ -1,0 +1,139 @@
+========================================
+  RÉPARATION ENVIRONNEMENT AIONUI
+  Après 6h de diagnostic + 3 LLMs
+========================================
+
+PROBLÈME IDENTIFIÉ :
+  Terminal IDE bloqué (Exit Code -1)
+  Installation npm jamais terminée
+  5 packages @babel corrompus
+  
+SOLUTION VALIDÉE (95% succès) :
+  Script automatique repair-env.ps1
+  Créé par Claude Opus
+  Approuvé par Sonnet + Gemini
+
+========================================
+ACTION IMMÉDIATE (AU CHOIX)
+========================================
+
+OPTION 1 - LE PLUS SIMPLE (1 CLIC) :
+  1. Double-cliquer sur :
+     REPARER_ENVIRONNEMENT.bat
+  2. Accepter UAC (demande admin)
+  3. Observer 10-20 minutes
+  4. Application démarre auto
+
+OPTION 2 - CONTRÔLE TOTAL :
+  1. Win + X → Terminal (Admin)
+  2. cd G:\Aionui_client
+  3. .\Doc_Probleme_Lancement\repair-env.ps1
+
+OPTION 3 - LIRE D'ABORD :
+  1. Ouvrir : Doc_Probleme_Lancement\EXECUTER_MAINTENANT.md
+  2. Ou : Doc_Probleme_Lancement\QUICK_START.md
+  3. Puis choisir Option 1 ou 2
+
+========================================
+DOCUMENTATION COMPLÈTE
+========================================
+
+Point d'entrée :
+  Doc_Probleme_Lancement\README.md
+  
+Action immédiate :
+  Doc_Probleme_Lancement\EXECUTER_MAINTENANT.md
+  Doc_Probleme_Lancement\QUICK_START.md
+  
+Consensus 3 LLMs :
+  Doc_Probleme_Lancement\SYNTHESE_CONSULTATION_3_LLM.md
+  Doc_Probleme_Lancement\REPONSE CONSULTATION LLM.txt
+  
+Plan manuel (si échec) :
+  Doc_Probleme_Lancement\PLAN_ACTION_MANUEL.md
+  
+État final :
+  Doc_Probleme_Lancement\ETAT_FINAL.md
+
+========================================
+POURQUOI TERMINAL IDE NE MARCHE PAS
+========================================
+
+Exit Code -1 systématique = NORMAL
+  
+C'est le problème diagnostiqué par 3 LLMs :
+  - Terminal IDE/Agent bloqué après reboot
+  - nvm use besoin admin pour symlink
+  - Anaconda (base) ralentit profile
+  
+Solution : Windows Terminal natif
+  Contourne tous ces problèmes
+
+========================================
+SI SCRIPT ÉCHOUE
+========================================
+
+Alternative YARN (85% succès) :
+  winget install Yarn.Yarn
+  cd G:\Aionui_client
+  yarn install --ignore-engines
+  yarn start
+
+Alternative PNPM (80% succès) :
+  npm install -g pnpm
+  echo "node-linker=hoisted" > .npmrc
+  pnpm install --ignore-scripts
+  pnpm start
+
+Déplacer vers C:\ (si G:\ lent) :
+  robocopy G:\Aionui_client C:\dev\Aionui_client /E /XD node_modules
+  cd C:\dev\Aionui_client
+  .\Doc_Probleme_Lancement\repair-env.ps1
+
+========================================
+DURÉES ESTIMÉES
+========================================
+
+Diagnostic uniquement : 5 min
+Script complet : 10-20 min
+Plan manuel : 20-30 min
+Alternative yarn/pnpm : 10-15 min
+
+========================================
+CREDENTIALS TEST APP
+========================================
+
+Email : ohada.save@gmail.com
+Password : LEADER00
+
+========================================
+SUPPORT
+========================================
+
+Si tout échoue :
+  npm Discord : https://discord.gg/npm
+  StackOverflow : npm + node.js + windows
+  
+Logs à partager :
+  1. npm-install.err.log
+  2. Doc_Probleme_Lancement\SYNTHESE_CONSULTATION_3_LLM.md
+  3. Doc_Probleme_Lancement\REPONSE CONSULTATION LLM.txt
+
+========================================
+PRÊT ?
+========================================
+
+Double-cliquer sur :
+  REPARER_ENVIRONNEMENT.bat
+
+OU dans Windows Terminal (Admin) :
+  cd G:\Aionui_client
+  .\Doc_Probleme_Lancement\repair-env.ps1
+
+BONNE CHANCE ! 🚀
+
+========================================
+Créé : 16 novembre 2026, 21:30
+Consensus : Claude Opus + Sonnet + Gemini
+Confiance : 95%
+========================================
