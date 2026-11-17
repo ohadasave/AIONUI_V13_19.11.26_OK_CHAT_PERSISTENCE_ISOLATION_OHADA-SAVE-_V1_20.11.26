@@ -309,6 +309,11 @@ export const ASSISTANT_PRESETS: AssistantPreset[] = [
     id: 'n8n-workflow',
     avatar: '🔄',
     presetAgentType: 'n8n',
+    resourceDir: 'assistant/n8n-workflow',
+    ruleFiles: {
+      'en-US': 'n8n-workflow.md',
+      'zh-CN': 'n8n-workflow.zh-CN.md',
+    },
     nameI18n: {
       'en-US': 'n8n Workflow',
       'zh-CN': 'n8n 工作流',
@@ -317,7 +322,6 @@ export const ASSISTANT_PRESETS: AssistantPreset[] = [
       'en-US': 'Execute n8n workflows and display results in a modern chat interface.',
       'zh-CN': '执行 n8n 工作流并在现代聊天界面中显示结果。',
     },
-    ruleFiles: {},
     promptsI18n: {
       'en-US': ['Generate a work program for cash inventory', 'Analyze risks in the payroll process', 'Create an audit control checklist'],
       'zh-CN': ['生成现金盘点的工作程序', '分析工资流程中的风险', '创建审计控制清单'],
@@ -327,6 +331,11 @@ export const ASSISTANT_PRESETS: AssistantPreset[] = [
     id: 'n8n-multi-workflow',
     avatar: '🔀',
     presetAgentType: 'n8n-multi-workflow',
+    resourceDir: 'assistant/n8n-multi-workflow',
+    ruleFiles: {
+      'en-US': 'n8n-multi-workflow.md',
+      'zh-CN': 'n8n-multi-workflow.zh-CN.md',
+    },
     nameI18n: {
       'en-US': 'n8n Multi Workflow',
       'zh-CN': 'n8n 多工作流',
@@ -335,7 +344,6 @@ export const ASSISTANT_PRESETS: AssistantPreset[] = [
       'en-US': 'Execute multi-step n8n workflows through the provider bridge and display results.',
       'zh-CN': '通过 provider bridge 执行多步骤 n8n 工作流并显示结果。',
     },
-    ruleFiles: {},
     promptsI18n: {
       'en-US': ['Generate a work program for cash inventory', 'Analyze risks in the payroll process', 'Create an audit control checklist'],
       'zh-CN': ['生成现金盘点的工作程序', '分析工资流程中的风险', '创建审计控制清单'],
