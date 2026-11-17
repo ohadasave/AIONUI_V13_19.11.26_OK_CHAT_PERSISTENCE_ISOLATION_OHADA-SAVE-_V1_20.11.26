@@ -80,6 +80,8 @@ export interface IConfigStorageRefer {
   'migration.builtinDefaultSkillsAdded_v2'?: boolean;
   // 迁移标记：为所有内置助手添加 promptsI18n / Migration flag: add promptsI18n for all builtin assistants
   'migration.promptsI18nAdded'?: boolean;
+  // 迁移标记：为 n8n 助手启用默认值 / Migration flag: enable n8n assistants by default
+  'migration.n8nAssistantsEnabledByDefault'?: boolean;
   // 关闭窗口时最小化到系统托盘 / Minimize to system tray when closing window
   'system.closeToTray'?: boolean;
   // Telegram assistant default model / Telegram 助手默认模型

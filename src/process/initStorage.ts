@@ -679,6 +679,12 @@ const initStorage = async () => {
     const promptsI18nMigrationDone = await configFile.get(PROMPTS_I18N_MIGRATION_KEY).catch(() => false);
     const needsPromptsI18nMigration = !promptsI18nMigrationDone;
 
+    // 5.2.4 检查是否需要迁移：启用 n8n 助手
+    // Check if migration needed: enable n8n assistants by default
+    const N8N_ASSISTANTS_ENABLED_MIGRATION_KEY = 'migration.n8nAssistantsEnabledByDefault';
+    const n8nAssistantsEnabledMigrationDone = await configFile.get(N8N_ASSISTANTS_ENABLED_MIGRATION_KEY).catch(() => false);
+    const needsN8nAssistantsEnabledMigration = !n8nAssistantsEnabledMigrationDone;
+
     // 更新或添加内置助手配置
     // Update or add built-in assistant configurations
     const updatedAgents = [...existingAgents];
@@ -703,9 +709,13 @@ const initStorage = async () => {
         // 当 enabled 是 undefined 或需要迁移时，设置默认值（Cowork 启用，其他禁用）
         // When enabled is undefined or migration needed, set default value (Cowork enabled, others disabled)
         const needsEnabledFix = existing.enabled === undefined || needsMigration;
+        // 检查是否是 n8n 助手且需要启用迁移
+        // Check if this is an n8n assistant and needs enabling migration
+        const isN8nAssistant = builtin.id === 'builtin-n8n-workflow' || builtin.id === 'builtin-n8n-multi-workflow';
+        const needsN8nEnabledFix = needsN8nAssistantsEnabledMigration && isN8nAssistant;
         // 迁移时强制使用默认值，否则保留用户设置
         // Force default value during migration, otherwise preserve user setting
-        const resolvedEnabled = needsEnabledFix ? builtin.enabled : existing.enabled;
+        const resolvedEnabled = needsEnabledFix ? builtin.enabled : needsN8nEnabledFix ? true : existing.enabled;
         // presetAgentType 由用户控制，未设置时使用内置默认值
         // presetAgentType is user-controlled, use builtin default if not set
         const resolvedPresetAgentType = existing.presetAgentType ?? builtin.presetAgentType;
@@ -718,7 +728,7 @@ const initStorage = async () => {
           resolvedEnabledSkills = builtin.enabledSkills;
         }
 
-        if (shouldUpdate || needsEnabledFix || (needsSkillsMigration && resolvedEnabledSkills !== existing.enabledSkills) || needsPromptsI18nUpdate) {
+        if (shouldUpdate || needsEnabledFix || needsN8nEnabledFix || (needsSkillsMigration && resolvedEnabledSkills !== existing.enabledSkills) || needsPromptsI18nUpdate) {
           // 保留用户已设置的 enabled 和 presetAgentType / Preserve user-set enabled and presetAgentType
           updatedAgents[index] = {
             ...existing,
@@ -752,6 +762,9 @@ const initStorage = async () => {
     }
     if (needsPromptsI18nMigration) {
       await configFile.set(PROMPTS_I18N_MIGRATION_KEY, true);
+    }
+    if (needsN8nAssistantsEnabledMigration) {
+      await configFile.set(N8N_ASSISTANTS_ENABLED_MIGRATION_KEY, true);
     }
   } catch (error) {
     console.error('[E-audit] Failed to initialize builtin assistants:', error);
