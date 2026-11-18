@@ -58,6 +58,7 @@ export default defineConfig({
         // ACP
         'src/agent/acp/AcpAdapter.ts',
         'src/agent/acp/AcpConnection.ts',
+        'src/agent/acp/AcpDetector.ts',
         'src/agent/acp/modelInfo.ts',
         // Common
         'src/common/chatLib.ts',
@@ -65,6 +66,9 @@ export default defineConfig({
         // Renderer utils
         'src/renderer/messages/useAutoScroll.ts',
         'src/renderer/utils/emitter.ts',
+        // Guid hooks
+        'src/renderer/pages/guid/hooks/useGuidAgentSelection.ts',
+        'src/renderer/pages/guid/hooks/useGuidSend.ts',
         // Extension system (only files with existing tests)
         'src/extensions/ExtensionLoader.ts',
         'src/extensions/{dependencyResolver,pathSafety,statePersistence,entryPointResolver,envResolver,fileResolver}.ts',
