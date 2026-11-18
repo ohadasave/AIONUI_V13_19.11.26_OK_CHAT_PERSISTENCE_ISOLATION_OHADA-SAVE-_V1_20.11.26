@@ -11,8 +11,9 @@
 ```
 Doc_Saas_Multi_User/
 ├── INDEX.md                                # Ce fichier - Navigation
-├── MEMO_PROGRESSION_COMPLETE.md            # ⭐ NOUVEAU - Mémo exhaustif avec toutes difficultés
-├── ARCHITECTURE_MULTI_UTILISATEUR.md       # Architecture complète (66 KB)
+├── ARCHITECTURE_ACTUALISEE_2025.md         # ⭐⭐ NOUVEAU - Mémo progressif v18 (Isolation complète)
+├── MEMO_PROGRESSION_COMPLETE.md            # ⭐ Mémo exhaustif v17 (SaaS Admin)
+├── ARCHITECTURE_MULTI_UTILISATEUR.md       # Architecture complète v17 (66 KB)
 ├── PROGRESSION_SAAS.md                     # État d'avancement du projet
 ├── FIXES_WEBUI.md                          # 5 corrections critiques WebUI
 ├── ADMIN_CREE.md                           # Credentials administrateur
@@ -25,9 +26,36 @@ Doc_Saas_Multi_User/
 
 ## 📖 Documents Principaux
 
-### ⭐ 1. [MEMO_PROGRESSION_COMPLETE.md](./MEMO_PROGRESSION_COMPLETE.md) — NOUVEAU
+### ⭐⭐ 1. [ARCHITECTURE_ACTUALISEE_2025.md](./ARCHITECTURE_ACTUALISEE_2025.md) — NOUVEAU (v18)
 
-**Document de référence exhaustif** — Chronologie complète avec toutes difficultés et solutions
+**Mémo progressif — État Actuel 2025** — Evolution de l'architecture multi-utilisateur
+
+**Contenu** :
+- **État Initial (Nov 2024)** : Architecture avant isolation (v17)
+  - Utilisateur système par défaut (`system_default_user`)
+  - Fallback dangereux dans la base de données
+  - userId non transmis du frontend au backend
+- **État Actuel (Fév 2025)** : Isolation complète (v18)
+  - Page de login obligatoire Desktop mode
+  - Génération userId unique (`user_${Date.now()}`)
+  - Transmission userId frontend → backend → database
+  - Validation stricte (erreur si userId manquant)
+- **Comparaison Avant/Après** : Tableau récapitulatif
+- **Cartographie Complète** : 8 fichiers modifiés avec code exact
+- **Tests et Validation** : Scénarios Alice/Bob, logs de traçabilité
+- **Intégration SaaS v17** : Compatibilité avec architecture admin existante
+- **Leçons Apprises** : Bonnes pratiques et pièges évités
+- **Prochaines Étapes** : Roadmap court/moyen/long terme
+
+**Usage** : **À LIRE EN PREMIER** pour comprendre l'évolution de l'isolation multi-utilisateur
+
+**Taille** : 570 lignes
+
+---
+
+### ⭐ 2. [MEMO_PROGRESSION_COMPLETE.md](./MEMO_PROGRESSION_COMPLETE.md) — SaaS Admin (v17)
+
+**Document de référence exhaustif** — Chronologie complète SaaS Admin avec toutes difficultés et solutions
 
 **Contenu** :
 - **Chronologie détaillée** : 2 ans 9 mois de développement (7 phases)
@@ -52,7 +80,7 @@ Doc_Saas_Multi_User/
 
 ---
 
-### 2. [ARCHITECTURE_MULTI_UTILISATEUR.md](./ARCHITECTURE_MULTI_UTILISATEUR.md)
+### 3. [ARCHITECTURE_MULTI_UTILISATEUR.md](./ARCHITECTURE_MULTI_UTILISATEUR.md)
 
 **Architecture technique complète** — Design et spécifications
 
@@ -84,7 +112,7 @@ Doc_Saas_Multi_User/
 
 ---
 
-### 3. [PROGRESSION_SAAS.md](./PROGRESSION_SAAS.md)
+### 4. [PROGRESSION_SAAS.md](./PROGRESSION_SAAS.md)
 
 **Suivi d'avancement** — État des phases 1-6
 
@@ -121,7 +149,7 @@ ade83741  Replace js-cookie
 
 ---
 
-### 4. [FIXES_WEBUI.md](./FIXES_WEBUI.md)
+### 5. [FIXES_WEBUI.md](./FIXES_WEBUI.md)
 
 **Corrections critiques WebUI** — 5 bugs résolus
 
@@ -144,7 +172,7 @@ ade83741  Replace js-cookie
 
 ---
 
-### 5. [ADMIN_CREE.md](./ADMIN_CREE.md)
+### 6. [ADMIN_CREE.md](./ADMIN_CREE.md)
 
 **Credentials administrateur** — Premier admin créé
 
@@ -166,7 +194,7 @@ Status: active
 
 ---
 
-### 6. [README.md](./README.md)
+### 7. [README.md](./README.md)
 
 **Vue d'ensemble** — Guide d'utilisation rapide
 
@@ -181,7 +209,7 @@ Status: active
 
 ---
 
-### 7. [phase1-review.md](./phase1-review.md)
+### 8. [phase1-review.md](./phase1-review.md)
 
 **Review Phase 1** — Migration database v17
 
@@ -200,7 +228,7 @@ Status: active
 
 ---
 
-### 8. [phase2-review.md](./phase2-review.md)
+### 9. [phase2-review.md](./phase2-review.md)
 
 **Review Phase 2** — Backend Admin API
 
@@ -220,11 +248,19 @@ Status: active
 
 ## 🎯 Parcours Recommandé
 
-### Pour Comprendre Tout le Projet ⭐ RECOMMANDÉ
+### Pour Comprendre l'Architecture Actuelle 2025 ⭐⭐ PRIORITAIRE
+1. **[ARCHITECTURE_ACTUALISEE_2025.md](./ARCHITECTURE_ACTUALISEE_2025.md)** — NOUVEAU
+   - **Lire en premier** pour comprendre l'état actuel (v18)
+   - Evolution progressive de l'isolation multi-utilisateur
+   - Comparaison Avant/Après avec exemples concrets
+   - 8 fichiers modifiés avec code complet
+   - Tests et validation détaillés
+
+### Pour Comprendre l'Historique SaaS Admin ⭐ RECOMMANDÉ
 1. **[MEMO_PROGRESSION_COMPLETE.md](./MEMO_PROGRESSION_COMPLETE.md)**
-   - Lire en premier pour contexte complet
-   - Chronologie avec toutes difficultés et solutions
-   - Statistiques et leçons apprises
+   - Chronologie SaaS Admin (v17, 2024)
+   - 15 difficultés documentées et solutions
+   - Statistiques projet et leçons apprises
 
 ### Pour Développeurs Backend
 1. **[ARCHITECTURE_MULTI_UTILISATEUR.md](./ARCHITECTURE_MULTI_UTILISATEUR.md)** (sections 4-7)
@@ -273,7 +309,7 @@ Status: active
 
 ## 📊 Statistiques du Projet
 
-### Progression Globale (MISE À JOUR)
+### Progression Globale (MISE À JOUR v18)
 - ✅ **Phase 0** : Planification → 100%
 - ✅ **Phase 1** : Migration v17 → 100%
 - ✅ **Phase 2** : Backend Admin → 100%
@@ -281,9 +317,10 @@ Status: active
 - ✅ **Phase 4** : CLI Admin → 100%
 - ✅ **Phase 5** : WebUI Fixes → 100%
 - ✅ **Phase 6** : Environment Repair → 100%
-- ✅ **Phase 7** : Documentation → 100%
+- ✅ **Phase 7** : Documentation v17 → 100%
+- ✅ **Phase 8** : Isolation userId v18 → 100% ⭐⭐ NOUVEAU
 
-**Total SaaS Multi-User** : **100% complété** ✅
+**Total SaaS Multi-User + Isolation** : **100% complété** ✅
 
 ### Commits Créés (MISE À JOUR)
 
@@ -316,24 +353,24 @@ afdceddf  feat: Dev environment repair script
 
 **Total** : **15 commits**
 
-### Fichiers Créés/Modifiés (MISE À JOUR)
-- **Backend** : 6 nouveaux
-- **Frontend** : 4 nouveaux
-- **Tests** : 2 nouveaux
-- **Scripts** : 2 nouveaux
-- **Documentation** : 15 nouveaux
-- **Modifiés** : 14 existants
+### Fichiers Créés/Modifiés (MISE À JOUR v18)
+- **Backend** : 6 nouveaux (v17) + 4 modifiés (v18) = 10 total
+- **Frontend** : 4 nouveaux (v17) + 3 modifiés + 1 nouveau (v18) = 8 total
+- **Tests** : 2 nouveaux (v17)
+- **Scripts** : 2 nouveaux (v17) + 1 nouveau (v18) = 3 total
+- **Documentation** : 15 nouveaux (v17) + 3 nouveaux (v18) = 18 total
+- **Modifiés** : 14 existants (v17)
 
-**Total** : **43 fichiers** impactés
+**Total** : **51 fichiers** impactés
 
-### Lignes de Code (MISE À JOUR)
-- Backend : +1,150 lignes
-- Frontend : +770 lignes
-- Tests : +300 lignes
-- Scripts : +200 lignes
-- Documentation : +3,500 lignes
+### Lignes de Code (MISE À JOUR v18)
+- Backend : +1,150 lignes (v17) + 35 lignes (v18) = +1,185 lignes
+- Frontend : +770 lignes (v17) + 75 lignes (v18) = +845 lignes
+- Tests : +300 lignes (v17)
+- Scripts : +200 lignes (v17) + 50 lignes (v18) = +250 lignes
+- Documentation : +3,500 lignes (v17) + 2,200 lignes (v18) = +5,700 lignes
 
-**Total** : **+5,920 lignes**
+**Total** : **+8,280 lignes**
 
 ### Temps (MISE À JOUR)
 - **Estimé** : 9-10 jours
@@ -345,8 +382,9 @@ afdceddf  feat: Dev environment repair script
 ## 🔗 Liens Rapides
 
 ### Documentation Principale
-- ⭐ **Mémo complet (À LIRE EN PREMIER)** : [MEMO_PROGRESSION_COMPLETE.md](./MEMO_PROGRESSION_COMPLETE.md)
-- **Architecture complète** : [ARCHITECTURE_MULTI_UTILISATEUR.md](./ARCHITECTURE_MULTI_UTILISATEUR.md)
+- ⭐⭐ **Architecture Actuelle 2025 (À LIRE EN PREMIER)** : [ARCHITECTURE_ACTUALISEE_2025.md](./ARCHITECTURE_ACTUALISEE_2025.md)
+- ⭐ **Mémo SaaS Admin (Historique 2024)** : [MEMO_PROGRESSION_COMPLETE.md](./MEMO_PROGRESSION_COMPLETE.md)
+- **Architecture SaaS v17** : [ARCHITECTURE_MULTI_UTILISATEUR.md](./ARCHITECTURE_MULTI_UTILISATEUR.md)
 - **Progression par phase** : [PROGRESSION_SAAS.md](./PROGRESSION_SAAS.md)
 - **Fixes WebUI** : [FIXES_WEBUI.md](./FIXES_WEBUI.md)
 
@@ -362,12 +400,19 @@ afdceddf  feat: Dev environment repair script
 
 ## 🏆 Réalisations
 
-✅ **Transformation SaaS complétée à 100%**
+✅ **Transformation SaaS complétée à 100% (v17)**
 - Système multi-utilisateurs fonctionnel
 - Interface admin complète (UserManagement + AuditLog)
 - API sécurisée avec JWT
 - Logs d'audit exhaustifs
 - Scripts CLI d'administration
+
+✅ **Isolation Multi-Utilisateur Complète (v18)** ⭐⭐ NOUVEAU
+- Page de login obligatoire Desktop mode
+- Génération userId unique (`user_${Date.now()}`)
+- Transmission userId frontend → backend → database
+- Validation stricte (erreur si userId manquant)
+- Tests manuels 100% passés (Alice/Bob isolation confirmée)
 
 ✅ **Qualité et Sécurité**
 - 3 HIGH security issues corrigées

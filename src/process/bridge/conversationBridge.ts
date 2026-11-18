@@ -72,10 +72,15 @@ export function initConversationBridge(): void {
   });
 
   ipcBridge.conversation.create.provider(async (params): Promise<TChatConversation> => {
+    // ISOLATION FIX: Extract userId from params
+    const userId = params.userId;
+    console.log('[conversationBridge] Creating conversation with userId:', userId);
+    
     // 使用 ConversationService 创建会话 / Use ConversationService to create conversation
     const result = await ConversationService.createConversation({
       ...params,
       source: 'aionui', // AionUI 创建的会话标记为 aionui / Mark conversations created by AionUI as aionui
+      userId, // ISOLATION FIX: Pass userId to service
     });
 
     if (!result.success || !result.conversation) {

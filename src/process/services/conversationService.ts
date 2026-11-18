@@ -35,6 +35,8 @@ export interface ICreateGeminiConversationParams {
   name?: string;
   /** Channel chat isolation ID (e.g. user:xxx, group:xxx) */
   channelChatId?: string;
+  /** ISOLATION FIX: User ID for multi-user data isolation */
+  userId?: string;
 }
 
 /**
@@ -46,6 +48,8 @@ export interface ICreateConversationOptions extends ICreateConversationParams {
   source?: ConversationSource;
   /** Channel chat isolation ID (e.g. user:xxx, group:xxx) */
   channelChatId?: string;
+  /** ISOLATION FIX: User ID for multi-user data isolation */
+  userId?: string;
 }
 
 /**
@@ -97,9 +101,9 @@ export class ConversationService {
         conversation.channelChatId = params.channelChatId;
       }
 
-      // Save to database
+      // ISOLATION FIX: Save to database with userId
       const db = getDatabase();
-      const result = db.createConversation(conversation);
+      const result = db.createConversation(conversation, userId);
       if (!result.success) {
         console.error('[ConversationService] Failed to create conversation in database:', result.error);
         return { success: false, error: result.error };
@@ -174,9 +178,9 @@ export class ConversationService {
         conversation.channelChatId = params.channelChatId;
       }
 
-      // Save to database
+      // ISOLATION FIX: Save to database with userId from params
       const db = getDatabase();
-      const result = db.createConversation(conversation);
+      const result = db.createConversation(conversation, params.userId);
       if (!result.success) {
         console.error('[ConversationService] Failed to create conversation in database:', result.error);
         return { success: false, error: result.error };
@@ -186,7 +190,7 @@ export class ConversationService {
       // Note: Don't call initAgent() here - let it be lazy initialized when sendMessage() is called.
       WorkerManage.buildConversation(conversation);
 
-      console.log(`[ConversationService] Created ${type} conversation ${conversation.id} with source=${source || 'aionui'}`);
+      console.log(`[ConversationService] Created ${type} conversation ${conversation.id} with source=${source || 'aionui'}, userId=${params.userId || 'default'}`);
       return { success: true, conversation };
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : String(error);

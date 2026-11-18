@@ -17,6 +17,7 @@ import classNames from 'classnames';
 import { ipcBridge } from '@/common';
 import type { AcpBackendAll } from '@/types/acpTypes';
 import type { AgentCheckResult } from '@/renderer/hooks/useAgentReadinessCheck';
+import { getCurrentUserId } from '@/renderer/utils/auth';
 
 // Agent logos
 import ClaudeLogo from '@/renderer/assets/logos/claude.svg';
@@ -94,10 +95,14 @@ const AgentSetupCard: React.FC<AgentSetupCardProps> = ({ conversationId, current
         // Get current conversation's model info (if gemini type)
         const currentModel = conversation.type === 'gemini' ? conversation.model : undefined;
 
+        // ISOLATION FIX: Get current user ID for multi-user data isolation
+        const userId = getCurrentUserId();
+        
         // Create new conversation with the selected agent
         const newConversation = await ipcBridge.conversation.create.invoke({
           type: conversationType,
           name: conversation.name || 'New Conversation',
+          userId, // ISOLATION FIX: Pass userId to backend
           model: currentModel || {
             id: 'default',
             name: 'Default',

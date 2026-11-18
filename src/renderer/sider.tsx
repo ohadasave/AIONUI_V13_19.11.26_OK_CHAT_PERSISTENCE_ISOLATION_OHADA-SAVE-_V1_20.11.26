@@ -1,4 +1,4 @@
-import { ArrowCircleLeft, ListCheckbox, Plus, SettingTwo } from '@icon-park/react';
+import { ArrowCircleLeft, ListCheckbox, Plus, SettingTwo, Logout } from '@icon-park/react';
 import { IconMoonFill, IconSunFill } from '@arco-design/web-react/icon';
 import classNames from 'classnames';
 import React, { Suspense, useCallback, useEffect, useRef, useState } from 'react';
@@ -12,6 +12,7 @@ import { useLayoutContext } from './context/LayoutContext';
 import { blurActiveElement } from './utils/focus';
 import { useThemeContext } from './context/ThemeContext';
 import { useLastConversation } from './hooks/useLastConversation';
+import { useAuth } from './context/AuthContext';
 import { ipcBridge } from '@/common';
 import type { TChatConversation } from '@/common/storage';
 import { v4 as uuid } from 'uuid';
@@ -36,6 +37,7 @@ const Sider: React.FC<SiderProps> = ({ onSessionClick, collapsed = false }) => {
   const { closePreview } = usePreviewContext();
   const { theme, setTheme } = useThemeContext();
   const { getLastConversationPath } = useLastConversation();
+  const { user, logout } = useAuth();
   const [isBatchMode, setIsBatchMode] = useState(false);
   const isSettings = pathname.startsWith('/settings') || pathname.startsWith('/admin');
   const lastNonSettingsPathRef = useRef('/guid');
@@ -72,6 +74,18 @@ const Sider: React.FC<SiderProps> = ({ onSessionClick, collapsed = false }) => {
   const handleQuickThemeToggle = () => {
     void setTheme(theme === 'dark' ? 'light' : 'dark');
   };
+
+  const handleLogout = useCallback(async () => {
+    cleanupSiderTooltips();
+    blurActiveElement();
+    try {
+      await logout();
+      // Redirect to login page after logout
+      navigate('/login');
+    } catch (error) {
+      console.error('[Logout] Failed to logout:', error);
+    }
+  }, [logout, navigate]);
 
   // Créer une nouvelle conversation n8n directement
   const handleCreateN8nConversation = useCallback(async () => {
@@ -157,7 +171,7 @@ const Sider: React.FC<SiderProps> = ({ onSessionClick, collapsed = false }) => {
           </div>
         )}
       </div>
-      {/* Footer - settings button */}
+      {/* Footer - settings button and logout */}
       <div className='shrink-0 sider-footer mt-auto pt-8px'>
         <div className='flex flex-col gap-8px'>
           {isSettings && (
@@ -167,6 +181,17 @@ const Sider: React.FC<SiderProps> = ({ onSessionClick, collapsed = false }) => {
                 <span className='collapsed-hidden text-t-primary'>
                   {t('settings.theme')} · {theme === 'dark' ? t('settings.darkMode') : t('settings.lightMode')}
                 </span>
+              </div>
+            </Tooltip>
+          )}
+          {user && (
+            <Tooltip {...siderTooltipProps} content={t('auth.logout')} position='right'>
+              <div
+                onClick={handleLogout}
+                className={classNames('flex items-center justify-start gap-10px px-12px py-8px rd-0.5rem cursor-pointer transition-colors hover:bg-hover hover:shadow-sm active:bg-fill-2', isMobile && 'sider-footer-btn-mobile')}
+              >
+                <Logout className='flex' theme='outline' size='24' fill={iconColors.primary} />
+                <span className='collapsed-hidden text-t-primary'>{t('auth.logout')}</span>
               </div>
             </Tooltip>
           )}

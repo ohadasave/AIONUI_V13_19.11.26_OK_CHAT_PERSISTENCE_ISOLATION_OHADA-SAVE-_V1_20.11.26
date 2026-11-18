@@ -506,6 +506,7 @@ export interface ICreateConversationParams {
   id?: string;
   name?: string;
   model: TProviderWithModel;
+  userId?: string; // ISOLATION FIX: User ID for multi-user data isolation
   extra: {
     workspace?: string;
     customWorkspace?: boolean;

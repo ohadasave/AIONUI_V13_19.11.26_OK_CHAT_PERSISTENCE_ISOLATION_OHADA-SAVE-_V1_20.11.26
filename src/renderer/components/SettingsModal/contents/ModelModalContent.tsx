@@ -13,6 +13,7 @@ import { DeleteFour, Info, Minus, Plus, Write, Heartbeat } from '@icon-park/reac
 import React, { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import useSWR from 'swr';
+import { getCurrentUserId } from '@/renderer/utils/auth';
 import AddModelModal from '@/renderer/pages/settings/components/AddModelModal';
 import AddPlatformModal from '@/renderer/pages/settings/components/AddPlatformModal';
 import { isNewApiPlatform, NEW_API_PROTOCOL_OPTIONS } from '@/renderer/config/modelPlatforms';
@@ -192,10 +193,14 @@ const ModelModalContent: React.FC = () => {
       // 测活走统一对话链路，与常规请求路径保持一致
       const responseStream = ipcBridge.conversation.responseStream;
 
+      // ISOLATION FIX: Get current user ID for multi-user data isolation
+      const userId = getCurrentUserId();
+
       // 1. 创建临时对话
       const conversation = await ipcBridge.conversation.create.invoke({
         type: 'gemini',
         name: `[Health Check] ${platform.name} - ${modelName}`,
+        userId, // ISOLATION FIX: Pass userId to backend
         model: {
           ...platform,
           useModel: modelName,

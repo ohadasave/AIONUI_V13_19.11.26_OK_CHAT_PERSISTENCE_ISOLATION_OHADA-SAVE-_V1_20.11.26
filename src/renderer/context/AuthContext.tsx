@@ -75,10 +75,10 @@ export const AuthProvider: React.FC<React.PropsWithChildren> = ({ children }) =>
     // Check if login is enabled (both Desktop and WebUI modes)
     // Use synchronous localStorage read to avoid race condition with router
     const config = localStorage.getItem('app_config');
-    const loginEnabled = config ? JSON.parse(config)?.['security.loginEnabled'] : undefined;
+    const loginEnabled = config ? JSON.parse(config)?.['security.loginEnabled'] : true; // DEFAULT: TRUE (login enabled)
 
-    if (loginEnabled === false || loginEnabled === undefined) {
-      // Login disabled: auto-authenticate for both modes
+    if (loginEnabled === false) {
+      // Login explicitly disabled: auto-authenticate for both modes
       console.log('[AuthContext] Login disabled, auto-authenticating');
       setUser({ id: 'desktop-user', username: 'local', role: 'admin' });
       setStatus('authenticated');
@@ -101,8 +101,13 @@ export const AuthProvider: React.FC<React.PropsWithChildren> = ({ children }) =>
         if (elapsed < twentyFourHours) {
           // Valid session exists
           const username = localStorage.getItem('eaudit_username') || 'desktop-user';
-          console.log('[AuthContext] Desktop mode - valid session found');
-          setUser({ id: 'desktop-user', username, role: 'admin' });
+          const userId = localStorage.getItem('eaudit_user_id') || 'desktop-user';
+          
+          // ISOLATION FIX: Expose userId globally for IPC calls
+          (window as any).__currentUserId = userId;
+          
+          console.log('[AuthContext] Desktop mode - valid session found for user:', userId);
+          setUser({ id: userId, username, role: 'admin' });
           setStatus('authenticated');
           setReady(true);
           return;
@@ -161,11 +166,12 @@ export const AuthProvider: React.FC<React.PropsWithChildren> = ({ children }) =>
 
         // Check if credentials already exist (reconnection)
         const storedCredentials = localStorage.getItem('eaudit_credentials');
+        let userId: string;
 
         if (storedCredentials) {
           // Reconnection: validate credentials
           try {
-            const { username: storedUsername, password: storedPassword } = JSON.parse(storedCredentials);
+            const { username: storedUsername, password: storedPassword, userId: storedUserId } = JSON.parse(storedCredentials);
 
             if (username !== storedUsername || password !== storedPassword) {
               return {
@@ -174,22 +180,33 @@ export const AuthProvider: React.FC<React.PropsWithChildren> = ({ children }) =>
                 code: 'invalidCredentials',
               };
             }
+            
+            // Use existing userId
+            userId = storedUserId;
           } catch (error) {
             console.error('[AuthContext] Failed to parse stored credentials:', error);
             // Clear invalid credentials
             localStorage.removeItem('eaudit_credentials');
+            // Create new userId for first login
+            userId = `user_${Date.now()}`;
           }
         } else {
-          // First login: store credentials
-          localStorage.setItem('eaudit_credentials', JSON.stringify({ username, password }));
+          // First login: create new userId and store credentials
+          userId = `user_${Date.now()}`;
+          localStorage.setItem('eaudit_credentials', JSON.stringify({ username, password, userId }));
         }
 
-        // Store login state with username
+        // Store login state with username and userId
         localStorage.setItem('eaudit_logged_in', 'true');
         localStorage.setItem('eaudit_login_time', Date.now().toString());
         localStorage.setItem('eaudit_username', username);
+        localStorage.setItem('eaudit_user_id', userId);
 
-        setUser({ id: 'desktop-user', username, role: 'admin' });
+        // ISOLATION FIX: Expose userId globally for IPC calls
+        (window as any).__currentUserId = userId;
+
+        console.log('[AuthContext] Desktop login successful for user:', userId);
+        setUser({ id: userId, username, role: 'admin' });
         setStatus('authenticated');
         setReady(true);
         return { success: true };
@@ -250,9 +267,13 @@ export const AuthProvider: React.FC<React.PropsWithChildren> = ({ children }) =>
 
   const logout = useCallback(async () => {
     if (isDesktopRuntime) {
+      // ISOLATION FIX: Clear global userId
+      delete (window as any).__currentUserId;
+      
       localStorage.removeItem('eaudit_logged_in');
       localStorage.removeItem('eaudit_login_time');
       localStorage.removeItem('eaudit_username');
+      localStorage.removeItem('eaudit_user_id');
       // Note: on ne supprime PAS eaudit_credentials pour permettre la reconnexion
       setUser(null);
       setStatus('unauthenticated');

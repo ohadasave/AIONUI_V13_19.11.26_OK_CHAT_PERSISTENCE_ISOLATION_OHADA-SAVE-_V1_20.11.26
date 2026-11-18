@@ -382,9 +382,18 @@ export class AionUIDatabase {
    * ==================
    */
 
-  createConversation(conversation: TChatConversation, userId?: string): IQueryResult<TChatConversation> {
+  createConversation(conversation: TChatConversation, userId: string): IQueryResult<TChatConversation> {
     try {
-      const row = conversationToRow(conversation, userId || this.defaultUserId);
+      // ISOLATION FIX: Require explicit userId, no default fallback
+      if (!userId) {
+        console.error('[Database] createConversation called without userId');
+        return {
+          success: false,
+          error: 'userId is required for creating conversations',
+        };
+      }
+
+      const row = conversationToRow(conversation, userId);
 
       const stmt = this.db.prepare(`
         INSERT INTO conversations (id, user_id, name, type, extra, model, status, source, channel_chat_id, created_at, updated_at)
@@ -434,10 +443,19 @@ export class AionUIDatabase {
    *
    * For ACP conversations, `backend` distinguishes between claude, iflow, codebuddy, etc.
    * (stored in `extra.backend` JSON field).
+   * 
+   * ISOLATION FIX: userId is required, no default fallback
    */
   findChannelConversation(source: ConversationSource, channelChatId: string, type: string, backend?: string, userId?: string): IQueryResult<TChatConversation | null> {
     try {
-      const finalUserId = userId || this.defaultUserId;
+      // ISOLATION FIX: Require explicit userId, no default fallback
+      if (!userId) {
+        console.error('[Database] findChannelConversation called without userId');
+        return {
+          success: false,
+          error: 'userId is required for finding channel conversations',
+        };
+      }
 
       let row: IConversationRow | undefined;
       if (backend) {
@@ -451,7 +469,7 @@ export class AionUIDatabase {
             LIMIT 1
           `
           )
-          .get(finalUserId, source, channelChatId, type, backend) as IConversationRow | undefined;
+          .get(userId, source, channelChatId, type, backend) as IConversationRow | undefined;
       } else {
         row = this.db
           .prepare(
@@ -462,7 +480,7 @@ export class AionUIDatabase {
             LIMIT 1
           `
           )
-          .get(finalUserId, source, channelChatId, type) as IConversationRow | undefined;
+          .get(userId, source, channelChatId, type) as IConversationRow | undefined;
       }
 
       return {
@@ -480,17 +498,27 @@ export class AionUIDatabase {
   /**
    * Batch-update the model field on channel conversations matching source + type.
    * Used when channel settings change to propagate new model to existing conversations.
+   * 
+   * ISOLATION FIX: userId is required, no default fallback
    */
   updateChannelConversationModel(source: 'telegram' | 'lark' | 'dingtalk', type: string, model: TProviderWithModel, userId?: string): IQueryResult<number> {
     try {
-      const finalUserId = userId || this.defaultUserId;
+      // ISOLATION FIX: Require explicit userId, no default fallback
+      if (!userId) {
+        console.error('[Database] updateChannelConversationModel called without userId');
+        return {
+          success: false,
+          error: 'userId is required for updating channel conversation models',
+        };
+      }
+
       const modelJson = JSON.stringify(model);
       const now = Date.now();
       const stmt = this.db.prepare(`
         UPDATE conversations SET model = ?, updated_at = ?
         WHERE user_id = ? AND source = ? AND type = ?
       `);
-      const result = stmt.run(modelJson, now, finalUserId, source, type);
+      const result = stmt.run(modelJson, now, userId, source, type);
       return { success: true, data: result.changes };
     } catch (error: any) {
       return { success: false, error: error.message };
@@ -499,7 +527,10 @@ export class AionUIDatabase {
 
   getUserConversations(userId?: string, page = 0, pageSize = 50): IPaginatedResult<TChatConversation> {
     try {
+      // ISOLATION FIX: When userId is not provided, use defaultUserId for backwards compatibility
+      // This is mainly for admin/system queries where user context is not available
       const finalUserId = userId || this.defaultUserId;
+      console.log(`[Database] getUserConversations called with userId=${userId}, using finalUserId=${finalUserId}`);
 
       const countResult = this.db.prepare('SELECT COUNT(*) as count FROM conversations WHERE user_id = ?').get(finalUserId) as {
         count: number;
