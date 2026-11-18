@@ -1,0 +1,1652 @@
+1. CHAT GPT 
+
+Oui. J’ai analysé l’architecture fournie, en distinguant ce qui est démontré par le code décrit, ce qui est probable, et ce qui doit être vérifié par un test.
+1. Diagnostic : la cause racine la plus probable
+La race condition window.__currentUserId n’est pas, à elle seule, la cause la plus convaincante.
+
+Dans le code fourni, l’ordre d’exécution est :
+(window as any).__currentUserId = userId;
+setUser({ id: userId, username, role: 'admin' });
+
+L'affectation de window.__currentUserId est synchrone. setUser() est appelé après. Donc, contrairement à l’hypothèse formulée dans le document, un simple re-render React déclenché par setUser() ne peut normalement pas faire exécuter ChatHistory avant l'instruction :
+(window as any).__currentUserId = userId;
+
+Cette séquence est explicitement décrite dans votre architecture. 
+Le vrai point dangereux
+En revanche, votre architecture contient une faille beaucoup plus certaine :
+getUserConversations(userId?: string, page, pageSize) {
+    const finalUserId = userId || this.defaultUserId;
+
+Cela signifie :
+Toute perte de userId transforme silencieusement une erreur d'authentification/isolation en lecture avec un autre utilisateur.
+
+C'est extrêmement dangereux dans une application multi-utilisateur.
+
+Le document v19 identifie exactement ce fallback comme point critique. 
+
+Et votre propre architecture prévoit ensuite le merge avec le file storage lorsque le userId n'est pas correctement présent. 
+Conclusion
+Je classerais les causes ainsi :
+Rang	Cause	Probabilité
+1	Fallback defaultUserId + appel READ sans userId fiable	Très haute
+2	Une autre source appelle getUserConversations() sans userId	Très haute
+3	Merge legacy file storage	Haute
+4	Mauvaise propagation du userId lors d'un CREATE secondaire	Moyenne/haute
+5	Race condition réelle de window.__currentUserId	Moyenne à faible
+6	structuredClone Electron qui supprimerait userId	Faible
+
+
+2. Correction que je recommande
+Je recommande Solution 1 + Solution 2 + Solution 3, mais avec une modification importante :
+Le Main Process doit être l'autorité finale sur l'identité utilisateur.
+
+Il ne faut pas considérer le userId envoyé par le Renderer comme une frontière de sécurité suffisante.
+
+Votre architecture actuelle fait :
+Renderer
+   ↓
+userId
+   ↓
+IPC
+   ↓
+databaseBridge
+   ↓
+database
+   ↓
+WHERE user_id = ?
+
+C'est fonctionnel, mais fragile.
+
+Le minimum absolu est :
+Renderer
+   ↓
+user.id
+   ↓
+IPC
+   ↓
+VALIDATION OBLIGATOIRE
+   ↓
+Database
+   ↓
+WHERE user_id = ?
+
+3. Modification n°1 — ChatHistory.tsx
+C'est la première modification à faire.
+
+Ne faites plus :
+const userId = (window as any).__currentUserId;
+
+Utilisez le contexte React.
+import { useAuth } from '@renderer/context/AuthContext';
+
+export const ChatHistory: React.FC<Props> = ({ id, onSessionClick }) => {
+  const { user } = useAuth();
+
+  useEffect(() => {
+    if (!user?.id) {
+      console.log(
+        '[ChatHistory] No authenticated user - conversations not loaded'
+      );
+
+      setChatHistory([]);
+      return;
+    }
+
+    let cancelled = false;
+
+    const refresh = async () => {
+      const userId = user.id;
+
+      console.log(
+        '[ChatHistory] Fetching conversations for userId:',
+        userId
+      );
+
+      try {
+        const history =
+          await ipcBridge.database.getUserConversations.invoke({
+            userId,
+            page: 0,
+            pageSize: 10000,
+          });
+
+        if (!cancelled) {
+          setChatHistory(history || []);
+        }
+      } catch (error) {
+        console.error(
+          '[ChatHistory] Failed to load conversations:',
+          error
+        );
+
+        if (!cancelled) {
+          setChatHistory([]);
+        }
+      }
+    };
+
+    void refresh();
+
+    const removeListener = addEventListener(
+      'chat.history.refresh',
+      refresh
+    );
+
+    return () => {
+      cancelled = true;
+      removeListener();
+    };
+  }, [user?.id]);
+
+  // ...
+};
+
+Cette approche correspond à la correction proposée dans vos deux documents. 
+Pourquoi c'est préférable
+Le changement important est :
+}, [user?.id]);
+
+Le chargement des conversations devient donc explicitement dépendant de l'identité authentifiée.
+
+Un changement :
+Alice → Bob
+
+provoque nécessairement :
+user.id Alice
+      ↓
+user.id Bob
+      ↓
+useEffect Bob
+      ↓
+SELECT ... WHERE user_id = Bob
+
+4. Modification n°2 — databaseBridge.ts
+C'est la protection la plus importante contre la fuite de données.
+
+Ne faites plus :
+provider(async ({ userId, page, pageSize }) => {
+  const result = db.getUserConversations(userId, page, pageSize);
+
+  // ...
+});
+
+Faites :
+ipcBridge.database.getUserConversations.provider(
+  async ({ userId, page = 0, pageSize = 10000 }) => {
+
+    console.log(
+      '[DatabaseBridge] getUserConversations:',
+      {
+        userId,
+        page,
+        pageSize,
+      }
+    );
+
+    if (!userId) {
+      console.error(
+        '[DatabaseBridge] BLOCKED: userId is required'
+      );
+
+      // FAIL CLOSED
+      return [];
+    }
+
+    const result = db.getUserConversations(
+      userId,
+      page,
+      pageSize
+    );
+
+    const dbConversations = result.data || [];
+
+    console.log(
+      `[DatabaseBridge] Returning ${dbConversations.length} conversations for userId=${userId}`
+    );
+
+    // IMPORTANT :
+    // aucun merge avec le file storage en mode multi-utilisateur
+    return dbConversations;
+  }
+);
+
+C'est particulièrement important parce que votre version actuelle possède justement un chemin legacy vers :
+ProcessChat.get('chat.history')
+
+puis fusionne ces conversations avec celles de SQLite. 
+Règle
+Pour le mode Desktop multi-utilisateur :
+userId présent
+     ↓
+SQLite uniquement
+
+et :
+userId absent
+     ↓
+[]
+
+Jamais :
+userId absent
+     ↓
+system_default_user
+
+5. Modification n°3 — database/index.ts
+C'est ici que je supprimerais définitivement le fallback.
+Actuellement
+getUserConversations(userId?: string, page, pageSize) {
+  const finalUserId = userId || this.defaultUserId;
+
+À remplacer par
+getUserConversations(
+  userId: string,
+  page = 0,
+  pageSize = 50
+) {
+  if (!userId) {
+    console.error(
+      '[Database] CRITICAL: userId is required'
+    );
+
+    throw new Error(
+      'userId is required for getUserConversations'
+    );
+  }
+
+  console.log(
+    `[Database] getUserConversations userId=${userId}`
+  );
+
+  const countResult = this.db
+    .prepare(
+      'SELECT COUNT(*) as count FROM conversations WHERE user_id = ?'
+    )
+    .get(userId) as { count: number };
+
+  const rows = this.db
+    .prepare(`
+      SELECT *
+      FROM conversations
+      WHERE user_id = ?
+      ORDER BY updated_at DESC
+      LIMIT ? OFFSET ?
+    `)
+    .all(
+      userId,
+      pageSize,
+      page * pageSize
+    );
+
+  return {
+    data: rows.map(rowToConversation),
+    total: countResult.count,
+    page,
+    pageSize,
+    hasMore:
+      (page + 1) * pageSize < countResult.count,
+  };
+}
+
+C'est exactement le principe de suppression du fallback proposé dans votre document v19. 
+6. Modification n°4 — sécuriser CREATE
+Même si votre document indique que CREATE fonctionne, je mettrais une barrière explicite dans conversationBridge.ts.
+ipcBridge.conversation.create.provider(
+  async (params) => {
+
+    console.log(
+      '[ConversationBridge] CREATE:',
+      {
+        userId: params.userId,
+        type: params.type,
+      }
+    );
+
+    if (!params.userId) {
+      console.error(
+        '[ConversationBridge] BLOCKED: userId is required'
+      );
+
+      throw new Error(
+        'userId is required for conversation creation'
+      );
+    }
+
+    const result =
+      await ConversationService.createConversation({
+        ...params,
+        userId: params.userId,
+      });
+
+    if (result.success && result.conversation) {
+      console.log(
+        '[ConversationBridge] Created:',
+        result.conversation.id,
+        'userId:',
+        params.userId
+      );
+    }
+
+    return result.conversation;
+  }
+);
+
+Votre architecture indique effectivement que userId doit traverser conversationBridge → conversationService → database. 
+7. Modification n°5 — createConversation doit être strict
+Dans database/index.ts :
+createConversation(
+  conversation: TChatConversation,
+  userId: string
+): IQueryResult<boolean> {
+
+  if (!userId) {
+    console.error(
+      '[Database] BLOCKED CREATE: userId is required'
+    );
+
+    throw new Error(
+      'userId is required for createConversation'
+    );
+  }
+
+  const row = conversationToRow(
+    conversation,
+    userId
+  );
+
+  // INSERT...
+}
+
+Le ? dans :
+userId?: string
+
+doit disparaître pour les opérations multi-utilisateurs.
+
+Votre propre schéma de données confirme que user_id est NOT NULL. 
+8. Attention : il existe un deuxième problème architectural important
+Il y a une faiblesse dans votre gestion des comptes.
+
+Vous stockez :
+eaudit_credentials
+
+avec :
+{
+  "username": "...",
+  "password": "...",
+  "userId": "..."
+}
+
+Puis, lorsqu'un nouvel utilisateur se connecte :
+localStorage.setItem(
+  'eaudit_credentials',
+  JSON.stringify({
+    username,
+    password,
+    userId
+  })
+);
+
+Donc :
+Alice
+  ↓
+credentials Alice
+
+Bob login
+  ↓
+credentials remplacées par Bob
+
+Alice reconnecte
+  ↓
+les credentials Alice ne sont plus présentes
+
+Ce problème est distinct de la fuite de conversations, mais il peut casser la reconnexion utilisateur que vous souhaitez préserver.
+
+Le document décrit bien cette logique de stockage d'un seul compte. 
+Il faudrait idéalement séparer :
+eaudit_accounts
+
+de :
+eaudit_session
+
+Par exemple conceptuellement :
+{
+  "Alice": {
+    "userId": "user_A"
+  },
+  "Bob": {
+    "userId": "user_B"
+  }
+}
+
+et :
+eaudit_current_user = user_A
+
+Ainsi :
+Alice → user_A
+Bob   → user_B
+
+restent stables indépendamment de la session courante.
+9. Je ne recommande PAS de faire ceci
+Je déconseille fortement :
+const userId =
+  (window as any).__currentUserId ||
+  localStorage.getItem('eaudit_user_id') ||
+  'system_default_user';
+
+Cela masque le problème.
+
+Encore pire :
+const finalUserId = userId || this.defaultUserId;
+
+dans une application multi-utilisateur.
+
+Une application d'audit doit fonctionner selon le principe :
+absence d'identité = aucune donnée accessible
+
+et non :
+absence d'identité = utilisateur par défaut.
+
+10. Vérification SQL : étape déterminante
+Avant même de modifier beaucoup de code, exécutez :
+SELECT
+    id,
+    user_id,
+    name,
+    created_at
+FROM conversations
+ORDER BY created_at DESC;
+
+Puis :
+SELECT
+    user_id,
+    COUNT(*) AS conversation_count
+FROM conversations
+GROUP BY user_id;
+
+Vous devez obtenir quelque chose comme :
+user_A    3
+user_B    2
+
+et non :
+system_default_user    5
+
+Le document v19 utilise précisément cette vérification pour distinguer un problème CREATE d'un problème READ. 
+11. Test décisif Alice / Bob
+Je recommande ce test avant et après correction.
+Étape 1
+Supprimer la base de test.
+Étape 2
+Alice :
+LOGIN
+Alice / PASSWORD123
+
+Créer :
+TEST_ALICE
+
+SQL :
+SELECT id, user_id, name
+FROM conversations;
+
+Résultat attendu :
+conv_xxx | user_XXXXXXXX | TEST_ALICE
+
+Étape 3
+Logout.
+Étape 4
+Bob :
+LOGIN
+Bob / PASSWORD456
+
+Créer :
+TEST_BOB
+
+SQL :
+SELECT id, user_id, name
+FROM conversations
+ORDER BY created_at;
+
+Résultat attendu :
+conv_xxx | user_ALICE | TEST_ALICE
+conv_yyy | user_BOB   | TEST_BOB
+
+Étape 5
+Bob doit voir :
+TEST_BOB
+
+uniquement.
+Étape 6
+Alice doit voir :
+TEST_ALICE
+
+uniquement.
+
+C'est exactement le scénario de validation défini dans votre architecture v19. 
+12. Ordre exact des modifications
+Je ferais dans cet ordre :
+1 — database/index.ts
+Supprimer immédiatement :
+userId || this.defaultUserId
+
+C'est le filet de sécurité le plus dangereux.
+2 — databaseBridge.ts
+Bloquer :
+!userId → []
+
+et supprimer le merge file-storage pour le chemin multi-user.
+3 — ChatHistory.tsx
+Remplacer :
+window.__currentUserId
+
+par :
+useAuth().user?.id
+
+avec :
+}, [user?.id]);
+
+4 — ConversationTabs.tsx
+Même correction.
+
+Le document identifie explicitement cet autre appel à getUserConversations. 
+5 — workspace/index.tsx
+Même correction. 
+6 — conversationBridge.ts
+Bloquer toute création sans userId.
+7 — conversationService.ts
+Vérifier tous les appels à :
+db.createConversation(...)
+
+et rendre userId obligatoire.
+8 — AuthContext.tsx
+Conserver temporairement :
+window.__currentUserId
+
+pour compatibilité, mais ne plus en faire la source d'autorité.
+13. Architecture cible
+Je recommande finalement :
+                    ┌──────────────────┐
+                    │   AuthContext     │
+                    │                  │
+                    │ user.id = Alice  │
+                    └────────┬─────────┘
+                             │
+                             ▼
+                    ┌──────────────────┐
+                    │   React UI       │
+                    │                  │
+                    │ useAuth().user.id│
+                    └────────┬─────────┘
+                             │
+                             ▼
+                    ┌──────────────────┐
+                    │       IPC        │
+                    │                  │
+                    │ { userId: Alice }│
+                    └────────┬─────────┘
+                             │
+                       VALIDATION
+                       userId requis
+                             │
+                             ▼
+                    ┌──────────────────┐
+                    │ databaseBridge   │
+                    └────────┬─────────┘
+                             │
+                       userId obligatoire
+                             │
+                             ▼
+                    ┌──────────────────┐
+                    │    SQLite        │
+                    │                  │
+                    │ WHERE user_id=?  │
+                    └──────────────────┘
+
+Et surtout :
+userId absent
+     ↓
+BLOCK
+     ↓
+[]
+
+jamais :
+userId absent
+     ↓
+defaultUserId
+     ↓
+données d'un autre utilisateur
+
+Verdict final
+Je ne commencerais pas par chercher une race condition React. Le code fourni ne démontre pas cette race condition : __currentUserId est affecté avant setUser().
+
+Le défaut architectural certain et critique est le fallback :
+const finalUserId = userId || this.defaultUserId;
+
+combiné au chemin legacy de file storage. C'est lui qui permet qu'une absence de userId devienne une lecture de données appartenant à un autre contexte.    Markdown collé
+
+La correction robuste est donc :
+useAuth() côté Renderer + userId obligatoire dans l'IPC + aucun fallback defaultUserId + aucun merge file-storage en mode multi-user + userId obligatoire pour CREATE.
+
+Cela constitue une véritable defense-in-depth, plutôt qu'une correction ponctuelle de ChatHistory.
+
+Le document v19 arrive d'ailleurs à la même stratégie générale : useAuth(), blocage des appels sans userId, suppression du fallback et audit de CREATE.    ARCHITECTURE_DEBUG_ISOLATION_V19
+
+
+
+
+2. CLAUDE OPUS 
+
+
+Diagnostic : isolation multi-utilisateur (E-audit v18.1 → v19)
+
+Je ne peux pas prouver la cause à partir des seuls fichiers fournis, mais ils permettent d’écarter une hypothèse et d’en isoler une plus probable.
+
+1. Ce que les fichiers montrent
+
+La race condition window.__currentUserId est peu crédible au login. Dans login(), l’affectation window.__currentUserId = userId s’exécute de façon synchrone avant setUser(). Les useEffect de React tournent après le commit du rendu suivant, donc la variable est déjà définie. Ce n’est pas elle qui rend undefined.
+
+Le symptôme est cohérent avec cette combinaison :
+
+Un appel de lecture arrive au backend avec userId absent ou égal à system_default_user.
+Le fallback userId || this.defaultUserId s’active dans database/index.ts.
+databaseBridge fusionne alors avec le file storage chat.history, qui n’est pas scopé par utilisateur.
+BOB voit « Test BOB » et « AAAAAA », parce que le file storage contient les deux, même si la DB est correctement écrite.
+
+Autrement dit, la DB peut être saine et la fuite venir du fallback, du merge fichier, ou d’un appelant non patché.
+
+Autres défauts qui n’expliquent pas la fuite directement :
+
+Dépendances du useEffect. ChatHistory dépend de [isConversation] et non de l’utilisateur. Si le composant reste monté entre logout et login, la liste d’ALICE reste affichée.
+État global conservé. Aucun nettoyage n’est fait au logout : onglets ouverts, caches SWR et état de l’emitter survivent à la déconnexion.
+Un seul emplacement de credentials. eaudit_credentials n’en stocke qu’un. Quand BOB se connecte, il écrase ceux d’ALICE, qui ne pourra plus jamais retrouver son userId. Votre test #10 (removeItem('eaudit_credentials') puis reconnexion d’ALICE) génère aussi un nouvel userId, donc il échouera pour une mauvaise raison.
+Mots de passe en clair dans localStorage.
+Callers non patchés. Vous avez corrigé 3 fichiers, mais la liste latérale peut être rendue par un autre composant ou hook (par exemple un composant d’historique groupé par workspace) qui appelle encore getUserConversations sans userId.
+Isolation uniquement cosmétique. getConversation(id), deleteConversation(id), updateConversation et les messages ne vérifient pas le propriétaire. Un userId fourni par le renderer est une confiance aveugle.
+
+Sur l’IPC : un { userId: undefined } arrive au backend comme undefined ou comme clé absente. Dans les deux cas, userId || default donne le même résultat. Ce n’est pas une cause distincte.
+
+2. Test décisif (5 min)
+sql
+SELECT user_id, COUNT(*) FROM conversations GROUP BY user_id;
+Résultat	Conclusion
+user_… différents par compte	Écriture OK. La fuite vient de la lecture : fallback, merge fichier ou caller non patché.
+Tout en system_default_user	Une voie de création n’a pas de userId. Faites un grep sur createConversation( et INSERT INTO conversations.
+
+Ajoutez aussi ce log dans databaseBridge : console.log('[bridge] params', JSON.stringify(params)). Faites ensuite grep -rn "getUserConversations\|chat.history" src/ pour lister tous les appelants.
+
+3. Correctifs, dans l’ordre
+
+① Backend : supprimer le fallback et le merge fichier (databaseBridge.ts)
+
+ts
+ipcBridge.database.getUserConversations.provider(async ({ userId, page = 0, pageSize = 10000 }) => {
+  if (!userId) {
+    console.error('[DatabaseBridge] userId manquant → []');
+    return [];
+  }
+  return getDatabase().getUserConversations(userId, page, pageSize).data ?? [];
+});
+
+② DB : userId obligatoire (database/index.ts)
+
+ts
+getUserConversations(userId: string, page = 0, pageSize = 50) {
+  if (!userId) throw new Error('userId is required');
+  // … même requête, avec userId à la place de finalUserId
+}
+
+Modifiez aussi ipcBridge.ts en { userId: string; page?: number; pageSize?: number }. TypeScript vous listera alors tous les appelants fautifs.
+
+③ Renderer : useAuth() avec le bon cycle de vie (ChatHistory.tsx, ConversationTabs.tsx, workspace/index.tsx et tout autre appelant trouvé)
+
+tsx
+const { user } = useAuth();
+const userId = user?.id;
+
+useEffect(() => {
+  setChatHistory([]);              // purge immédiate au changement d'utilisateur
+  if (!userId) return;
+  let cancelled = false;
+  const refresh = () => {
+    ipcBridge.database.getUserConversations
+      .invoke({ userId, page: 0, pageSize: 10000 })
+      .then((h) => { if (!cancelled) setChatHistory((h ?? []).sort((a, b) => getActivityTime(b) - getActivityTime(a))); })
+      .catch(() => { if (!cancelled) setChatHistory([]); });
+  };
+  refresh();
+  const off = addEventListener('chat.history.refresh', refresh);
+  return () => { cancelled = true; off(); };
+}, [userId]);
+
+④ Remontage complet au changement d’utilisateur (là où le layout authentifié est rendu)
+
+tsx
+<AuthenticatedLayout key={user?.id ?? 'anon'} />
+
+Cela réinitialise onglets, caches et états locaux. À défaut, faites un window.location.reload() dans logout() en mode Desktop.
+
+⑤ Isolation réelle : le main process possède l’identité
+
+Ajoutez un IPC auth.setCurrentUser(userId) appelé au login et au logout. Le main stocke l’utilisateur courant.
+Les handlers ignorent le userId envoyé par le renderer et utilisent celui du main.
+Ajoutez un contrôle de propriétaire : getConversation(id, userId), deleteConversation(id, userId) et updateConversation(id, userId, …) avec WHERE id = ? AND user_id = ?. Vérifiez la même chose pour l’accès aux messages.
+
+⑥ Comptes (AuthContext.tsx)
+
+Remplacez eaudit_credentials par une table eaudit_accounts : { [username]: { salt, hash, userId } }.
+Utilisez crypto.randomUUID() pour userId et un hash (PBKDF2 ou scrypt) pour le mot de passe.
+Ajoutez le fallback loginEnabled === false, qui ne positionne aucun userId aujourd’hui.
+Cela corrige la reconnexion d’ALICE après le passage de BOB.
+
+⑦ Données existantes
+
+Les lignes system_default_user doivent être soit réattribuées au premier compte, soit masquées comme « legacy ».
+Désactivez ou scopez toute écriture dans chat.history en mode multi-utilisateur.
+4. Tests de validation
+Reset. Supprimez la DB et localStorage, puis lancez l’app.
+ALICE. Créez le compte et la conversation « Test ALICE ».
+Vérification DB. Lancez SELECT id, user_id, name FROM conversations; et contrôlez que user_id est celui d’ALICE.
+Logout, puis BOB. Créez « Test BOB » : la liste ne montre que « Test BOB ». Les onglets ouverts d’ALICE ont disparu.
+Vérification DB. Vous devez voir deux user_id distincts.
+Reconnexion d’ALICE. Faites un logout/login normal, sans toucher à localStorage. Elle ne retrouve que « Test ALICE ».
+Test d’accès croisé. BOB tente getConversation('<id d'ALICE>') : le résultat doit être vide.
+Test automatisé (Vitest sur la couche DB) : insérez des conversations pour u1 et u2, vérifiez que getUserConversations('u1') ne retourne que celles de u1, et que getUserConversations('') lève une erreur.
+Réponses à vos questions
+Hypothèse la plus probable : un appel de lecture sans userId combiné au fallback et au merge du file storage. Le grep sur tous les callers et la requête GROUP BY départageront cela avec la création non scopée.
+Solution recommandée : ① + ② + ③ + ④ tout de suite (defense in depth), puis ⑤ et ⑥ pour une vraie isolation.
+Autres fuites : le merge chat.history, les caches et onglets du renderer, les accès par id non vérifiés, les messages, les fichiers de workspace et la configuration partagée (clés API).
+Isolation à 100 % : identité côté main process, contrôle du propriétaire dans chaque requête, NOT NULL sans valeur par défaut sur user_id, et tests automatisés.
+Perte du userId par l’IPC : pas de façon distincte. Le backend reçoit undefined ou une clé absente, et le fallback réagit de la même manière.
+
+Si vous voulez, envoyez-moi databaseBridge.ts et le résultat du grep sur getUserConversations / createConversation, et je vous donne le patch exact.
+
+
+
+3. CLAUDE SONNET 
+
+
+Diagnostic : cause racine probable
+
+Le document formule trois hypothèses, mais le code fourni en désigne une autre, plus structurelle.
+
+1. Cause la plus probable : updateConversation écrase le user_id avec defaultUserId
+
+Dans updateConversation, la ligne conversationToRow(updated, this.defaultUserId) produit un row dont le user_id est defaultUserId. Le UPDATE ne modifie pas user_id (il met à jour name, extra, model, status et updated_at), donc ce point n’est pas une fuite directe. Mais il révèle un schéma : le code passe defaultUserId partout où le contexte utilisateur manque. Il faut vérifier tous les chemins qui appellent createConversation sans userId (import, migration, ConversationService pour les chats « cron », « team » ou « agent », etc.). Un seul chemin de ce type suffit à produire des lignes system_default_user.
+
+2. Cause probable de la fuite visible : les appels IPC qui ne passent pas par getUserConversations
+
+Le fichier ChatHistory ne fait pas que lire. Les appels suivants n’ont pas de userId dans le code fourni :
+
+ipcBridge.conversation.remove.invoke({ id })
+deleteConversation(conversationId), qui ne vérifie pas le propriétaire
+le getUserConversations du provider, qui retombe sur le file storage sans filtre (hypothèse #3 du document)
+
+Si le provider arrive dans la branche file storage (userId absent ou égal à system_default_user), il fusionne toutes les conversations historiques. C’est le seul chemin du code fourni qui peut montrer « AAAAAA » à Bob sans que la requête SQL soit en cause.
+
+3. La race condition (hypothèse #1) est réelle mais pas la cause principale
+
+Elle est possible mais peu probable dans le cas du login : window.__currentUserId est affecté de façon synchrone avant setUser, donc au rendu suivant il est défini. Le vrai défaut est ailleurs : le useEffect de ChatHistory a pour dépendance [isConversation], pas l’utilisateur.
+
+Scénario de fuite réaliste :
+
+Alice se déconnecte, ChatHistory reste monté (ou est remonté avec le même état).
+Bob se connecte, __currentUserId change.
+isConversation ne change pas, donc l’effet ne se relance pas.
+Le state chatHistory d’Alice reste affiché pour Bob.
+
+Ensuite, quand Bob crée une conversation, chat.history.refresh se déclenche, et la liste affichée mélange l’ancien state et le nouveau. Cela correspond exactement au symptôme décrit (« les tables se chevauchent »).
+
+Autre défaut dans AuthContext : un seul jeu d’identifiants est stocké dans eaudit_credentials. Quand Bob se connecte, localStorage.setItem('eaudit_credentials', …) écrase le compte d’Alice. Alice ne retrouvera donc jamais son userId : elle reçoit un nouveau user_${Date.now()}, et ses conversations deviennent orphelines. Ce n’est pas la cause de la fuite, mais cela cassera le test « Reconnexion ALICE » du plan.
+
+Correctifs, dans l’ordre
+Fichier 1 : ChatHistory.tsx
+typescript
+import { useAuth } from '@/renderer/context/AuthContext';
+
+const ChatHistory = ({ onSessionClick, collapsed = false }) => {
+  const { user } = useAuth();
+  const userId = user?.id;
+  // ...
+
+  useEffect(() => {
+    // Purge immédiate au changement d'utilisateur : jamais de state résiduel
+    setChatHistory([]);
+
+    if (!userId) return;
+
+    let cancelled = false;
+    const refresh = () => {
+      ipcBridge.database.getUserConversations
+        .invoke({ userId, page: 0, pageSize: 10000 })
+        .then((history) => {
+          if (cancelled) return; // ignore les réponses d'un ancien utilisateur
+          const list = Array.isArray(history) ? history : [];
+          setChatHistory(list.sort((a, b) => getActivityTime(b) - getActivityTime(a)));
+        })
+        .catch((error) => {
+          if (!cancelled) {
+            console.error('[ChatHistory] load failed:', error);
+            setChatHistory([]);
+          }
+        });
+    };
+
+    refresh();
+    const off = addEventListener('chat.history.refresh', refresh);
+    return () => {
+      cancelled = true;
+      off();
+    };
+  }, [userId, isConversation]);
+
+Les trois points importants : userId en dépendance, purge du state, et le drapeau cancelled qui évite qu’une réponse tardive d’Alice écrase l’affichage de Bob.
+
+Fichier 2 : databaseBridge.ts (backend)
+typescript
+provider(async ({ userId, page = 0, pageSize = 10000 }) => {
+  if (!userId || userId === 'system_default_user') {
+    console.error('[DatabaseBridge] userId manquant, retour vide');
+    return [];
+  }
+  // Mode multi-utilisateur : on ne fusionne JAMAIS le file storage
+  return db.getUserConversations(userId, page, pageSize).data;
+});
+Fichier 3 : database/index.ts
+typescript
+getUserConversations(userId: string, page = 0, pageSize = 50): IPaginatedResult<TChatConversation> {
+  if (!userId) {
+    return { data: [], total: 0, page, pageSize, hasMore: false };
+  }
+  // ... même requête, avec userId à la place de finalUserId
+}
+
+Renvoyer une liste vide plutôt que lever une exception évite qu’un catch en aval masque l’erreur. Les logs signalent le problème sans casser l’interface.
+
+Fichier 4 : suppression et mise à jour avec contrôle du propriétaire
+typescript
+deleteConversation(conversationId: string, userId: string) {
+  const stmt = this.db.prepare('DELETE FROM conversations WHERE id = ? AND user_id = ?');
+  const result = stmt.run(conversationId, userId);
+  return { success: true, data: result.changes > 0 };
+}
+
+Mêmes principes pour updateConversation, getConversation et remove : ajoutez AND user_id = ? et propagez userId depuis l’IPC.
+
+Fichier 5 : AuthContext.tsx (comptes multiples)
+
+Remplacez la clé unique par une table de comptes :
+
+typescript
+type Accounts = Record<string, { password: string; userId: string }>;
+
+const loadAccounts = (): Accounts => {
+  try { return JSON.parse(localStorage.getItem('eaudit_accounts') || '{}'); }
+  catch { return {}; }
+};
+
+// dans login (mode Desktop)
+const accounts = loadAccounts();
+const existing = accounts[username];
+let userId: string;
+
+if (existing) {
+  if (existing.password !== password) {
+    return { success: false, message: 'Mot de passe incorrect', code: 'invalidCredentials' };
+  }
+  userId = existing.userId;
+} else {
+  userId = `user_${crypto.randomUUID()}`; // pas Date.now(), risque de collision
+  accounts[username] = { password, userId };
+  localStorage.setItem('eaudit_accounts', JSON.stringify(accounts));
+}
+
+Deux remarques :
+
+Stocker un mot de passe en clair dans localStorage n’est pas acceptable en production. Utilisez au minimum un hash salé (PBKDF2 via crypto.subtle) ou, mieux, gérez l’authentification dans le processus principal.
+Dans logout, ajoutez un emitter.emit('chat.history.refresh') ou, mieux encore, laissez le useEffect ci-dessus faire la purge via userId.
+Migration des données existantes
+
+Les conversations déjà créées avec system_default_user doivent être rattachées à un propriétaire, sinon elles resteront invisibles :
+
+sql
+UPDATE conversations SET user_id = 'user_XXXX' WHERE user_id = 'system_default_user';
+
+Faites une sauvegarde de aionui.db avant.
+
+Priorisation des hypothèses
+Rang	Cause	Confiance
+1	useEffect sans dépendance sur l’utilisateur, state résiduel, réponses tardives	Haute
+2	Fusion avec le file storage quand userId est absent ou par défaut	Moyenne-haute
+3	Conversations créées avec system_default_user via un chemin non audité	Moyenne
+4	Race condition __currentUserId au login	Faible
+5	Perte du userId à travers l’IPC	Très faible
+Sur l’IPC Electron
+
+Le structured clone conserve une propriété undefined explicite ({ userId: undefined } reste { userId: undefined }). Cela dit, si la couche ipcBridge sérialise en JSON, la propriété disparaît. Dans les deux cas, le backend reçoit undefined, d’où l’intérêt de la garde dans databaseBridge.
+
+Tests de validation
+
+Diagnostic rapide avant tout correctif :
+
+sql
+SELECT user_id, COUNT(*) FROM conversations GROUP BY user_id;
+Un seul user_id : bug en écriture (cause #3).
+Plusieurs user_id : bug en lecture/affichage (causes #1 ou #2).
+
+Scénario manuel :
+
+Supprimer la base, démarrer l’application.
+Créer ALICE, créer la conversation « Test ALICE ».
+Vérifier en SQL que user_id vaut user_… et non system_default_user.
+Logout, créer BOB : la liste doit être vide immédiatement, avant toute action.
+Créer « Test BOB » : seule cette conversation apparaît.
+Logout, reconnexion ALICE : seule « Test ALICE » apparaît (ce test échoue tant que le correctif du fichier 5 n’est pas appliqué).
+Tenter de supprimer, depuis la console DevTools, l’ID d’une conversation d’Alice en étant connecté en Bob : changes doit valoir 0.
+
+Test automatisé (Vitest, avec une base SQLite en mémoire) :
+
+typescript
+it('isole les conversations par utilisateur', () => {
+  db.createConversation(convA, 'user_a');
+  db.createConversation(convB, 'user_b');
+  expect(db.getUserConversations('user_a').data.map(c => c.id)).toEqual([convA.id]);
+  expect(db.getUserConversations('').data).toEqual([]);
+  expect(db.deleteConversation(convA.id, 'user_b').data).toBe(false);
+});
+Réponses à vos questions
+Hypothèse la plus probable : un état résiduel côté React (effet non relancé au changement d’utilisateur), combiné à la fusion avec le file storage. La race condition pure est peu probable.
+Solution recommandée : fichiers 1 + 2 + 3 + 4 ensemble (défense en profondeur), plus le fichier 5 pour la reconnexion.
+Autres points de fuite : remove, update, getConversation, les messages d’une conversation (vérifiez que getMessages(conversationId) contrôle le propriétaire), le file storage, et tout autre appel utilisant getUserConversations (ConversationTabs, workspace/index.tsx).
+Isolation à 100 % : le processus principal doit être la source de vérité de l’identité. L’idéal est qu’il détienne la session et déduise lui-même le userId côté backend, sans jamais le faire confiance à un paramètre envoyé par le renderer. Ajoutez une contrainte NOT NULL sur user_id et des tests comme celui ci-dessus.
+IPC et userId : voir la remarque plus haut.
+
+Si vous me fournissez databaseBridge.ts et conversationService.ts, je peux confirmer les causes #2 et #3 avec le code exact plutôt qu’avec des hypothèses.
+
+
+
+
+
+
+4. DEEPSEEK 
+
+
+Diagnostic et Solution - Bug Isolation Multi-Utilisateur
+🎯 Diagnostic : 4 causes combinées (pas une seule)
+Après analyse croisée des 4 fichiers fournis, le bug n'est pas une seule hypothèse mais la combinaison de 3 failles simultanées. La race condition window.__currentUserId seule ne suffit pas à expliquer que BOB voie "AAAAAA" — il faut aussi que la lecture pollue par un autre canal.
+
+Cause #1 : Dépendance useEffect incorrecte ⭐⭐⭐⭐⭐ (CERTAINE)
+Fichier : ChatHistory.tsx ligne ~113
+
+typescript
+}, [isConversation]); // ← Ne se re-déclenche PAS quand l'utilisateur change
+Scénario fatal :
+
+ALICE login → / (isConversation=false) → refresh() s'exécute avec __currentUserId = user_A
+
+ALICE logout → __currentUserId supprimé, mais isConversation reste false
+
+BOB login → __currentUserId = user_B — mais isConversation est TOUJOURS false → l'effet ne re-tourne pas !
+
+ChatHistory garde en mémoire les résultats de la requête précédente (qui contenait "AAAAAA")
+
+BOB voit "AAAAAA" jusqu'à ce qu'il navigue vers une conversation (là isConversation passe à true et l'effet re-tourne — mais trop tard, l'utilisateur croit que c'est cassé)
+
+C'est la preuve visuelle du symptôme : "les tables se chevauchent" = anciennes données non purgées.
+
+Cause #2 : Pollution par file storage ⭐⭐⭐⭐
+Fichier : databaseBridge.ts
+
+typescript
+if (userId && userId !== 'system_default_user') {
+  return dbConversations;  // ✅ Skip file storage
+}
+// ↓ Si userId est undefined OU = 'system_default_user'
+const fileConversations = await ProcessChat.get('chat.history') || [];
+return [...dbConversations, ...fileOnlyConversations];  // ❌ AAAAAA revient
+Si userId est undefined au moment de l'appel (race, ou effect non re-déclenché comme Cause #1), le file storage global (non scopé par user) est mergé. Les conversations legacy ou d'une session précédente ressurgissent pour TOUS.
+
+Cause #3 : Fallback silencieux côté DB ⭐⭐⭐⭐
+Fichier : database/index.ts ligne 533
+
+typescript
+const finalUserId = userId || this.defaultUserId;  // ❌ Masque le bug
+Le fallback defaultUserId empêche de voir l'erreur. Combiné à Cause #2, cela renvoie un jeu de données non filtré.
+
+Cause #4 : Bug secondaire dans AuthContext.refresh() ⭐⭐⭐
+Fichier : AuthContext.tsx (bloc loginEnabled === false)
+
+typescript
+if (loginEnabled === false) {
+  setUser({ id: 'desktop-user', username: 'local', role: 'admin' });
+  // ❌ __currentUserId JAMAIS défini dans ce chemin !
+  return;
+}
+Ce chemin laisse __currentUserId = undefined → fallback → file storage → pollution. Si le test Alice/Bob a été fait avec loginEnabled === false, c'est la cause racine directe.
+
+Cause #5 (bonus) : eaudit_credentials écrasé ⭐⭐
+typescript
+} else {
+  userId = `user_${Date.now()}`;
+  localStorage.setItem('eaudit_credentials', JSON.stringify({ username, password, userId })); // ❌ écrase ALICE
+}
+Après login BOB, eaudit_credentials ne contient plus que BOB. ALICE ne pourra plus retrouver son user_A historique. Ce n'est pas la cause du chevauchement actuel, mais c'est un bug à corriger pour la reconnexion.
+
+✅ Solution complète (4 fichiers, ordre d'application)
+Fichier 1 : AuthContext.tsx — Fix refresh() + multi-comptes
+typescript
+// === Dans refresh() ===
+if (loginEnabled === false) {
+  const fallbackUserId = 'desktop-user';
+  (window as any).__currentUserId = fallbackUserId;  // ✅ AJOUT CRITIQUE
+  setUser({ id: fallbackUserId, username: 'local', role: 'admin' });
+  setStatus('authenticated');
+  setReady(true);
+  return;
+}
+
+// === Dans login() : support multi-comptes sans écraser ===
+const CREDENTIALS_KEY = 'eaudit_credentials_list';
+
+const loadCredentialsList = (): Array<{username: string; password: string; userId: string}> => {
+  try {
+    const raw = localStorage.getItem(CREDENTIALS_KEY);
+    if (raw) return JSON.parse(raw);
+    // Migration legacy (ancien format mono-compte)
+    const legacy = localStorage.getItem('eaudit_credentials');
+    if (legacy) {
+      const parsed = JSON.parse(legacy);
+      localStorage.setItem(CREDENTIALS_KEY, JSON.stringify([parsed]));
+      localStorage.removeItem('eaudit_credentials');
+      return [parsed];
+    }
+  } catch { /* ignore */ }
+  return [];
+};
+
+// Dans login():
+const credentials = loadCredentialsList();
+const existing = credentials.find(c => c.username === username && c.password === password);
+let userId: string;
+
+if (existing) {
+  userId = existing.userId;  // ✅ Reconnexion fidèle
+  console.log('[AuthContext] Reconnecting existing user:', userId);
+} else {
+  userId = `user_${Date.now()}`;
+  credentials.push({ username, password, userId });
+  localStorage.setItem(CREDENTIALS_KEY, JSON.stringify(credentials));
+  console.log('[AuthContext] New account:', userId);
+}
+
+localStorage.setItem('eaudit_logged_in', 'true');
+localStorage.setItem('eaudit_login_time', Date.now().toString());
+localStorage.setItem('eaudit_username', username);
+localStorage.setItem('eaudit_user_id', userId);
+(window as any).__currentUserId = userId;  // ✅ Avant setUser
+
+setUser({ id: userId, username, role: 'admin' });
+setStatus('authenticated');
+setReady(true);
+Fichier 2 : ChatHistory.tsx — Source de vérité = React Context
+typescript
+import { useAuth } from '@renderer/context/AuthContext';
+
+const ChatHistory: React.FC<Props> = ({ onSessionClick, collapsed }) => {
+  const { user } = useAuth();  // ✅ Source de vérité React
+  
+  useEffect(() => {
+    if (!user?.id) {
+      console.log('[ChatHistory] No user, clearing history');
+      setChatHistory([]);
+      return;
+    }
+
+    const refresh = () => {
+      console.log('[ChatHistory] Fetching for user:', user.id);
+      ipcBridge.database.getUserConversations
+        .invoke({ userId: user.id, page: 0, pageSize: 10000 })
+        .then(history => {
+          setChatHistory(Array.isArray(history) && history.length > 0
+            ? history.sort((a, b) => getActivityTime(b) - getActivityTime(a))
+            : []);
+        })
+        .catch(err => {
+          console.error('[ChatHistory] Load failed:', err);
+          setChatHistory([]);  // ✅ Fail-safe : vide en cas d'erreur
+        });
+    };
+
+    refresh();
+    return addEventListener('chat.history.refresh', refresh);
+  }, [user?.id]);  // ✅ Dépendance sur l'utilisateur, pas sur la route
+};
+Fichier 3 : databaseBridge.ts — Pas de fallback, pas de file storage en multi-user
+typescript
+ipcBridge.database.getUserConversations.provider(async ({ userId, page = 0, pageSize = 10000 }) => {
+  console.log('[DatabaseBridge] userId received:', userId);
+
+  // ✅ Fail-fast : pas de userId = pas de données (empêche pollution)
+  if (!userId || userId === 'system_default_user') {
+    console.error('[DatabaseBridge] BLOCKED: userId required. Returning [].');
+    return [];
+  }
+
+  // ✅ Multi-user : skip file storage TOUJOURS
+  const db = getDatabase();
+  const result = db.getUserConversations(userId, page, pageSize);
+  console.log(`[DatabaseBridge] Returning ${result.data.length} conversations for ${userId}`);
+  return result.data || [];
+});
+Fichier 4 : database/index.ts — Suppression du fallback
+typescript
+getUserConversations(userId: string, page = 0, pageSize = 50): IPaginatedResult<TChatConversation> {
+  // ✅ Strict : plus de '?' et plus de fallback
+  if (!userId) {
+    console.error('[Database] getUserConversations called without userId');
+    return { data: [], total: 0, page, pageSize, hasMore: false };
+  }
+
+  try {
+    const countResult = this.db.prepare(
+      'SELECT COUNT(*) as count FROM conversations WHERE user_id = ?'
+    ).get(userId) as { count: number };
+
+    const rows = this.db.prepare(`
+      SELECT * FROM conversations
+      WHERE user_id = ?
+      ORDER BY updated_at DESC
+      LIMIT ? OFFSET ?
+    `).all(userId, pageSize, page * pageSize) as IConversationRow[];
+
+    return {
+      data: rows.map(rowToConversation),
+      total: countResult.count,
+      page, pageSize,
+      hasMore: (page + 1) * pageSize < countResult.count,
+    };
+  } catch (error: any) {
+    console.error('[Database] getUserConversations error:', error);
+    return { data: [], total: 0, page, pageSize, hasMore: false };
+  }
+}
+📋 Ordre d'implémentation (30-45 min)
+database/index.ts (strict) — plus de fallback silencieux
+
+databaseBridge.ts (fail-fast) — bloque la pollution file storage
+
+AuthContext.tsx — fix refresh() + multi-comptes (nécessaire pour la reconnexion Alice)
+
+ChatHistory.tsx — useAuth() + dépendance [user?.id]
+
+ConversationTabs.tsx et workspace/index.tsx — même pattern useAuth() (faites-les en même temps que #4)
+
+🧪 Plan de validation (impératif)
+Test A — Vérifier l'état actuel de la DB (avant de toucher au code)
+bash
+sqlite3 "C:\Users\LEADER\AppData\Roaming\E-audit\aionui\aionui.db"
+.headers on
+.mode column
+SELECT id, user_id, name, datetime(created_at/1000, 'unixepoch') AS created
+FROM conversations ORDER BY created_at DESC;
+Interprétation :
+
+Si tous les user_id = 'system_default_user' → Cause #3 confirmée (le write était cassé aussi ; les logs "OK" étaient trompeurs)
+
+Si chaque user_id est unique → Cause #1 + #2 confirmées (le read + la dépendance useEffect)
+
+Si les conversations anciennes sont sous system_default_user et les nouvelles sous user_XXX → les anciennes remontent via file storage (Cause #2)
+
+Test B — Isolation end-to-end (post-fix)
+bash
+# 1. Nettoyer
+rm "C:\Users\LEADER\AppData\Roaming\E-audit\aionui\aionui.db"
+# → dans DevTools : localStorage.clear(); location.reload()
+
+# 2. ALICE
+# Login ALICE/PASSWORD123 → créer "AAAAAA"
+# DevTools console DOIT afficher :
+#   [ChatHistory] Fetching for user: user_1738...
+#   [DatabaseBridge] userId received: user_1738...
+# SQL : SELECT * FROM conversations WHERE user_id='user_1738...' → 1 ligne
+
+# 3. Logout → vérifier
+# DevTools : __currentUserId === undefined  (normal)
+
+# 4. BOB login (BOB/PASSWORD456)
+# DevTools console DOIT afficher immédiatement :
+#   [ChatHistory] Fetching for user: user_1738xxx (différent de ALICE)
+# ❌ NE DOIT PAS afficher "[DatabaseBridge] BLOCKED" en boucle
+# UI : SEULEMENT "Test BOB", pas "AAAAAA"
+
+# 5. Créer "Test BOB" → SQL : 2 lignes, 2 user_id distincts
+
+# 6. Logout BOB, re-login ALICE/PASSWORD123
+# UI : retrouve "AAAAAA" (grâce au fix multi-comptes), PAS "Test BOB"
+
+# 7. Logout ALICE, re-login BOB/PASSWORD456
+# UI : retrouve "Test BOB", PAS "AAAAAA"  → isolation 100%
+Test C — Non-régression
+Créer une conversation via AgentSetupCard → vérifier en DB que user_id = user courant
+
+Rafraîchir la page (F5) → la session est restaurée, __currentUserId doit être set (grâce au fix refresh())
+
+WebUI mode : __currentUserId non utilisé, aucune régression attendue
+
+🔍 Réponse à vos 5 questions
+Question	Réponse
+1. Hypothèse la plus probable ?	Cause #1 (dépendance [isConversation]) est la cause racine du chevauchement visuel. La race __currentUserId seule ne suffit pas car login() set __currentUserId avant setUser(). La vraie race est temporelle : l'effet ne se re-déclenche pas au changement d'utilisateur.
+2. Solution recommandée ?	Les 4 fichiers (défense en profondeur). Solution #1 seule ne suffit pas : il faut aussi fail-fast backend (#2/#3) pour empêcher la pollution file storage.
+3. Autres fuites ?	Oui : le file storage (ProcessChat.get('chat.history')) est global et non scopé. Il DOIT être totalement désactivé en mode multi-user. ConversationTabs.tsx et workspace/index.tsx ont le même anti-pattern window.__currentUserId.
+4. Garantir 100% ?	(a) useAuth() partout + [user?.id] en dep, (b) fail-fast backend sur userId manquant, (c) userId: string obligatoire (pas ?) dans ipcBridge.ts, (d) désactivation file storage en multi-user, (e) test A+B dans la CI.
+5. IPC peut perdre userId ?	Oui, dans 2 cas : (i) { userId: undefined } est sérialisé sans la clé par structuredClone — le backend reçoit {} et userId === undefined. (ii) Un chat.history.refresh émis pendant un logout transitoire peut propager undefined. La solution fail-fast le rend impossible à ignorer.
+⚠️ Point critique de migration
+Après correction, les conversations existantes sous system_default_user deviendront invisibles (comportement voulu, mais déroutant). Ajoutez cette migration une seule fois au démarrage, après login du premier utilisateur :
+
+typescript
+// databaseBridge.ts (ou migration dédiée)
+const assignLegacyConversations = (userId: string) => {
+  const db = getDatabase();
+  const legacyCount = db.prepare(
+    "SELECT COUNT(*) as c FROM conversations WHERE user_id = 'system_default_user'"
+  ).get() as { c: number };
+  
+  if (legacyCount.c > 0) {
+    console.warn(`[Migration] Assigning ${legacyCount.c} legacy conversations to ${userId}`);
+    db.prepare(
+      "UPDATE conversations SET user_id = ? WHERE user_id = 'system_default_user'"
+    ).run(userId);
+  }
+};
+À appeler une seule fois après le premier login post-déploiement (flag dans localStorage : migration_legacy_v19_done).
+
+
+
+
+
+5. GEMINI HYDROGEN 
+
+1. Diagnostic clair (Cause racine)
+L’isolation échoue en lecture parce que le frontend s’appuie sur un état global impératif (window.__currentUserId) lu dans un useEffect sans dépendance utilisateur ([isConversation]), combiné à un mécanisme de fail-open côté backend (userId || this.defaultUserId + fusion du file storage ProcessChat.get('chat.history')). En React, les useEffect enfants (ChatHistory) s’exécutent avant les useEffect parents (AuthProvider) lors du montage/rechargement, et ne se ré-exécutent pas lors d’un changement de compte si le composant reste monté : ChatHistory envoie userId = undefined (ou l’ID précédent), ce qui déclenche côté backend la requête WHERE user_id = 'system_default_user' et la fusion non isolée du file storage.
+Point logique critique que votre doc n’a pas encore vérifié : SQLite ne peut pas retourner la conversation "AAAAA" (créée par A) et "Test BOB" (créée par B) dans une même requête WHERE user_id = ? s’ils avaient deux user_id différents. Donc, si l’utilisateur B voit "AAAAA" dans ChatHistory, cela prouve mathématiquement qu’au moins une des trois conditions suivantes est vraie :
+"AAAAA" a en réalité été créée avec user_id = 'system_default_user' (autre point d’entrée de création, ou fallback silencieux dans createConversation / conversationToRow), et la lecture de B retombe aussi sur 'system_default_user'.
+"AAAAA" existe dans le file storage (ProcessChat 'chat.history') et la lecture de B passe userId = undefined, activant le merge legacy dans databaseBridge.ts.
+Les « données qui se chevauchent » proviennent de composants d’état/UI non réinitialisés au logout (onglets ouverts dans ConversationTabs, cache React ou route /conversation/:id encore active) + d’un bug majeur dans AuthContext.tsx où eaudit_credentials écrase le compte précédent à chaque nouveau login.
+2. Priorisation des hypothèses (Haute → Faible)
+Priorité 1 (Très Haute) — Couplage window.__currentUserId + [isConversation] + fallback system_default_user
+Preuves dans l’architecture : ChatHistory.tsx lit (window as any).__currentUserId avec [isConversation] (et non [user?.id]). databaseBridge.ts accepte userId?: string et délègue à db.getUserConversations(userId) qui fait userId || this.defaultUserId.
+Effet : À chaque race condition (montage avant hydratation auth) ou changement d’utilisateur sans démontage complet, userId vaut undefined → fuite vers system_default_user + ProcessChat.
+Priorité 2 (Très Haute) — Écriture silencieuse sur system_default_user ou double écriture ProcessChat
+Preuves : Dans votre section 3 (Hypothèse #3), le commentaire throw new Error('userId is required'); // ← Devrait bloquer suggère que createConversation ne bloque pas encore l’absence de userId. De plus, si un autre écran crée une conversation (ex. page d’accueil/Guid, ConversationTabs, duplication, import) ou si conversationToRow utilise un fallback, "AAAAA" finit sous system_default_user ou dans ProcessChat.
+Priorité 3 (Haute) — Fuite d’état UI au logout (ConversationTabs, localStorage, route active) & écrasement de eaudit_credentials
+Preuves :
+AuthContext.tsx stocke un seul objet sous eaudit_credentials : quand Bob se connecte, il écrase les identifiants et le userId d’Alice (qui perdra ses conversations à sa reconnexion !).
+Si logout() ne vide pas window.__currentUserId, chatHistory, les onglets ouverts de ConversationTabs (souvent persistés en localStorage sans préfixe userId) et l’URL /conversation/:id, l’UI superpose les données de A et B.
+Priorité 4 (Moyenne) — Fusion du file storage (ProcessChat.get('chat.history'))
+Preuves : Dans databaseBridge.ts, dès que !userId || userId === 'system_default_user', toutes les conversations du fichier legacy sont injectées sans aucun filtre user_id.
+Priorité 5 (Faible) — Perte de userId par sérialisation IPC Electron
+Explication : Electron ipcRenderer.invoke utilise Structured Clone (qui préserve { userId: undefined }), alors qu’un pont JSON/WebSocket (WebUI) supprime les clés undefined. Dans les deux cas, le backend reçoit userId === undefined : la cause n’est pas Electron IPC, c’est l’émission d’un userId undefined côté frontend + l’absence de rejet côté backend.
+3. Réponses directes à vos 5 questions
+Cause la plus probable ? Combinaison Priorité 1 + Priorité 2 (le frontend envoie userId undefined ou stale en lecture, et soit la création de "AAAAA" a aussi fait fallback sur system_default_user, soit le merge ProcessChat l’a remontée). Vérifiable en 30 secondes via le SELECT SQL en Phase 1.
+Solution recommandée ? Combinaison complète (Defense in Depth) :
+Frontend : useAuth().user?.id partout + annulation des requêtes obsolètes (cancelled) + multi-utilisateurs dans AuthContext + reset complet au logout.
+Contrat IPC : userId: string obligatoire dans ipcBridge.ts (pour que tsc détecte 100% des oublis).
+Backend/DB : Fail-closed (retourner [] ou lever une erreur si !userId, supprimer defaultUserId en mode multi-utilisateur, désactiver le merge ProcessChat dès qu’un userId non-legacy est utilisé).
+Autres points de fuite potentiels ?
+ConversationTabs (onglets ouverts persistés globalement dans localStorage).
+db.getConversation(id), updateConversation, deleteConversation, getMessages : si B accède à une route /conversation/:id résiduelle de A sans vérification AND user_id = ?, la conversation s’ouvre.
+AgentSetupCard / Guid / getCurrentUserId() : tout point d’entrée conversation.create qui lit window.__currentUserId.
+Comment garantir l’isolation à 100% ? Typage strict (userId: string), suppression de tout fallback silencieux, scoping SQL WHERE id = ? AND user_id = ? sur lecture/écriture/suppression, et tests automatisés Vitest sur database/index.ts.
+Mode WebUI : Attention ! En WebUI (single/admin auth), le user seeded en base a souvent id = 'system_default_user' (ou l’ID retourné par /api/auth/me). Il ne faut donc pas rejeter 'system_default_user' si AuthContext WebUI retourne cet ID explicitement — en revanche, il faut toujours rejeter undefined ou "", et ne jamais fusionner ProcessChat pour les comptes user_*.
+4. Ordre des modifications et code exact à appliquer
+Ordre d’exécution recommandé
+src/common/ipcBridge.ts (rend userId obligatoire → tsc vous listera tous les appelants manquants)
+src/process/database/index.ts (supprimer fallback defaultUserId)
+src/process/bridge/databaseBridge.ts (fail-closed si !userId + isoler file storage)
+src/process/bridge/conversationBridge.ts & src/process/services/conversationService.ts (exiger userId en création)
+src/renderer/context/AuthContext.tsx (registre multi-user pour ne pas casser la reconnexion + synchro __currentUserId + nettoyage logout)
+src/renderer/pages/conversation/ChatHistory.tsx (remplacer window.__currentUserId par useAuth())
+src/renderer/pages/conversation/ConversationTabs.tsx, src/renderer/pages/conversation/workspace/index.tsx & AgentSetupCard.tsx (remplacer window.__currentUserId / scoper les onglets)
+Étape 1 : src/common/ipcBridge.ts
+Rendre userId obligatoire afin que TypeScript bloque toute invocation incomplète :
+TypeScript
+// src/common/ipcBridge.ts
+export const database = {
+  getUserConversations: bridge.buildProvider<
+    import('@/common/storage').TChatConversation[],
+    { userId: string; page?: number; pageSize?: number }
+  >('database.get-user-conversations'),
+};
+(Conseil : faites de même sur conversation.create si le schéma est partagé uniquement avec le renderer authentifié.)
+Étape 2 : src/process/database/index.ts
+Supprimer tout fallback silencieux vers this.defaultUserId en lecture et en écriture, et vérifier conversationToRow :
+TypeScript
+// src/process/database/index.ts
+
+createConversation(conversation: TChatConversation, userId: string): IQueryResult<boolean> {
+  try {
+    if (!userId || typeof userId !== 'string' || !userId.trim()) {
+      const msg = '[Database] CRITICAL: userId is required for createConversation';
+      console.error(msg);
+      return { success: false, error: msg };
+    }
+
+    const row = conversationToRow(conversation, userId);
+    // Vérification défensive : s'assurer que conversationToRow n'écrase pas user_id
+    row.user_id = userId;
+
+    // ... INSERT INTO conversations ...
+    return { success: true, data: true };
+  } catch (error) {
+    return { success: false, error: String(error) };
+  }
+}
+
+getUserConversations(userId: string, page = 0, pageSize = 50): IPaginatedResult<TChatConversation> {
+  if (!userId || typeof userId !== 'string' || !userId.trim()) {
+    console.error('[Database] CRITICAL: getUserConversations called without userId');
+    throw new Error('userId is required for getUserConversations');
+  }
+
+  const countRow = this.db
+    .prepare('SELECT COUNT(*) as count FROM conversations WHERE user_id = ?')
+    .get(userId) as { count: number };
+
+  const rows = this.db
+    .prepare(`
+      SELECT * FROM conversations
+      WHERE user_id = ?
+      ORDER BY updated_at DESC
+      LIMIT ? OFFSET ?
+    `)
+    .all(userId, pageSize, page * pageSize);
+
+  return {
+    data: rows.map(rowToConversation),
+    total: countRow.count,
+    page,
+    pageSize,
+    hasMore: (page + 1) * pageSize < countRow.count,
+  };
+}
+À vérifier dans database/index.ts : Auditez aussi getConversation(id), updateConversation(id, ...), deleteConversation(id) et getConversationMessages(id) pour vous assurer qu’une route résiduelle /conversation/:id ne permette pas à Bob d’ouvrir une conversation d’Alice.
+Étape 3 : src/process/bridge/databaseBridge.ts
+Fail-closed si userId manque, tout en préservant la compatibilité WebUI :
+TypeScript
+// src/process/bridge/databaseBridge.ts
+ipcBridge.database.getUserConversations.provider(async (params) => {
+  const userId = params?.userId;
+  const page = params?.page ?? 0;
+  const pageSize = params?.pageSize ?? 10000;
+
+  if (!userId || typeof userId !== 'string' || !userId.trim()) {
+    console.error('[DatabaseBridge] BLOCKED: missing userId in getUserConversations:', params);
+    return [];
+  }
+
+  const db = getDatabase();
+  const result = db.getUserConversations(userId, page, pageSize);
+  const dbConversations = result.data || [];
+
+  // Mode multi-utilisateur (Desktop ou comptes distincts) :
+  // NE JAMAIS fusionner ProcessChat qui n'est pas isolé par userId.
+  if (userId !== 'system_default_user') {
+    return dbConversations;
+  }
+
+  // Compatibilité WebUI / single-user legacy uniquement :
+  const fileConversations = (await ProcessChat.get('chat.history')) || [];
+  const dbConversationMap = new Map(dbConversations.map((conv) => [conv.id, conv]));
+  const fileOnlyConversations = fileConversations.filter((conv) => !dbConversationMap.has(conv.id));
+  return [...dbConversations, ...fileOnlyConversations];
+});
+Étape 4 : src/process/bridge/conversationBridge.ts & conversationService.ts
+Garantir qu’aucune création UI ne passe sans userId et qu’aucune double écriture ne pollue ProcessChat :
+TypeScript
+// src/process/bridge/conversationBridge.ts
+ipcBridge.conversation.create.provider(async (params) => {
+  if (!params?.userId || typeof params.userId !== 'string' || !params.userId.trim()) {
+    throw new Error('[ConversationBridge] BLOCKED: userId is required to create conversation');
+  }
+
+  const result = await ConversationService.createConversation({
+    ...params,
+    userId: params.userId,
+  });
+
+  if (!result.success) {
+    throw new Error(result.error || 'Failed to create conversation');
+  }
+
+  return result.conversation;
+});
+(Dans conversationService.ts, vérifiez tous les appels à db.createConversation(...), pas seulement les lignes 85 et 191 — Gemini, ACP, Codex, etc. — et vérifiez qu’aucun appel n’écrit vers ProcessChat.set('chat.history', ...) en mode Desktop.)
+Étape 5 : src/renderer/context/AuthContext.tsx
+Correction de 3 bugs critiques :
+Remplacer l’objet unique eaudit_credentials par un dictionnaire multi-comptes eaudit_desktop_users (sinon Bob écrase le userId d’Alice).
+Synchroniser (window as any).__currentUserId dès la restauration de session (avant setReady(true)), pas seulement dans login().
+Nettoyer proprement au logout() sans effacer le registre des utilisateurs.
+TypeScript
+// Helpers dans src/renderer/context/AuthContext.tsx
+interface DesktopUserRecord {
+  username: string;
+  password: string;
+  userId: string;
+}
+
+const DESKTOP_USERS_KEY = 'eaudit_desktop_users';
+const LEGACY_CREDENTIALS_KEY = 'eaudit_credentials';
+
+function loadDesktopUsers(): Record<string, DesktopUserRecord> {
+  const users: Record<string, DesktopUserRecord> = {};
+  try {
+    const raw = localStorage.getItem(DESKTOP_USERS_KEY);
+    if (raw) {
+      Object.assign(users, JSON.parse(raw));
+    }
+    // Migration douce depuis l'ancien format mono-utilisateur
+    const legacyRaw = localStorage.getItem(LEGACY_CREDENTIALS_KEY);
+    if (legacyRaw) {
+      const legacy = JSON.parse(legacyRaw) as Partial<DesktopUserRecord>;
+      if (legacy.username && legacy.password && legacy.userId) {
+        const key = legacy.username.trim().toLowerCase();
+        if (!users[key]) {
+          users[key] = {
+            username: legacy.username,
+            password: legacy.password,
+            userId: legacy.userId,
+          };
+          localStorage.setItem(DESKTOP_USERS_KEY, JSON.stringify(users));
+        }
+      }
+    }
+  } catch (e) {
+    console.error('[AuthContext] Failed to parse desktop users:', e);
+  }
+  return users;
+}
+Dans login (mode Desktop) :
+TypeScript
+if (isDesktopRuntime) {
+  const normalizedKey = username.trim().toLowerCase();
+  const users = loadDesktopUsers();
+  const existing = users[normalizedKey];
+  let userId: string;
+
+  if (existing) {
+    if (existing.password !== password) {
+      return { success: false, message: 'Mot de passe incorrect pour ce compte' };
+    }
+    userId = existing.userId; // Reconnexion fidèle même après connexion d'un autre user
+  } else {
+    userId = `user_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`;
+    users[normalizedKey] = { username: username.trim(), password, userId };
+    localStorage.setItem(DESKTOP_USERS_KEY, JSON.stringify(users));
+  }
+
+  localStorage.setItem('eaudit_user_id', userId);
+  localStorage.setItem('eaudit_username', username.trim());
+  localStorage.setItem('eaudit_logged_in', 'true');
+  (window as any).__currentUserId = userId;
+
+  setUser({ id: userId, username: username.trim(), role: 'admin' });
+  setStatus('authenticated');
+  setReady(true);
+  return { success: true };
+}
+Dans la restauration de session au démarrage (mode Desktop, avant setReady(true)) :
+TypeScript
+const savedUserId = localStorage.getItem('eaudit_user_id');
+const savedUsername = localStorage.getItem('eaudit_username');
+const isLoggedIn = localStorage.getItem('eaudit_logged_in') === 'true';
+
+if (isDesktopRuntime && isLoggedIn && savedUserId && savedUsername) {
+  (window as any).__currentUserId = savedUserId;
+  setUser({ id: savedUserId, username: savedUsername, role: 'admin' });
+  setStatus('authenticated');
+} else if (isDesktopRuntime) {
+  (window as any).__currentUserId = undefined;
+}
+setReady(true);
+(En mode WebUI, assurez-vous que l’appel /api/auth/me ou /api/auth/login renseigne également user.id et synchronise (window as any).__currentUserId = fetchedUser.id si nécessaire.)
+Dans logout :
+TypeScript
+const logout = useCallback(async () => {
+  // Ne PAS supprimer DESKTOP_USERS_KEY pour préserver la reconnexion multi-comptes
+  localStorage.removeItem('eaudit_user_id');
+  localStorage.removeItem('eaudit_username');
+  localStorage.removeItem('eaudit_logged_in');
+  localStorage.removeItem('eaudit_login_time');
+  (window as any).__currentUserId = undefined;
+
+  setUser(null);
+  setStatus('unauthenticated');
+  // Si WebUI : appeler l'API logout existante
+}, []);
+Étape 6 : src/renderer/pages/conversation/ChatHistory.tsx
+Utiliser useAuth(), réagir aux changements de user?.id, et ignorer les réponses async périmées (cancelled) :
+TypeScript
+import { useAuth } from '@renderer/context/AuthContext';
+
+export const ChatHistory: React.FC<Props> = ({ id, onSessionClick }) => {
+  const { user } = useAuth();
+  const [chatHistory, setChatHistory] = useState<TChatConversation[]>([]);
+
+  useEffect(() => {
+    if (!user?.id) {
+      setChatHistory([]);
+      return;
+    }
+
+    let cancelled = false;
+    const activeUserId = user.id;
+
+    const refresh = () => {
+      ipcBridge.database.getUserConversations
+        .invoke({ userId: activeUserId, page: 0, pageSize: 10000 })
+        .then((history) => {
+          if (!cancelled) {
+            setChatHistory(history || []);
+          }
+        })
+        .catch((error) => {
+          console.error('[ChatHistory] Error loading conversations:', error);
+          if (!cancelled) {
+            setChatHistory([]);
+          }
+        });
+    };
+
+    refresh();
+    const removeListener = addEventListener('chat.history.refresh', refresh);
+
+    return () => {
+      cancelled = true;
+      removeListener();
+    };
+  }, [user?.id, isConversation]);
+  // ...
+};
+Étape 7 : ConversationTabs.tsx, workspace/index.tsx, AgentSetupCard.tsx (et @renderer/utils/auth)
+ConversationTabs.tsx :
+TypeScript
+const { user } = useAuth();
+
+const handleNewConversation = useCallback(() => {
+  if (!user?.id) {
+    console.error('[ConversationTabs] No authenticated user');
+    return;
+  }
+
+  void ipcBridge.database.getUserConversations
+    .invoke({ userId: user.id, page: 0, pageSize: 10000 })
+    .then((conversations) => {
+      const currentConversation = conversations?.find((conv) => conv.id === currentTab.id);
+      // ... suite inchangée, en passant userId: user.id si création ...
+    });
+}, [user?.id, openTabs, activeTabId, navigate, t]);
+Crucial pour le chevauchement visuel : Vérifiez dans ConversationTabs.tsx (ou le contexte/store des onglets) comment openTabs est stocké. Si openTabs est persisté dans localStorage, préfixez la clé par user.id (ex. eaudit_open_tabs_${user.id}) et réinitialisez openTabs à [] quand user?.id change ou devient undefined !
+workspace/index.tsx :
+TypeScript
+const { user } = useAuth();
+
+const handleMigrateWorkspace = async () => {
+  if (!user?.id) {
+    console.error('[Workspace] No authenticated user');
+    return;
+  }
+
+  const conversations = await ipcBridge.database.getUserConversations
+    .invoke({ userId: user.id, page: 0, pageSize: 10000 });
+  const currentConversation = conversations?.find((conv) => conv.id === conversation_id);
+  // ...
+};
+AgentSetupCard.tsx et @renderer/utils/auth.ts :
+Dans AgentSetupCard.tsx (et tout autre composant qui appelle ipcBridge.conversation.create), utilisez const { user } = useAuth(); et bloquez si !user?.id.
+Dans @renderer/utils/auth.ts (getCurrentUserId()), si une fonction utilitaire hors hook subsiste, faites au minimum :
+TypeScript
+export function getCurrentUserId(): string | undefined {
+  return (window as any).__currentUserId || localStorage.getItem('eaudit_user_id') || undefined;
+}
+Lancez ensuite un npx tsc --noEmit et une recherche globale sur getUserConversations et conversation.create pour vérifier qu’il ne reste aucun appelant sans userId.
+5. Plan d’implémentation & Tests de validation
+Phase A — Vérification rapide de l’état actuel en SQLite (avant modification)
+Pour lever toute ambiguïté entre bug d’écriture et bug de lecture sur votre base actuelle :
+Powershell
+sqlite3 "$env:APPDATA\E-audit\aionui\aionui.db" "SELECT id, user_id, name, created_at FROM conversations ORDER BY created_at DESC LIMIT 20;"
+Si des lignes récentes ont user_id = 'system_default_user', il restait bien un chemin d’écriture sans userId (ou un fallback dans conversationToRow).
+Vérifiez également le schéma exact de conversations :
+Powershell
+sqlite3 "$env:APPDATA\E-audit\aionui\aionui.db" ".schema conversations"
+(Pour confirmer l’absence de contrainte FOREIGN KEY(user_id) REFERENCES users(id) qui bloquerait les IDs user_*.)
+Phase B — Nettoyage & Validation E2E (Alice → Bob → Reconnexion Alice)
+Supprimez l’ancienne DB polluée pour repartir sur un état sain :
+Powershell
+Remove-Item "$env:APPDATA\E-audit\aionui\aionui.db" -ErrorAction SilentlyContinue
+(Et en DevTools Console au premier lancement : localStorage.clear() pour purger les anciens onglets/clés non scopés.)
+Lancez l’app (npm run start:mem) et vérifiez npx tsc --noEmit = 0 erreur.
+Scénario Alice :
+Login ALICE / PASSWORD123 → créez la conversation "Test ALICE".
+SQLite doit contenir 1 ligne avec user_id = 'user_...'.
+Scénario Bob (sans localStorage.removeItem manuel ! Utilisez le vrai bouton Logout) :
+Cliquez sur Logout → Login BOB / PASSWORD456.
+Attendu immédiat avant même de créer une conv : La sidebar ChatHistory et les ConversationTabs sont vides (aucune trace de "Test ALICE").
+Créez "Test BOB" → seule "Test BOB" apparaît dans l’UI.
+Vérification SQLite :
+SQL
+SELECT id, user_id, name FROM conversations ORDER BY created_at;
+-- Doit afficher exactement 2 lignes avec 2 user_id distincts (aucun 'system_default_user')
+Scénario Reconnexion Alice :
+Cliquez sur Logout → Login ALICE / PASSWORD123.
+Attendu : Alice retrouve uniquement "Test ALICE" (grâce à eaudit_desktop_users), et ne voit ni "Test BOB" ni ses onglets.
+Non-régression WebUI :
+Démarrez en mode WebUI, connectez-vous avec le compte web configuré, vérifiez que user?.id est non vide dans AuthContext et que la liste des conversations charge normalement.
+
+
+
+6.
+
+
+
+
+
+
+
+
+
+

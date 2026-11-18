@@ -267,8 +267,12 @@ const ChatWorkspace: React.FC<WorkspaceProps> = ({ conversation_id, workspace, e
     setMigrationLoading(true);
 
     try {
+      // ISOLATION FIX: Get userId from auth context
+      const userId = (window as any).__currentUserId;
+      console.log('[Workspace] Migrating workspace for userId:', userId);
+      
       // Get current conversation data
-      const conversations = await ipcBridge.database.getUserConversations.invoke({ page: 0, pageSize: 10000 });
+      const conversations = await ipcBridge.database.getUserConversations.invoke({ userId, page: 0, pageSize: 10000 });
       const currentConversation = conversations?.find((conv) => conv.id === conversation_id);
 
       if (!currentConversation) {

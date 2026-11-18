@@ -24,11 +24,19 @@ export function initDatabaseBridge(): void {
   });
 
   // Get user conversations from database with lazy migration from file storage
-  ipcBridge.database.getUserConversations.provider(async ({ page = 0, pageSize = 10000 }) => {
+  ipcBridge.database.getUserConversations.provider(async ({ userId, page = 0, pageSize = 10000 }) => {
     try {
+      console.log(`[DatabaseBridge] getUserConversations called with userId=${userId}`);
       const db = getDatabase();
-      const result = db.getUserConversations(undefined, page, pageSize);
+      const result = db.getUserConversations(userId, page, pageSize);
       const dbConversations = result.data || [];
+
+      // ISOLATION FIX: When userId is provided, skip file storage migration
+      // File storage doesn't support multi-user isolation, so only use it for legacy/default user
+      if (userId && userId !== 'system_default_user') {
+        console.log(`[DatabaseBridge] Returning ${dbConversations.length} conversations for userId=${userId} (no file migration)`);
+        return dbConversations;
+      }
 
       // Try to get conversations from file storage
       let fileConversations: TChatConversation[] = [];

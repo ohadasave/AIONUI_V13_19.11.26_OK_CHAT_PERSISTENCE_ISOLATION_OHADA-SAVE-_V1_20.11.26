@@ -123,9 +123,13 @@ const ConversationTabs: React.FC = () => {
       return;
     }
 
+    // ISOLATION FIX: Get userId from auth context
+    const userId = (window as any).__currentUserId;
+    console.log('[ConversationTabs] Creating new conversation for userId:', userId);
+
     // 从数据库获取当前会话的完整信息
     void ipcBridge.database.getUserConversations
-      .invoke({ page: 0, pageSize: 10000 })
+      .invoke({ userId, page: 0, pageSize: 10000 })
       .then((conversations) => {
         const currentConversation = conversations?.find((conv: TChatConversation) => conv.id === currentTab.id);
         if (!currentConversation) {

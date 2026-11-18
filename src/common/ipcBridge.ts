@@ -343,7 +343,7 @@ export const openclawConversation = {
 // Database operations
 export const database = {
   getConversationMessages: bridge.buildProvider<import('@/common/chatLib').TMessage[], { conversation_id: string; page?: number; pageSize?: number }>('database.get-conversation-messages'),
-  getUserConversations: bridge.buildProvider<import('@/common/storage').TChatConversation[], { page?: number; pageSize?: number }>('database.get-user-conversations'),
+  getUserConversations: bridge.buildProvider<import('@/common/storage').TChatConversation[], { userId?: string; page?: number; pageSize?: number }>('database.get-user-conversations'),
   updateMessageContent: bridge.buildProvider<{ success: boolean; error?: string }, { messageId: string; conversationId: string; content: string }>('database.update-message-content'),
 };
 

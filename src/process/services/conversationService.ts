@@ -103,7 +103,7 @@ export class ConversationService {
 
       // ISOLATION FIX: Save to database with userId
       const db = getDatabase();
-      const result = db.createConversation(conversation, userId);
+      const result = db.createConversation(conversation, params.userId);
       if (!result.success) {
         console.error('[ConversationService] Failed to create conversation in database:', result.error);
         return { success: false, error: result.error };

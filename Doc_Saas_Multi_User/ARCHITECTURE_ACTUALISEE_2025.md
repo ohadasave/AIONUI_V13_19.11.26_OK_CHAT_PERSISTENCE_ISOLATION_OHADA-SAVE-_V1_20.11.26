@@ -1,14 +1,14 @@
 # Architecture Multi-Utilisateur — Mémo Progressif 2025
 
-**Date:** 2 février 2025  
-**Status:** ✅ ISOLATION COMPLÈTE IMPLÉMENTÉE  
-**Version:** v18 (avec isolation userId)
+**Date:** 7 Février 2025  
+**Status:** ⚠️ BUG CRITIQUE EN COURS - Isolation lecture défaillante  
+**Version:** v18.1 → v19 (correction en cours)
 
 ---
 
 ## 🎯 Vue d'Ensemble
 
-Ce document présente l'évolution progressive de l'architecture multi-utilisateur d'AionUi, depuis l'état initial (utilisateur unique implicite) jusqu'à l'état actuel (isolation complète avec transmission userId du frontend au backend).
+Ce document présente l'évolution progressive de l'architecture multi-utilisateur d'AionUi, depuis l'état initial (utilisateur unique implicite) jusqu'à l'état actuel (v18.1 avec isolation partielle, v19 en cours pour isolation complète).
 
 ### Chronologie des Évolutions
 
@@ -19,10 +19,21 @@ Nov 2024 → État Initial
   └─ WebUI avec JWT mais isolation partielle
 
 Fév 2025 → Isolation Complète (v18)
-  ✅ Transmission userId frontend → backend
+  ✅ Transmission userId frontend → backend (CREATE)
   ✅ Page de login obligatoire en Desktop mode
-  ✅ Suppression des fallbacks defaultUserId
-  ✅ Chaque compte voit uniquement ses données
+  ✅ Bouton logout dans sidebar
+  ✅ Multiple accounts creation
+
+Fév 2025 → Tentative correction lecture (v18.1)
+  ✅ Ajout userId dans IPC getUserConversations
+  ✅ Passage userId depuis frontend (window.__currentUserId)
+  ❌ BUG PERSISTE: utilisateurs voient conversations des autres
+
+Fév 2025 → Debug en cours (v19)
+  🔍 Hypothèse principale: Race condition window.__currentUserId
+  🔍 Solution proposée: Utiliser useAuth() au lieu de window global
+  📊 Architecture debug complète créée
+  📄 Prompt Frontier Model préparé
 ```
 
 ---
@@ -513,7 +524,7 @@ Résultat: Chaque utilisateur voit UNIQUEMENT ses données ✅
 7. Bob voit la conversation "Test Alice" ❌
 ```
 
-**APRÈS:**
+**APRÈS (v18 - CRÉATION):**
 ```
 1. Alice lance l'app Desktop
 2. ✅ Page de login s'affiche
@@ -528,8 +539,10 @@ Résultat: Chaque utilisateur voit UNIQUEMENT ses données ✅
 11. Bob entre: bob@example.com / Bob456
 12. ✅ userId généré: user_1738840000000 (différent d'Alice)
 13. ✅ window.__currentUserId = user_1738840000000
-14. Bob ne voit PAS la conversation "Test Alice" ✅
+14. ❌ Bob VOIT la conversation "Test Alice" (BUG v18.1)
 ```
+
+**Note v18.1:** L'isolation en ÉCRITURE fonctionne, mais pas en LECTURE. Bob voit les conversations d'Alice car `getUserConversations` ne filtre pas correctement par userId.
 
 #### Scénario 2: Reconnexion Alice
 
@@ -826,15 +839,155 @@ v18 (Fév 2025) — Isolation userId Desktop Mode
   ├─ ✅ Génération userId unique
   ├─ ✅ Transmission userId frontend → backend
   ├─ ✅ Validation stricte database
-  └─ ✅ Isolation complète confirmée
+  └─ ⚠️ Isolation PARTIELLE - Bug en lecture détecté
 ```
+
+---
+
+## 🐛 BUG v18.1 — Isolation en Lecture Défaillante
+
+### Symptômes (7 Février 2025)
+
+**Comportement observé:**
+```
+1. Alice login → crée conversation "AAAAAA" → logout
+2. Bob login (nouveau compte) → crée conversation "Test BOB"
+3. ❌ Bob voit AUSSI la conversation "AAAAAA" d'Alice
+4. Les tables de données se chevauchent visuellement
+```
+
+### Analyse du Bug
+
+**Isolation ÉCRITURE (CREATE) - ✅ Fonctionne**
+```typescript
+// Frontend: AgentSetupCard.tsx
+const userId = getCurrentUserId(); // window.__currentUserId
+ipcBridge.conversation.create.invoke({ type, model, extra, userId });
+
+// Backend: conversationService.ts
+db.createConversation(conversation, params.userId);
+
+// Database: INSERT INTO conversations (id, user_id, ...) VALUES (?, ?, ...)
+→ user_id correctement enregistré ✅
+```
+
+**Isolation LECTURE (READ) - ❌ Ne fonctionne pas**
+```typescript
+// Frontend: ChatHistory.tsx (ligne ~104)
+const userId = (window as any).__currentUserId; // ← SUSPECT: undefined ?
+ipcBridge.database.getUserConversations.invoke({ userId, page: 0, pageSize: 10000 });
+
+// Backend: databaseBridge.ts (ligne ~27)
+provider(async ({ userId, page, pageSize }) => {
+  const result = db.getUserConversations(userId, page, pageSize);
+  // Si userId = undefined → fallback vers 'system_default_user'
+});
+
+// Database: index.ts (ligne ~533)
+getUserConversations(userId?: string, page, pageSize) {
+  const finalUserId = userId || this.defaultUserId; // ← FALLBACK ICI
+  SELECT * FROM conversations WHERE user_id = ? // ← Requête SQL
+}
+→ Si userId undefined → requête filtre sur 'system_default_user'
+→ Tous les utilisateurs voient les mêmes conversations ❌
+```
+
+### Hypothèses Principales
+
+#### Hypothèse #1: Race Condition `window.__currentUserId` ⭐⭐⭐⭐⭐
+
+**Probabilité:** TRÈS HAUTE
+
+```typescript
+// AuthContext.tsx - login()
+(window as any).__currentUserId = userId;
+setUser({ id: userId, username, role: 'admin' });
+setStatus('authenticated');
+// ↓ React re-render déclenché
+// ↓ ChatHistory.tsx se monte IMMÉDIATEMENT
+// ↓ useEffect s'exécute AVANT que __currentUserId soit défini ?
+
+// ChatHistory.tsx - useEffect (ligne ~101)
+const userId = (window as any).__currentUserId; // ← undefined ?
+```
+
+**Solution proposée:** Utiliser `useAuth()` au lieu de `window.__currentUserId`
+
+```typescript
+// ChatHistory.tsx (v19)
+import { useAuth } from '@renderer/context/AuthContext';
+
+const { user } = useAuth(); // ← React Context garantit sync
+
+useEffect(() => {
+  if (!user?.id) {
+    setChatHistory([]);
+    return;
+  }
+  
+  const refresh = () => {
+    ipcBridge.database.getUserConversations
+      .invoke({ userId: user.id, page: 0, pageSize: 10000 }) // ← user.id garanti défini
+      .then(history => setChatHistory(history || []));
+  };
+  
+  refresh();
+  return addEventListener('chat.history.refresh', refresh);
+}, [user?.id]); // ← Dépendance sur user.id
+```
+
+#### Hypothèse #2: Conversations créées avec `user_id = 'system_default_user'` ⭐⭐⭐⭐
+
+**Test de diagnostic:**
+```sql
+sqlite3 "C:\Users\LEADER\AppData\Roaming\E-audit\aionui\aionui.db"
+SELECT id, user_id, name FROM conversations;
+
+-- Si tous ont user_id = 'system_default_user' → BUG EN ÉCRITURE
+-- Si chaque conversation a un user_id différent → BUG EN LECTURE
+```
+
+### Fichiers Modifiés v18.1 (Tentative Correction)
+
+**Objectif:** Transmettre userId du frontend au backend pour la lecture
+
+1. **`src/common/ipcBridge.ts`** - Ajout `userId?: string` à `getUserConversations`
+2. **`src/process/bridge/databaseBridge.ts`** - Extraction userId + skip file storage
+3. **`src/renderer/pages/conversation/ChatHistory.tsx`** - Passage `window.__currentUserId`
+4. **`src/renderer/pages/conversation/ConversationTabs.tsx`** - Passage `window.__currentUserId`
+5. **`src/renderer/pages/conversation/workspace/index.tsx`** - Passage `window.__currentUserId`
+6. **`src/process/services/conversationService.ts`** - Fix bug `userId undefined` (ligne 85)
+
+**Résultat:** Bug persiste, hypothèse race condition confirmée.
+
+### Plan de Correction v19
+
+**Phase 1: Diagnostic (fichiers de debug créés)**
+- ✅ `ARCHITECTURE_DEBUG_ISOLATION_V19.md` (analyse exhaustive)
+- ✅ `PROMPT_FRONTIER_ISOLATION_BUG.md` (prompt pour frontier model)
+- ✅ `CORRECTION_ISOLATION_LECTURE_FEVRIER_2025.md` (tentatives v18.1)
+
+**Phase 2: Solution Proposée**
+- [ ] Utiliser `useAuth()` dans les 3 fichiers frontend (ChatHistory, ConversationTabs, workspace)
+- [ ] Bloquer les appels IPC sans userId dans databaseBridge.ts
+- [ ] Supprimer fallback `defaultUserId` dans database/index.ts
+- [ ] Ajouter logs exhaustifs pour traçabilité
+
+**Phase 3: Tests de Validation**
+- [ ] Scénario Alice/Bob avec vérification SQL
+- [ ] Reconnexion Alice retrouve ses données
+- [ ] Logout/login multiple accounts
+- [ ] Base de données vérifiée (user_id différents)
+
+---
 
 ### Compatibilité
 
 **Mode Desktop:**
 - ✅ Login obligatoire avec génération userId
-- ✅ Isolation complète entre comptes
+- ⚠️ Isolation partielle (WRITE ok, READ ko)
 - ✅ Fonctionne avec SQLite local
+- ⚠️ Correction v19 en cours
 
 **Mode WebUI:**
 - ✅ JWT authentification existante conservée
@@ -842,7 +995,7 @@ v18 (Fév 2025) — Isolation userId Desktop Mode
 - ✅ Interface Admin fonctionnelle (v17)
 - ✅ Audit logs opérationnels (v17)
 
-**Aucune régression:** Tous les tests existants passent ✅
+**Régression détectée:** Isolation lecture ne fonctionne pas ❌
 
 ---
 

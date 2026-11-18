@@ -100,9 +100,13 @@ const ChatHistory: React.FC<{ onSessionClick?: () => void; collapsed?: boolean }
 
   useEffect(() => {
     const refresh = () => {
+      // ISOLATION FIX: Get userId from auth context
+      const userId = (window as any).__currentUserId;
+      console.log('[ChatHistory] Fetching conversations for userId:', userId);
+      
       // Get conversations from database instead of file storage
       ipcBridge.database.getUserConversations
-        .invoke({ page: 0, pageSize: 10000 })
+        .invoke({ userId, page: 0, pageSize: 10000 })
         .then((history) => {
           if (history && Array.isArray(history) && history.length > 0) {
             const sortedHistory = history.sort((a, b) => getActivityTime(b) - getActivityTime(a));

@@ -164,36 +164,37 @@ export const AuthProvider: React.FC<React.PropsWithChildren> = ({ children }) =>
           };
         }
 
-        // Check if credentials already exist (reconnection)
+        // Check if credentials already exist
         const storedCredentials = localStorage.getItem('eaudit_credentials');
         let userId: string;
 
         if (storedCredentials) {
-          // Reconnection: validate credentials
           try {
             const { username: storedUsername, password: storedPassword, userId: storedUserId } = JSON.parse(storedCredentials);
 
-            if (username !== storedUsername || password !== storedPassword) {
-              return {
-                success: false,
-                message: 'Identifiants incorrects',
-                code: 'invalidCredentials',
-              };
+            // Check if this is the same user reconnecting
+            if (username === storedUsername && password === storedPassword) {
+              // Same user reconnecting - use existing userId
+              userId = storedUserId;
+              console.log('[AuthContext] User reconnecting with existing credentials:', userId);
+            } else {
+              // Different credentials - create new account with new userId
+              userId = `user_${Date.now()}`;
+              localStorage.setItem('eaudit_credentials', JSON.stringify({ username, password, userId }));
+              console.log('[AuthContext] New account created with userId:', userId);
             }
-            
-            // Use existing userId
-            userId = storedUserId;
           } catch (error) {
             console.error('[AuthContext] Failed to parse stored credentials:', error);
-            // Clear invalid credentials
+            // Clear invalid credentials and create new account
             localStorage.removeItem('eaudit_credentials');
-            // Create new userId for first login
             userId = `user_${Date.now()}`;
+            localStorage.setItem('eaudit_credentials', JSON.stringify({ username, password, userId }));
           }
         } else {
           // First login: create new userId and store credentials
           userId = `user_${Date.now()}`;
           localStorage.setItem('eaudit_credentials', JSON.stringify({ username, password, userId }));
+          console.log('[AuthContext] First account created with userId:', userId);
         }
 
         // Store login state with username and userId
