@@ -11,9 +11,12 @@
 
 | Document | Usage |
 |----------|-------|
+| **[INSTRUCTIONS_TEST_IMMEDIAT.md](INSTRUCTIONS_TEST_IMMEDIAT.md)** | 🚀 **COMMENCER ICI** - Procédure de test |
 | [01_SYMPTOME_REGRESSION.md](01_SYMPTOME_REGRESSION.md) | Description du problème |
 | **[02_ANALYSE_CAUSE_RACINE.md](02_ANALYSE_CAUSE_RACINE.md)** | 📚 **Analyse complète** ⭐ |
 | [03_CORRECTIF_APPLIQUE.md](03_CORRECTIF_APPLIQUE.md) | Modification de code + instructions test |
+| [04_VALIDATION_DEMARRAGE_DERNIER_CHAT.md](04_VALIDATION_DEMARRAGE_DERNIER_CHAT.md) | Observation : app démarre sur dernier chat |
+| [05_TEST_PERSISTANCE_PAR_USER.md](05_TEST_PERSISTANCE_PAR_USER.md) | Test multi-utilisateur (optionnel) |
 
 ---
 

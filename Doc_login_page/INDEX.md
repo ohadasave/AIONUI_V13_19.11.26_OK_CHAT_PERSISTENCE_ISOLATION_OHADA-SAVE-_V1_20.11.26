@@ -9,6 +9,7 @@
 | [README.md](README.md) | Vue d'ensemble et index général | Tous |
 | [ARCHITECTURE.md](ARCHITECTURE.md) | Architecture technique complète | Développeurs |
 | [GUIDE_IMPLEMENTATION.md](GUIDE_IMPLEMENTATION.md) | Guide d'implémentation pas à pas | Développeurs |
+| [GUIDE_REACTIVATION.md](GUIDE_REACTIVATION.md) | 🔥 Guide de réactivation rapide | Tous |
 | [GUIDE_TEST.md](GUIDE_TEST.md) | Procédures de test | QA, Développeurs |
 | [PROBLEMES_ET_SOLUTIONS.md](PROBLEMES_ET_SOLUTIONS.md) | Historique des problèmes | Support, Développeurs |
 | [HISTORIQUE_MODIFICATIONS.md](HISTORIQUE_MODIFICATIONS.md) | Chronologie des modifications | Tous |

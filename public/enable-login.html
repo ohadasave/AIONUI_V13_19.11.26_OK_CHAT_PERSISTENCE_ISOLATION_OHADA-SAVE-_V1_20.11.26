@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Activer la Page de Connexion E-audit</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        
+        .container {
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            padding: 40px;
+            max-width: 600px;
+            width: 100%;
+        }
+        
+        h1 {
+            color: #333;
+            font-size: 28px;
+            margin-bottom: 10px;
+            text-align: center;
+        }
+        
+        .subtitle {
+            color: #666;
+            font-size: 16px;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        
+        .status {
+            background: #f7fafc;
+            border-left: 4px solid #667eea;
+            padding: 15px;
+            margin-bottom: 20px;
+            border-radius: 4px;
+        }
+        
+        .status-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+            font-size: 14px;
+        }
+        
+        .status-item:last-child {
+            margin-bottom: 0;
+        }
+        
+        .status-label {
+            color: #666;
+            font-weight: 500;
+        }
+        
+        .status-value {
+            font-weight: 600;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 12px;
+        }
+        
+        .status-value.enabled {
+            background: #10b981;
+            color: white;
+        }
+        
+        .status-value.disabled {
+            background: #ef4444;
+            color: white;
+        }
+        
+        .status-value.yes {
+            background: #10b981;
+            color: white;
+        }
+        
+        .status-value.no {
+            background: #6b7280;
+            color: white;
+        }
+        
+        .button-group {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+        }
+        
+        button {
+            flex: 1;
+            padding: 14px 24px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        }
+        
+        button:active {
+            transform: translateY(0);
+        }
+        
+        .btn-primary {
+            background: #667eea;
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            background: #5568d3;
+        }
+        
+        .btn-secondary {
+            background: #e5e7eb;
+            color: #374151;
+        }
+        
+        .btn-secondary:hover {
+            background: #d1d5db;
+        }
+        
+        .btn-danger {
+            background: #ef4444;
+            color: white;
+        }
+        
+        .btn-danger:hover {
+            background: #dc2626;
+        }
+        
+        .message {
+            padding: 12px 16px;
+            border-radius: 8px;
+            margin-top: 20px;
+            font-size: 14px;
+            display: none;
+        }
+        
+        .message.success {
+            background: #d1fae5;
+            color: #065f46;
+            border: 1px solid #10b981;
+        }
+        
+        .message.error {
+            background: #fee2e2;
+            color: #991b1b;
+            border: 1px solid #ef4444;
+        }
+        
+        .message.info {
+            background: #dbeafe;
+            color: #1e40af;
+            border: 1px solid #3b82f6;
+        }
+        
+        .credentials {
+            background: #fef3c7;
+            border: 2px solid #f59e0b;
+            border-radius: 8px;
+            padding: 15px;
+            margin-top: 20px;
+        }
+        
+        .credentials h3 {
+            color: #92400e;
+            font-size: 16px;
+            margin-bottom: 10px;
+        }
+        
+        .credentials p {
+            color: #78350f;
+            font-size: 14px;
+            margin: 5px 0;
+        }
+        
+        .credentials code {
+            background: white;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-family: 'Courier New', monospace;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔐 Page de Connexion E-audit</h1>
+        <p class="subtitle">Gestion de la sécurité de l'application</p>
+        
+        <div class="status">
+            <div class="status-item">
+                <span class="status-label">État du login:</span>
+                <span id="loginStatus" class="status-value">...</span>
+            </div>
+            <div class="status-item">
+                <span class="status-label">Session active:</span>
+                <span id="sessionStatus" class="status-value">...</span>
+            </div>
+            <div class="status-item">
+                <span class="status-label">Utilisateur:</span>
+                <span id="username" class="status-value" style="background: #667eea; color: white;">...</span>
+            </div>
+        </div>
+        
+        <div class="button-group">
+            <button id="btnEnable" class="btn-primary">✅ Activer le Login</button>
+            <button id="btnDisable" class="btn-secondary">❌ Désactiver</button>
+        </div>
+        
+        <div class="button-group">
+            <button id="btnClearSession" class="btn-danger">🧹 Nettoyer Session</button>
+            <button id="btnRefresh" class="btn-secondary">🔄 Actualiser</button>
+        </div>
+        
+        <div id="message" class="message"></div>
+        
+        <div class="credentials">
+            <h3>📋 Identifiants de connexion</h3>
+            <p><strong>Email:</strong> <code>ohada.save@gmail.com</code></p>
+            <p><strong>Mot de passe:</strong> <code>LEADER00</code></p>
+        </div>
+    </div>
+    
+    <script>
+        // Fonction pour lire la configuration
+        function getConfig() {
+            const configStr = localStorage.getItem('app_config');
+            return configStr ? JSON.parse(configStr) : {};
+        }
+        
+        // Fonction pour sauvegarder la configuration
+        function setConfig(config) {
+            localStorage.setItem('app_config', JSON.stringify(config));
+        }
+        
+        // Fonction pour afficher un message
+        function showMessage(text, type) {
+            const messageEl = document.getElementById('message');
+            messageEl.textContent = text;
+            messageEl.className = `message ${type}`;
+            messageEl.style.display = 'block';
+            
+            setTimeout(() => {
+                messageEl.style.display = 'none';
+            }, 5000);
+        }
+        
+        // Fonction pour mettre à jour le statut
+        function updateStatus() {
+            const config = getConfig();
+            const loginEnabled = config['security.loginEnabled'] === true;
+            const loggedIn = localStorage.getItem('eaudit_logged_in') === 'true';
+            const username = localStorage.getItem('eaudit_username') || 'Aucun';
+            
+            // Mise à jour du statut du login
+            const loginStatusEl = document.getElementById('loginStatus');
+            loginStatusEl.textContent = loginEnabled ? 'Activé' : 'Désactivé';
+            loginStatusEl.className = `status-value ${loginEnabled ? 'enabled' : 'disabled'}`;
+            
+            // Mise à jour du statut de session
+            const sessionStatusEl = document.getElementById('sessionStatus');
+            sessionStatusEl.textContent = loggedIn ? 'Oui' : 'Non';
+            sessionStatusEl.className = `status-value ${loggedIn ? 'yes' : 'no'}`;
+            
+            // Mise à jour du nom d'utilisateur
+            document.getElementById('username').textContent = username;
+        }
+        
+        // Activer le login
+        document.getElementById('btnEnable').addEventListener('click', () => {
+            try {
+                const config = getConfig();
+                config['security.loginEnabled'] = true;
+                setConfig(config);
+                updateStatus();
+                showMessage('✅ Page de connexion activée! Redémarrez l\'application pour voir les changements.', 'success');
+            } catch (error) {
+                showMessage('❌ Erreur lors de l\'activation: ' + error.message, 'error');
+            }
+        });
+        
+        // Désactiver le login
+        document.getElementById('btnDisable').addEventListener('click', () => {
+            try {
+                const config = getConfig();
+                config['security.loginEnabled'] = false;
+                setConfig(config);
+                
+                // Nettoyer la session
+                localStorage.removeItem('eaudit_logged_in');
+                localStorage.removeItem('eaudit_login_time');
+                localStorage.removeItem('eaudit_username');
+                
+                updateStatus();
+                showMessage('❌ Page de connexion désactivée!', 'info');
+            } catch (error) {
+                showMessage('❌ Erreur lors de la désactivation: ' + error.message, 'error');
+            }
+        });
+        
+        // Nettoyer la session
+        document.getElementById('btnClearSession').addEventListener('click', () => {
+            try {
+                localStorage.removeItem('eaudit_logged_in');
+                localStorage.removeItem('eaudit_login_time');
+                localStorage.removeItem('eaudit_username');
+                updateStatus();
+                showMessage('🧹 Session nettoyée! Rechargez l\'application pour voir la page de login.', 'success');
+            } catch (error) {
+                showMessage('❌ Erreur lors du nettoyage: ' + error.message, 'error');
+            }
+        });
+        
+        // Actualiser le statut
+        document.getElementById('btnRefresh').addEventListener('click', () => {
+            updateStatus();
+            showMessage('🔄 Statut actualisé!', 'info');
+        });
+        
+        // Initialiser le statut au chargement
+        updateStatus();
+    </script>
+</body>
+</html>

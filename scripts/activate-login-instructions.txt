@@ -1,0 +1,53 @@
+=== ACTIVATION DE LA PAGE DE CONNEXION E-AUDIT ===
+
+📋 ÉTAPES À SUIVRE :
+
+1. Démarrer l'application :
+   npm run start
+   
+   ou
+   
+   bun run start
+
+2. Ouvrir DevTools (appuyer sur F12)
+
+3. Dans l'onglet Console, copier-coller ce code :
+
+   // Activer la page de login
+   const config = JSON.parse(localStorage.getItem('app_config') || '{}');
+   config['security.loginEnabled'] = true;
+   localStorage.setItem('app_config', JSON.stringify(config));
+
+   // Nettoyer la session actuelle
+   localStorage.removeItem('eaudit_logged_in');
+   localStorage.removeItem('eaudit_login_time');
+   localStorage.removeItem('eaudit_username');
+
+   // Recharger l'application
+   location.reload();
+
+4. ✅ La page de login devrait maintenant s'afficher !
+
+📝 IDENTIFIANTS DE CONNEXION :
+   Email    : ohada.save@gmail.com
+   Password : LEADER00
+
+💡 MÉTHODE ALTERNATIVE : Interface Graphique
+
+   1. Démarrer l'application : npm run start
+   2. Ouvrir dans l'application : file:///G:/Aionui_client/public/enable-login.html
+   3. Cliquer sur "✅ Activer le Login"
+   4. Cliquer sur "🧹 Nettoyer Session"
+   5. Redémarrer l'application
+
+🔍 VÉRIFICATION :
+
+   Après rechargement, vous devriez voir :
+   - Page de login avec le logo E-audit
+   - Deux onglets : "Se connecter" et "S'inscrire"
+   - Thème gris
+   - Champs Email et Mot de passe
+
+📚 DOCUMENTATION COMPLÈTE :
+
+   Voir : Doc_login_page/GUIDE_REACTIVATION.md
