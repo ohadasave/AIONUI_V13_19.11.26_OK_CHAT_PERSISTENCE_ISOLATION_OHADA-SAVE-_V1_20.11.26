@@ -202,6 +202,21 @@ class AcpDetector {
       acpArgs: undefined,
     });
 
+    // 添加内置 n8n backends（服务端 backends，无需 CLI 检测）
+    // Add built-in n8n backends (server-side backends, no CLI detection needed)
+    detected.push({
+      backend: 'n8n',
+      name: 'n8n Workflow',
+      cliPath: undefined,
+      acpArgs: undefined,
+    });
+    detected.push({
+      backend: 'n8n-multi-workflow',
+      name: 'n8n Multi Workflow',
+      cliPath: undefined,
+      acpArgs: undefined,
+    });
+
     // Add extension-contributed agents (hot-load, no persistence)
     this.addExtensionAgentsToList(detected);
 

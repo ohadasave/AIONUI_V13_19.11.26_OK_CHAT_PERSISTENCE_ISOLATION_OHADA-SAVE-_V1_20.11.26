@@ -61,6 +61,8 @@ export type AcpBackendAll =
   | 'openclaw-gateway' // OpenClaw Gateway WebSocket
   | 'vibe' // Mistral Vibe CLI
   | 'nanobot' // nanobot CLI
+  | 'n8n' // n8n Workflow Backend
+  | 'n8n-multi-workflow' // n8n Multi Workflow Backend
   | 'custom'; // User-configured custom ACP agent
 
 /**
@@ -449,6 +451,22 @@ export const ACP_BACKENDS_ALL: Record<AcpBackendAll, AcpBackendConfig> = {
     id: 'nanobot',
     name: 'Nano Bot',
     cliCommand: 'nanobot',
+    authRequired: false,
+    enabled: true,
+    supportsStreaming: false,
+  },
+  n8n: {
+    id: 'n8n',
+    name: 'n8n Workflow',
+    cliCommand: undefined, // n8n is a backend service, not a CLI
+    authRequired: false,
+    enabled: true,
+    supportsStreaming: false,
+  },
+  'n8n-multi-workflow': {
+    id: 'n8n-multi-workflow',
+    name: 'n8n Multi Workflow',
+    cliCommand: undefined, // n8n is a backend service, not a CLI
     authRequired: false,
     enabled: true,
     supportsStreaming: false,

@@ -260,10 +260,20 @@ export const useGuidSend = (deps: GuidSendDeps): GuidSendResult => {
     // n8n path
     if (selectedAgent === 'n8n' || (isPreset && finalEffectiveAgentType === 'n8n')) {
       try {
+        // n8n doesn't use models, provide a placeholder
+        const placeholderModel = currentModel || {
+          id: 'n8n-placeholder',
+          name: 'n8n',
+          useModel: 'n8n-workflow',
+          platform: 'n8n' as const,
+          baseUrl: '',
+          apiKey: '',
+        };
+
         const conversation = await ipcBridge.conversation.create.invoke({
           type: 'n8n',
           name: input,
-          model: currentModel!,
+          model: placeholderModel,
           extra: {
             defaultFiles: files,
             workspace: finalWorkspace,
@@ -304,10 +314,20 @@ export const useGuidSend = (deps: GuidSendDeps): GuidSendResult => {
     // n8n-multi-workflow path
     if (selectedAgent === 'n8n-multi-workflow' || (isPreset && finalEffectiveAgentType === 'n8n-multi-workflow')) {
       try {
+        // n8n doesn't use models, provide a placeholder
+        const placeholderModel = currentModel || {
+          id: 'n8n-multi-workflow-placeholder',
+          name: 'n8n Multi Workflow',
+          useModel: 'n8n-multi-workflow',
+          platform: 'n8n' as const,
+          baseUrl: '',
+          apiKey: '',
+        };
+
         const conversation = await ipcBridge.conversation.create.invoke({
           type: 'n8n-multi-workflow',
           name: input,
-          model: currentModel!,
+          model: placeholderModel,
           extra: {
             defaultFiles: files,
             workspace: finalWorkspace,
