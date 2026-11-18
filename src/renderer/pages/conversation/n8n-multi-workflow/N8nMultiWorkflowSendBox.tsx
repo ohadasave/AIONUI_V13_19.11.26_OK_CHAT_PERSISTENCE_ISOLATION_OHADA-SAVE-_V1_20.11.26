@@ -105,7 +105,7 @@ const N8nMultiWorkflowSendBox: React.FC<{
         });
       } catch (error) {
         const errorMessage = error instanceof Error ? error.message : 'Erreur inconnue';
-        
+
         let troubleshooting = '';
         if (errorMessage.includes('timeout')) {
           troubleshooting = `\n\n**Solutions:**\n1. Augmentez le timeout du backend\n2. Vérifiez le serveur puente n8n (Provider-bridge)`;
@@ -132,7 +132,7 @@ const N8nMultiWorkflowSendBox: React.FC<{
     [conversation_id, addOrUpdateMessage, sending, t]
   );
 
-  return <SendBox value={input} onChange={setInput} onSend={handleSend} disabled={sending} placeholder="Entrez la commande multi-workflow (ex: - [Command] = Programme...)" />;
+  return <SendBox value={input} onChange={setInput} onSend={handleSend} disabled={sending} placeholder='Entrez la commande multi-workflow (ex: - [Command] = Programme...)' />;
 };
 
 export default N8nMultiWorkflowSendBox;

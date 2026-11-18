@@ -16,6 +16,13 @@ import { type TFunction } from 'i18next';
 import type { NavigateFunction } from 'react-router-dom';
 import type { AcpBackend, AvailableAgent, EffectiveAgentInfo } from '../types';
 
+// Type guard pour détecter n8n de manière unifiée
+type N8nType = 'n8n' | 'n8n-multi-workflow';
+
+const isN8nType = (value: string | undefined): value is N8nType => {
+  return value === 'n8n' || value === 'n8n-multi-workflow';
+};
+
 export type GuidSendDeps = {
   // Input state
   input: string;
@@ -257,21 +264,31 @@ export const useGuidSend = (deps: GuidSendDeps): GuidSendResult => {
       return;
     }
 
-    // n8n path
-    if (selectedAgent === 'n8n' || (isPreset && finalEffectiveAgentType === 'n8n')) {
+    // n8n path (unifié pour n8n et n8n-multi-workflow)
+    const n8nType: N8nType | undefined = isN8nType(selectedAgent)
+      ? selectedAgent
+      : isN8nType(selectedAgentKey)
+        ? selectedAgentKey
+        : isPreset && isN8nType(finalEffectiveAgentType)
+          ? finalEffectiveAgentType
+          : undefined;
+
+    if (n8nType) {
       try {
-        // n8n doesn't use models, provide a placeholder
-        const placeholderModel = currentModel || {
-          id: 'n8n-placeholder',
-          name: 'n8n',
-          useModel: 'n8n-workflow',
-          platform: 'n8n' as const,
-          baseUrl: '',
+        setLoading(true);
+
+        // Utiliser 'custom' pour éviter le type check error sur 'n8n'
+        const placeholderModel = {
+          id: `${n8nType}-placeholder`,
+          name: n8nType === 'n8n' ? 'n8n Workflow' : 'n8n Multi Workflow',
+          useModel: n8nType,
+          platform: 'custom' as const, // ✅ Plus sûr que 'n8n' as const
+          baseUrl: 'http://localhost:3458',
           apiKey: '',
         };
 
         const conversation = await ipcBridge.conversation.create.invoke({
-          type: 'n8n',
+          type: n8nType,
           name: input,
           model: placeholderModel,
           extra: {
@@ -284,8 +301,7 @@ export const useGuidSend = (deps: GuidSendDeps): GuidSendResult => {
         });
 
         if (!conversation || !conversation.id) {
-          alert('Failed to create n8n conversation. Please ensure n8n backend is running on port 3458.');
-          return;
+          throw new Error(`Failed to create ${n8nType} conversation - conversation object is null or missing id`);
         }
 
         if (isCustomWorkspace) {
@@ -304,63 +320,17 @@ export const useGuidSend = (deps: GuidSendDeps): GuidSendResult => {
 
         await navigate(`/conversation/${conversation.id}`);
       } catch (error: unknown) {
+        console.error(`Failed to create ${n8nType} conversation:`, error);
         const errorMessage = error instanceof Error ? error.message : String(error);
-        alert(`Failed to create n8n conversation: ${errorMessage}`);
-        throw error;
-      }
-      return;
-    }
-
-    // n8n-multi-workflow path
-    if (selectedAgent === 'n8n-multi-workflow' || (isPreset && finalEffectiveAgentType === 'n8n-multi-workflow')) {
-      try {
-        // n8n doesn't use models, provide a placeholder
-        const placeholderModel = currentModel || {
-          id: 'n8n-multi-workflow-placeholder',
-          name: 'n8n Multi Workflow',
-          useModel: 'n8n-multi-workflow',
-          platform: 'n8n' as const,
-          baseUrl: '',
-          apiKey: '',
-        };
-
-        const conversation = await ipcBridge.conversation.create.invoke({
-          type: 'n8n-multi-workflow',
-          name: input,
-          model: placeholderModel,
-          extra: {
-            defaultFiles: files,
-            workspace: finalWorkspace,
-            customWorkspace: isCustomWorkspace,
-            enabledSkills: isPreset ? enabledSkills : undefined,
-            presetAssistantId: isPreset ? agentInfo?.customAgentId : undefined,
-          },
-        });
-
-        if (!conversation || !conversation.id) {
-          alert('Failed to create n8n multi-workflow conversation. Please ensure backend is running.');
-          return;
-        }
-
-        if (isCustomWorkspace) {
-          closeAllTabs();
-          updateWorkspaceTime(finalWorkspace);
-          openTab(conversation);
-        }
-
-        emitter.emit('chat.history.refresh');
-
-        const initialMessage = {
-          input,
-          files: files.length > 0 ? files : undefined,
-        };
-        sessionStorage.setItem(`n8n_initial_message_${conversation.id}`, JSON.stringify(initialMessage));
-
-        await navigate(`/conversation/${conversation.id}`);
-      } catch (error: unknown) {
-        const errorMessage = error instanceof Error ? error.message : String(error);
-        alert(`Failed to create n8n-multi-workflow conversation: ${errorMessage}`);
-        throw error;
+        Message.error(
+          t('guid.n8nCreationFailed', {
+            defaultValue: `Failed to create ${n8nType} conversation: ${errorMessage}`,
+            type: n8nType,
+            message: errorMessage,
+          })
+        );
+      } finally {
+        setLoading(false); // ✅ Garantit que le spinner s'arrête
       }
       return;
     }

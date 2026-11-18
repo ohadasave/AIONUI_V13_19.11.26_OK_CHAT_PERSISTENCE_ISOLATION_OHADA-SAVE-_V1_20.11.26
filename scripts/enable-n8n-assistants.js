@@ -4,16 +4,16 @@
  * Script to enable n8n workflow assistants in E-audit config
  * 
  * This script:
- * 1. Locates the E-audit config file using electron-store
- * 2. Loads the acp.customAgents array
+ * 1. Locates the E-audit config file (aionui-config.txt)
+ * 2. Decodes the URL-encoded content
  * 3. Finds n8n workflow assistants and enables them
- * 4. Saves the config back to the file
+ * 4. Encodes and saves the config back to the file
  */
 
 const path = require('path');
 const fs = require('fs');
 
-// Determine the config file path (same logic as electron-store)
+// Determine the config file path
 function getConfigPath() {
   const appData = process.env.APPDATA || 
     (process.platform === 'darwin' 
@@ -21,10 +21,22 @@ function getConfigPath() {
       : path.join(process.env.HOME, '.config'));
   
   const appName = 'E-audit';
-  const configDir = path.join(appData, appName);
-  const configFile = path.join(configDir, 'config.json');
+  const configDir = path.join(appData, appName, 'config');
+  const configFile = path.join(configDir, 'aionui-config.txt');
   
   return { configDir, configFile };
+}
+
+function decodeConfig(encoded) {
+  // The config is base64 encoded, then URL-encoded
+  const base64Decoded = Buffer.from(encoded, 'base64').toString('utf8');
+  return decodeURIComponent(base64Decoded);
+}
+
+function encodeConfig(jsonString) {
+  // URL-encode first, then base64 encode to match the app's format
+  const urlEncoded = encodeURIComponent(jsonString);
+  return Buffer.from(urlEncoded).toString('base64');
 }
 
 function main() {
@@ -43,23 +55,25 @@ function main() {
   
   // Read the config file
   let config;
+  let originalEncoded;
   try {
-    const configContent = fs.readFileSync(configFile, 'utf8');
-    config = JSON.parse(configContent);
-    console.log('✓ Config file loaded successfully\n');
+    originalEncoded = fs.readFileSync(configFile, 'utf8');
+    const decoded = decodeConfig(originalEncoded);
+    config = JSON.parse(decoded);
+    console.log('✓ Config file loaded and decoded successfully\n');
   } catch (error) {
     console.error(`❌ ERROR: Failed to read or parse config file: ${error.message}`);
     process.exit(1);
   }
   
   // Check if acp.customAgents exists
-  if (!config.acp || !Array.isArray(config.acp.customAgents)) {
+  if (!config['acp.customAgents'] || !Array.isArray(config['acp.customAgents'])) {
     console.error('❌ ERROR: acp.customAgents array not found in config');
     console.error('   The config structure may be invalid or incomplete.');
     process.exit(1);
   }
   
-  const customAgents = config.acp.customAgents;
+  const customAgents = config['acp.customAgents'];
   console.log(`Found ${customAgents.length} custom agents in config`);
   
   // Find n8n assistants
@@ -99,9 +113,11 @@ function main() {
       fs.copyFileSync(configFile, backupFile);
       console.log(`\n✓ Backup created: ${backupFile}`);
       
-      // Write updated config
-      fs.writeFileSync(configFile, JSON.stringify(config, null, 2), 'utf8');
-      console.log('✓ Config file updated successfully');
+      // Write updated config (encode it back)
+      const jsonString = JSON.stringify(config);
+      const encoded = encodeConfig(jsonString);
+      fs.writeFileSync(configFile, encoded, 'utf8');
+      console.log('✓ Config file updated and encoded successfully');
       
       console.log('\n✅ SUCCESS: n8n assistants have been enabled');
       console.log('   Restart the E-audit application to see the changes.');

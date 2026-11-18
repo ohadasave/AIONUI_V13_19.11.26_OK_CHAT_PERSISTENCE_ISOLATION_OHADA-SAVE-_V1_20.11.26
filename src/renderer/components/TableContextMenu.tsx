@@ -25,7 +25,7 @@ export const TableContextMenu: React.FC = () => {
     // AIONUI renders markdown tables inside Shadow DOM
     // Check if table is inside .markdown-shadow-body or message-item
     let parent: HTMLElement | ShadowRoot | null = table.parentElement;
-    
+
     while (parent) {
       // Check if we're in a shadow root
       if (parent instanceof ShadowRoot) {
@@ -37,17 +37,17 @@ export const TableContextMenu: React.FC = () => {
         parent = host.parentElement;
         continue;
       }
-      
+
       // Check for markdown-shadow-body class
       if ((parent as HTMLElement).classList?.contains('markdown-shadow-body')) {
         return true;
       }
-      
+
       // Check for message-item with data-message-id
       if ((parent as HTMLElement).hasAttribute?.('data-message-id')) {
         return true;
       }
-      
+
       parent = (parent as HTMLElement).parentElement;
     }
     return false;

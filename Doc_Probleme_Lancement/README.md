@@ -1,362 +1,274 @@
-# Documentation Problème Lancement AionUi
+# Documentation Interventions E-audit
 
-**Date Création** : 16 novembre 2026  
-**Status** : EN COURS - Corruption packages @babel identifiée, npm timeout bloque réparation  
-**Durée** : 5+ heures de débogage
+## 🎯 Objectif de ce Dossier
+
+Ce dossier contient toute la documentation relative aux **interventions techniques** effectuées sur l'application E-audit v1.8.25.
 
 ---
 
-## 📋 RÉSUMÉ SITUATION
+## 📖 Documents Principaux
+
+### 🚀 **Pour Démarrer** : Lisez d'abord ces fichiers
+
+| Fichier | Description | Priorité |
+|---------|-------------|----------|
+| **00_INDEX_DOCUMENTATION.md** | 📚 Index complet de tous les documents | ⭐⭐⭐ |
+| **INTERVENTION_DESACTIVATION_WELCOME_PAGE.md** | 📋 Dernière intervention (désactivation page d'accueil) | ⭐⭐⭐ |
+| **RESOLUTION_FINALE_SUCCES.md** | ✅ Résolution du problème npm (session principale) | ⭐⭐ |
+
+---
+
+## 🔴 Intervention 1 : Réparation npm (RÉSOLU)
 
 ### Problème
-Application Electron 37 + Vite 5 ne démarre pas avec erreur `ERR_MODULE_NOT_FOUND` sur `@babel/core`
+- **Date** : 2026-11-17
+- **Symptôme** : ERR_MODULE_NOT_FOUND @babel/core
+- **Cause** : Corruption npm (installation interrompue)
+- **Durée** : 6+ heures diagnostic + 26 min réparation
 
-### Cause Racine
-**5 packages @babel corrompus** (sans package.json) dus à installations npm interrompues multiples
+### Solution
+✅ Script `repair-env.ps1` (créé par Claude Opus)  
+✅ 1955 packages réinstallés  
+✅ Application fonctionnelle  
 
-### Blocage Actuel  
-**npm install timeout systématique** (6-30 min) empêche réparation des packages
-
-### Objectif
-Débloquer npm install ou trouver solution alternative pour réparer @babel packages
-
----
-
-## 📁 FICHIERS DOCUMENTATION
-
-### 1. ⭐ **repair-env.ps1** (SOLUTION AUTOMATISÉE)
-**Type** : Script PowerShell automatique  
-**Auteur** : Claude Opus  
-**Contenu** :
-- Diagnostic réseau automatique (npm + GitHub)
-- Contournement nvm4w via PATH
-- Suppression rapide node_modules (cmd)
-- Installation surveillée (arrêt auto si blocage 5 min)
-- Electron postinstall séparé
-- Vérification intégrité finale
-
-**Utilisation** :
-```powershell
-# Test diagnostic seulement
-powershell -NoProfile -ExecutionPolicy Bypass -File .\repair-env.ps1 -DiagOnly
-
-# Réparation complète (10-20 min)
-powershell -NoProfile -ExecutionPolicy Bypass -File .\repair-env.ps1
-```
-
-### 2. **REPONSE CONSULTATION LLM.txt**
-**Type** : Réponses des 3 LLMs consultés  
-**Contenu** :
-- Claude Opus : Script + diagnostic cause racine
-- Claude Sonnet : Plan manuel 7 phases + alternatives
-- Gemini Hydrogen : Analyse senior + solutions classées
-
-**Utilisation** : Comprendre consensus 3 modèles IA experts
-
-### 3. **PLAN_ACTION_MANUEL.md** (GUIDE COMPLET)
-**Type** : Procédure pas-à-pas détaillée  
-**Contenu** :
-- 7 phases avec commandes exactes
-- Diagnostics interprétation résultats
-- 3 alternatives (yarn, pnpm, copie)
-- Prévention future (config .npmrc, scripts)
-- Escalade support (logs à collecter)
-
-**Utilisation** : Si script `repair-env.ps1` échoue ou besoin comprendre détails
-
-### 4. **MEMO_PROBLEME_LANCEMENT_EXHAUSTIF.md**
-**Type** : Analyse technique complète  
-**Contenu** :
-- 12 sections exhaustives
-- Chronologie détaillée (7 tentatives)
-- 6 hypothèses avec probabilités (MISE À JOUR avec corruption confirmée)
-- 8 solutions potentielles
-- 12 questions spécifiques experts
-
-**Utilisation** : Document de référence pour comprendre historique problème
-
-### 5. **PROMPT_CONSULTATION_MODELES.md**
-**Type** : Prompt structuré pour LLMs externes  
-**Contenu** :
-- Contexte résumé
-- Symptômes avec diagnostic corruption
-- Hypothèses confirmées
-- Questions techniques ciblées
-- Format réponse attendu
-
-**Utilisation** : Copier-coller vers Claude/GPT-4/Gemini pour consultation externe
-
-### 6. **DIAGNOSTIC_FINAL_BABEL_CORRUPTION.md**
-**Type** : Preuve technique corruption  
-**Contenu** :
-- Tests PowerShell exécutés avec résultats
-- Structure packages corrompus (5/44)
-- Mécanisme corruption identifié (npm interrupted)
-- Tentatives réparation échouées (timeouts)
-- 6 solutions à tester priorisées
-
-**Utilisation** : Référence technique pour experts npm/Node.js
-
-### 7. **SOLUTION_FINALE_BABEL.md**
-**Type** : Document diagnostic initial  
-**Utilisation** : Archive historique (remplacé par documents mis à jour)
-
-### 8. **README.md** (ce fichier)
-**Type** : Index et guide navigation  
-**Utilisation** : Point d'entrée documentation
+### Documents à Consulter
+1. `SYNTHESE_CONSULTATION_3_LLM.md` - Consensus de 3 IA
+2. `repair-env.ps1` - Script de réparation
+3. `RESOLUTION_FINALE_SUCCES.md` - Documentation complète
 
 ---
 
-## 🔍 DIAGNOSTIC RAPIDE
+## 🟢 Intervention 2 : Désactivation Welcome Page (ACTUEL)
 
-### Commandes Vérification
+### Demande
+> "Retire cette page d'accueil à la connexion du compte, pour celle du dernier chat de l'utilisateur. Désactive-la sans la supprimer"
+> 
+> "Au clic 'New Chat' : un chat apparaît et il est possible d'envoyer la requête vers le endpoint n8n"
 
-```powershell
-# Vérifier structure @babel/core
-Get-ChildItem node_modules\@babel\core
-# Attendu : lib/, node_modules/, LICENSE, README.md, package.json
-# Actuel : package.json MANQUANT
+### Solution Implémentée
+✅ **Fichier modifié** : `src/renderer/router.tsx`  
+✅ **Redirection** : Dernier chat actif au lieu de page d'accueil  
+✅ **Fichier modifié** : `src/renderer/sider.tsx`  
+✅ **Bouton "New Chat"** : Crée directement une conversation n8n  
+✅ **Code préservé** : Page `/guid` toujours accessible  
+✅ **Fallback robuste** : Gestion d'erreurs complète  
 
-# Test présence package.json
-Test-Path node_modules\@babel\core\package.json
-# Attendu : True
-# Actuel : False
+### Documents à Consulter
 
-# Audit tous @babel
-Get-ChildItem node_modules\@babel -Directory | ForEach-Object {
-  $hasJson = Test-Path (Join-Path $_.FullName "package.json")
-  "$($_.Name): $hasJson"
-}
-# Résultat : 5/44 packages retournent False (core, helpers, parser, runtime, types)
-```
+#### Pour Comprendre
+1. **`RESUME_FINAL_SESSION.md`** ⭐⭐⭐
+   - Vue d'ensemble de toute la session
+   - Résumé des 2 modifications
+   - Métriques de performance
 
-### Packages Corrompus Identifiés
+2. **`QUICK_SUMMARY.md`** ⭐⭐⭐
+   - Résumé en 30 secondes
+   - Tests rapides
+   - Status actuel
 
-- ❌ `@babel/core` - CRITIQUE
-- ❌ `@babel/helpers` - CRITIQUE
-- ❌ `@babel/parser` - CRITIQUE
-- ❌ `@babel/runtime` - CRITIQUE
-- ❌ `@babel/types` - CRITIQUE
+3. **`GUIDE_VISUEL_MODIFICATIONS.md`** ⭐⭐
+   - Diagrammes ASCII
+   - Comparaisons Avant/Après visuelles
+   - Flux utilisateur illustrés
+
+#### Pour Tester
+4. **`TESTER_MAINTENANT.md`** ⭐⭐⭐⭐⭐
+   - Guide de test étape par étape
+   - Vérifications DevTools
+   - Solutions aux problèmes courants
+
+#### Détails Techniques
+5. **`DESACTIVATION_PAGE_ACCUEIL.md`** ⭐⭐
+   - Redirection au démarrage
+   - Logique technique détaillée
+
+6. **`NEW_CHAT_N8N_DIRECT.md`** ⭐⭐
+   - Bouton "New Chat" → n8n
+   - Architecture de création conversation
+
+#### Pour Réactiver (si besoin)
+7. **`REACTIVER_PAGE_ACCUEIL.md`** ⭐
+   - 3 options de rollback
+   - Guide pas-à-pas
 
 ---
 
-## 🚀 SOLUTIONS DISPONIBLES
+## 🎯 Logique de Redirection (Résumé Rapide)
 
-### ⭐ **Solution 1 : Script Automatique repair-env.ps1** (RECOMMANDÉ)
+### Ordre de Priorité
 
-**Consensus 3 LLMs : Solution optimale**
+```
+1. Tab actif (localStorage.activeTabId)
+   └─> /conversation/{activeTabId}
 
-```powershell
-# Terminal Windows (EN ADMIN recommandé)
-cd G:\Aionui_client
+2. Premier tab ouvert (localStorage.openTabs[0])
+   └─> /conversation/{openTabs[0].id}
 
-# Test diagnostic SANS modification (5 min)
-powershell -NoProfile -ExecutionPolicy Bypass -File .\Doc_Probleme_Lancement\repair-env.ps1 -DiagOnly
-
-# Réparation complète (10-20 min)
-powershell -NoProfile -ExecutionPolicy Bypass -File .\Doc_Probleme_Lancement\repair-env.ps1
+3. Page d'accueil (fallback)
+   └─> /guid
 ```
 
-**Avantages :**
-- ✅ Automatise tout (diagnostic + réparation + vérification)
-- ✅ Surveillance temps réel (arrêt auto si blocage > 5 min)
-- ✅ Gère Electron postinstall séparément
-- ✅ Génère logs détaillés si échec
-- ✅ Node 22 par défaut (plus stable que 24)
+### Cas d'Usage
 
-**Options :**
-```powershell
-# Utiliser Node 24
-.\repair-env.ps1 -NodeVersion 24.21.0
+| Situation | Comportement |
+|-----------|-------------|
+| **Utilisateur avec historique** | → Dernier chat actif |
+| **Nouvel utilisateur** | → Page d'accueil `/guid` |
+| **localStorage corrompu** | → Page d'accueil `/guid` (fallback) |
+| **Navigation manuelle vers `/guid`** | → Page d'accueil s'affiche |
 
-# Projet sur C:\ au lieu de G:\
-.\repair-env.ps1 -ProjectDir C:\dev\Aionui_client
+---
 
-# Ne pas lancer app automatiquement
-.\repair-env.ps1 -NoLaunch
+## 🧪 Tests Requis
+
+### Checklist de Validation
+
+Avant de déployer en production, tester ces 6 scénarios :
+
+- [ ] **Test 1** : Login avec historique → Redirige vers dernier chat
+- [ ] **Test 2** : Login sans historique → Affiche page d'accueil
+- [ ] **Test 3** : localStorage corrompu → Fallback vers `/guid`
+- [ ] **Test 4** : Active ID invalide → Utilise premier tab
+- [ ] **Test 5** : Accès manuel `/guid` → Fonctionne normalement
+- [ ] **Test 6** : Navigation normale → Aucune régression
+
+**Guide complet** : Voir `TEST_WELCOME_PAGE_DISABLED.md`
+
+---
+
+## 🔄 Comment Réactiver la Page d'Accueil
+
+### Méthode Rapide (1 ligne)
+
+Dans `src/renderer/router.tsx` ligne 91 :
+```typescript
+<Route index element={<Navigate to='/guid' replace />} />
+```
+
+### Méthode Complète
+
+Voir le guide détaillé : `REACTIVER_PAGE_ACCUEIL.md`
+
+---
+
+## 📊 Structure du Dossier
+
+```
+Doc_Probleme_Lancement/
+│
+├── 📋 README.md (ce fichier)
+├── 📚 00_INDEX_DOCUMENTATION.md
+│
+├── 🟢 INTERVENTION_DESACTIVATION_WELCOME_PAGE.md
+├── 📖 DESACTIVATION_PAGE_ACCUEIL.md
+├── 🔄 REACTIVER_PAGE_ACCUEIL.md
+├── 🧪 TEST_WELCOME_PAGE_DISABLED.md
+│
+├── 🔴 RESOLUTION_FINALE_SUCCES.md
+├── 📊 SYNTHESE_CONSULTATION_3_LLM.md
+├── 🛠️ repair-env.ps1
+├── 🚀 REPARER_ENVIRONNEMENT.bat
+│
+└── [12 autres fichiers archivés de l'intervention npm]
 ```
 
 ---
 
-### 📖 **Solution 2 : Procédure Manuelle (PLAN_ACTION_MANUEL.md)**
+## 📝 Fichiers Modifiés
 
-**Si script échoue ou besoin comprendre chaque étape**
+### Code Source
+| Fichier | Type | Status |
+|---------|------|--------|
+| `src/renderer/router.tsx` | ✏️ Modifié | ✅ Complété |
+| `src/renderer/pages/guid/GuidPage.tsx` | 👁️ Lecture seule | ✅ Intact |
 
-Voir fichier `PLAN_ACTION_MANUEL.md` pour :
-- 7 phases détaillées (PHASE 0 à PHASE 7)
-- Diagnostics avec interprétation résultats
-- Commandes PowerShell exactes
-- 3 alternatives (yarn, pnpm, copie node_modules)
-- Configuration prévention future
-
-**Phases principales :**
-1. Terminal propre + Node direct (contourner nvm4w)
-2. Diagnostic racine (lecteur, réseau, corruption)
-3. Exclusions Windows Defender
-4. Suppression node_modules rapide
-5. Installation npm ci avec logs verbeux
-6. Scripts postinstall (Electron séparé)
-7. Vérification intégrité + lancement
+### Scripts
+| Fichier | Type | Status |
+|---------|------|--------|
+| `repair-env.ps1` | 🛠️ Script PowerShell | ✅ Exécuté |
+| `REPARER_ENVIRONNEMENT.bat` | 🚀 Lanceur | ✅ Exécuté |
 
 ---
 
-### 🔄 **Alternatives Si npm Reste Bloqué**
+## 🔗 Liens Rapides
 
-**Option A : yarn (Package manager alternatif)**
-```powershell
-winget install Yarn.Yarn
-cd G:\Aionui_client
-Remove-Item -Recurse -Force node_modules
-yarn install --ignore-engines --network-timeout 60000
-```
+### Pour Développeurs
+- **Code Router** : `G:\Aionui_client\src\renderer\router.tsx`
+- **Page Welcome** : `G:\Aionui_client\src\renderer\pages\guid\GuidPage.tsx`
+- **Storage Keys** : `G:\Aionui_client\src\common\storageKeys.ts`
 
-**Option B : pnpm (Plus robuste interruptions)**
-```powershell
-npm install -g pnpm
-echo "node-linker=hoisted" > .npmrc
-pnpm install --ignore-scripts
-pnpm rebuild electron
-```
+### Pour Tests
+- **DevTools** : `F12` dans l'application
+- **localStorage Key** : `aionui_conversation_tabs`
+- **Console** : `localStorage.getItem('aionui_conversation_tabs')`
 
-**Option C : Miroirs (Si réseau lent)**
-```powershell
-# Registry npm
-npm config set registry https://registry.npmmirror.com
-
-# Binaire Electron
-$env:ELECTRON_MIRROR = "https://npmmirror.com/mirrors/electron/"
-
-# Réessayer
-npm ci --legacy-peer-deps
-```
+### Pour Support
+- **Documentation technique** : `DESACTIVATION_PAGE_ACCUEIL.md`
+- **Plan de test** : `TEST_WELCOME_PAGE_DISABLED.md`
+- **Rollback** : `REACTIVER_PAGE_ACCUEIL.md`
 
 ---
 
-## 🛠️ ENVIRONNEMENT TECHNIQUE
+## ⚠️ Notes Importantes
 
-### Système
+### Ce Qui a Changé
+✅ Redirection par défaut : `/guid` → `getDefaultRoute()`  
+✅ Logique de priorité : activeTab → firstTab → fallback  
+✅ Gestion d'erreurs robuste (try/catch + validation)  
 
-```yaml
-OS: Windows 11 Pro (build 26200)
-Shell: PowerShell 7.x
-Python: Anaconda base environment actif
-Node.js: v24.21.0 (via nvm4w)
-npm: v11.19.0
-Projet: G:\Aionui_client\
-```
+### Ce Qui N'a PAS Changé
+✅ Page d'accueil `/guid` toujours accessible  
+✅ Tous les composants intacts  
+✅ Navigation normale fonctionnelle  
+✅ Authentification inchangée  
 
-### Stack Application
-
-```yaml
-Framework: Electron 37
-Build Tool: electron-vite 5
-Frontend: React 19 + TypeScript 5.8
-Package Manager: npm
-Requirements: Node.js >=22 <25
-```
-
-### État node_modules
-
-```yaml
-Total packages: ~2,000
-@babel packages: 44 total
-@babel corrompus: 5 (11% corruption)
-Dossiers temporaires: 4 (.core-*, .helpers-*, etc.)
-```
+### Problème Non Lié
+⚠️ **better-sqlite3** binding error (existait avant cette intervention)
 
 ---
 
-## 📊 CHRONOLOGIE DÉBOGAGE
+## 🚀 Prochaines Étapes
 
-### Session 1 : Tentatives Lancement (15:00-17:00)
-
-1. `npm run start` → electron-vite not found
-2. `npx electron-vite dev` → binaires .cmd manquants
-3. Installer Node.js 20 → EBADENGINE (besoin >=22)
-4. `node ...electron-vite.js dev` → @babel/core manquant
-
-### Session 2 : Switch Node + Redémarrage (17:00-18:30)
-
-5. Retour Node.js 24 → PowerShell bloqué (Exit Code -1)
-6. Redémarrage Windows → PowerShell toujours bloqué
-
-### Session 3 : Diagnostic Approfondi (19:00-20:00)
-
-7. Analyse structure @babel → **5 packages corrompus identifiés**
-8. Tentative réinstall @babel → **npm timeout 6 min**
-9. Clean cache + retry → **npm timeout persiste**
-
-### Status Actuel (20:00)
-
-- ✅ Cause racine identifiée : Packages @babel corrompus
-- ❌ npm install bloqué (timeout systématique)
-- 📝 Documentation complète créée
-- ⏳ Attente solution npm timeout ou alternative
+1. **Tester** l'application avec les 6 scénarios
+2. **Valider** le comportement avec utilisateur final
+3. **Documenter** toute anomalie trouvée
+4. **Déployer** en production si tests OK
+5. **Monitorer** retours utilisateurs post-déploiement
 
 ---
 
-## 🎯 PROCHAINES ÉTAPES
+## 📞 Support
 
-### Immédiat
+### En Cas de Problème
 
-1. Ouvrir nouveau PowerShell propre (`-NoProfile`)
-2. Désactiver Anaconda : `conda deactivate`
-3. Activer Node 24 : `nvm use 24.21.0`
-4. Tester Option A (diagnostics npm rapides)
-5. Si timeout → Tester Option B ou C
+| Problème | Solution |
+|----------|----------|
+| **npm corruption** | Exécuter `REPARER_ENVIRONNEMENT.bat` |
+| **Welcome page** | Consulter `REACTIVER_PAGE_ACCUEIL.md` |
+| **Tests échouent** | Voir `TEST_WELCOME_PAGE_DISABLED.md` |
+| **Régression** | Rollback avec guide réactivation |
 
-### Court Terme
-
-- Appliquer solution finale
-- Documenter procédure réparation
-- Tester lancement application
-
-### Moyen Terme
-
-- Créer script diagnostic automatique
-- Évaluer migration pnpm/yarn
-- Documenter prévention corruption
+### Contact
+- **Documentation** : Kiro AI
+- **Date** : 2026-11-17
+- **Version App** : E-audit v1.8.25
 
 ---
 
-## 💡 CONSULTATION EXTERNE
+## ✅ Résumé Exécutif
 
-### Fichiers à Partager
+### Intervention Actuelle (2026-11-17)
 
-Pour consultation avec experts externes (Discord, StackOverflow, GitHub Issues) :
+**Objectif** : Désactiver la page d'accueil, rediriger vers dernier chat  
+**Durée** : 30 minutes  
+**Complexité** : ⭐⭐ (Moyen)  
+**Risque** : 🟢 Faible (rollback facile)  
+**Impact** : 🟢 Positif (meilleure UX)  
 
-1. **PROMPT_CONSULTATION_MODELES.md** - Prompt structuré LLM
-2. **DIAGNOSTIC_FINAL_BABEL_CORRUPTION.md** - Preuves techniques
-3. **MEMO_PROBLEME_LANCEMENT_EXHAUSTIF.md** - Contexte complet
-
-### Questions Clés
-
-1. Pourquoi npm timeout alors que cache clean fonctionne ?
-2. Comment forcer npm overwrite packages corrompus ?
-3. Tarball local viable pour réparer ?
-4. yarn/pnpm contournent problème ?
-5. npm 11.19.0 (Node 24) a-t-il bugs connus ?
+**Status** : ✅ Code complété, ⏳ Tests en attente
 
 ---
 
-## 📞 SUPPORT
-
-### Ressources
-
-- npm documentation : https://docs.npmjs.com
-- Node.js ESM : https://nodejs.org/api/esm.html
-- @babel issues : https://github.com/babel/babel/issues
-- nvm-windows : https://github.com/coreybutler/nvm-windows
-
-### Communautés
-
-- npm Discord
-- Node.js Discord  
-- StackOverflow (tag: npm, node.js, windows, babel)
-- Reddit r/node
-
----
-
-**Dernière Mise à Jour** : 16 novembre 2026, 20:00  
-**Status** : Documentation complète - Attente solution npm timeout  
-**Auteur** : Diagnostic automatisé + Agent IA
+**Dernière mise à jour** : 2026-11-17  
+**Version** : 2.0  
+**Mainteneur** : Kiro AI

@@ -177,13 +177,7 @@ export class AdminController {
    */
   static async getAuditLog(req: Request, res: Response): Promise<void> {
     try {
-      const {
-        userId,
-        targetUserId,
-        action,
-        page = '1',
-        pageSize = '50',
-      } = req.query;
+      const { userId, targetUserId, action, page = '1', pageSize = '50' } = req.query;
 
       const db = getDatabase();
 

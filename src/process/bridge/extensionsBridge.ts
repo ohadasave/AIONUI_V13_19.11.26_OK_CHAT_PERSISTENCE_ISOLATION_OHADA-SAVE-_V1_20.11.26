@@ -108,14 +108,12 @@ const buildActivitySnapshot = (): IExtensionAgentActivitySnapshot => {
       .map((m) => toEventText(m))
       .filter((e): e is { kind: 'status' | 'tool' | 'message'; text: string; at: number } => Boolean(e))
       .slice(0, 6)
-      .map(
-        (e): IExtensionAgentActivityEvent => ({
-          conversationId: conversation.id,
-          kind: e.kind,
-          text: e.text,
-          at: e.at,
-        })
-      );
+      .map((e): IExtensionAgentActivityEvent => ({
+        conversationId: conversation.id,
+        kind: e.kind,
+        text: e.text,
+        at: e.at,
+      }));
 
     const lastStatus = recentMessages.find((m) => m.type === 'agent_status')?.content as { status?: string } | undefined;
     const state = mapStatusToState(runtimeStatus, lastStatus?.status, events);

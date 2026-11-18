@@ -47,8 +47,8 @@ app.post('/api/n8n-multi-workflow/execute', async (req, res) => {
     const requestBody = {
       message: userMessage,
       options: {
-        timeout: 660000
-      }
+        timeout: 660000,
+      },
     };
 
     // Call Provider-Bridge endpoint with timeout
@@ -82,7 +82,7 @@ app.post('/api/n8n-multi-workflow/execute', async (req, res) => {
     // Return the response as received or adapt it if necessary.
     // The Provider-Bridge returns JSON with {"message": {"content": "...", "role": "assistant"}, ...}
     // We will extract the content and normalize it so it looks like what the frontend expects.
-    
+
     // Normalize response
     const normalized = normalizeN8nMultiResponse(result);
 
@@ -144,7 +144,7 @@ function normalizeN8nMultiResponse(result: any): any {
     content: content,
     metadata: {
       format: format || 'direct_output',
-      timestamp: result.created_at || new Date().toISOString()
+      timestamp: result.created_at || new Date().toISOString(),
     },
   };
 }

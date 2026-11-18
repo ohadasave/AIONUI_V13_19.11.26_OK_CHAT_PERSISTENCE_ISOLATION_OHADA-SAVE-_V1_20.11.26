@@ -211,7 +211,7 @@ const GeminiModalContent: React.FC = () => {
                               });
                               return;
                             }
-                            
+
                             setGoogleAccountLoading(true);
                             ipcBridge.googleAuth.login
                               .invoke({ proxy: form.getFieldValue('proxy') })

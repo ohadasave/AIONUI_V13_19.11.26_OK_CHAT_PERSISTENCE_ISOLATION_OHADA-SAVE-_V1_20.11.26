@@ -37,18 +37,7 @@ export class AuditLogService {
         ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       `);
 
-      stmt.run(
-        id,
-        params.userId,
-        params.targetUserId || null,
-        params.action,
-        params.resourceType || null,
-        params.resourceId || null,
-        params.details || null,
-        params.ipAddress || null,
-        params.userAgent || null,
-        now
-      );
+      stmt.run(id, params.userId, params.targetUserId || null, params.action, params.resourceType || null, params.resourceId || null, params.details || null, params.ipAddress || null, params.userAgent || null, now);
 
       return { success: true };
     } catch (error: any) {

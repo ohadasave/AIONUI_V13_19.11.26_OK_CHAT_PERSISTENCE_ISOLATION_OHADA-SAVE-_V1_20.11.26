@@ -121,7 +121,7 @@ const N8nSendBox: React.FC<{
           user_msg_id,
           files: [],
         });
-        
+
         // WORKAROUND: IPC stream events don't always reach the renderer reliably
         // Reload messages from database after a short delay to ensure the response is shown
         setTimeout(async () => {
@@ -131,7 +131,7 @@ const N8nSendBox: React.FC<{
               page: 0,
               pageSize: 10000,
             });
-            
+
             if (messages && Array.isArray(messages)) {
               updateMessageList(() => messages);
             }
@@ -141,7 +141,6 @@ const N8nSendBox: React.FC<{
             setSending(false);
           }
         }, 1500); // Wait 1.5s for n8n workflow to complete
-        
       } catch (error) {
         // Handle error
         const errorMessage = error instanceof Error ? error.message : 'Erreur inconnue';

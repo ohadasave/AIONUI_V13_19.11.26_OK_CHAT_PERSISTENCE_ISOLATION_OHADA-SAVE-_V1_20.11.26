@@ -49,10 +49,7 @@ export function AuditLog() {
   // Filters
   const [userIdFilter, setUserIdFilter] = useState<string>('');
   const [actionFilter, setActionFilter] = useState<string>('');
-  const [dateRange, setDateRange] = useState<[Date | undefined, Date | undefined]>([
-    undefined,
-    undefined,
-  ]);
+  const [dateRange, setDateRange] = useState<[Date | undefined, Date | undefined]>([undefined, undefined]);
 
   // Load audit logs
   useEffect(() => {
@@ -152,8 +149,8 @@ export function AuditLog() {
       width: 150,
       render: (username?: string, record?: IAuditLog) => (
         <div>
-          <div className="font-medium">{username || 'Unknown'}</div>
-          <div className="text-xs text-gray-500">{record?.user_id?.slice(0, 12)}...</div>
+          <div className='font-medium'>{username || 'Unknown'}</div>
+          <div className='text-xs text-gray-500'>{record?.user_id?.slice(0, 12)}...</div>
         </div>
       ),
     },
@@ -161,9 +158,7 @@ export function AuditLog() {
       title: 'Action',
       dataIndex: 'action',
       width: 180,
-      render: (action: string) => (
-        <Tag color={getActionColor(action)}>{action}</Tag>
-      ),
+      render: (action: string) => <Tag color={getActionColor(action)}>{action}</Tag>,
     },
     {
       title: 'Target',
@@ -173,8 +168,8 @@ export function AuditLog() {
         if (!record?.target_user_id) return '-';
         return (
           <div>
-            <div className="font-medium">{username || 'Unknown'}</div>
-            <div className="text-xs text-gray-500">{record.target_user_id.slice(0, 12)}...</div>
+            <div className='font-medium'>{username || 'Unknown'}</div>
+            <div className='text-xs text-gray-500'>{record.target_user_id.slice(0, 12)}...</div>
           </div>
         );
       },
@@ -186,10 +181,8 @@ export function AuditLog() {
         if (!record.resource_type) return '-';
         return (
           <div>
-            <div className="text-sm">{record.resource_type}</div>
-            {record.resource_id && (
-              <div className="text-xs text-gray-500">{record.resource_id.slice(0, 12)}...</div>
-            )}
+            <div className='text-sm'>{record.resource_type}</div>
+            {record.resource_id && <div className='text-xs text-gray-500'>{record.resource_id.slice(0, 12)}...</div>}
           </div>
         );
       },
@@ -203,9 +196,9 @@ export function AuditLog() {
         if (!details) return '-';
         try {
           const parsed = JSON.parse(details);
-          return <pre className="text-xs overflow-x-auto">{JSON.stringify(parsed, null, 2)}</pre>;
+          return <pre className='text-xs overflow-x-auto'>{JSON.stringify(parsed, null, 2)}</pre>;
         } catch {
-          return <span className="text-sm text-gray-600">{details}</span>;
+          return <span className='text-sm text-gray-600'>{details}</span>;
         }
       },
     },
@@ -218,29 +211,15 @@ export function AuditLog() {
   ];
 
   return (
-    <div className="p-6">
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold mb-4">Audit Log</h1>
+    <div className='p-6'>
+      <div className='mb-6'>
+        <h1 className='text-2xl font-bold mb-4'>Audit Log</h1>
 
         {/* Filters */}
-        <div className="flex gap-4 mb-4 flex-wrap">
-          <Input
-            placeholder="Filter by User ID"
-            value={userIdFilter}
-            onChange={setUserIdFilter}
-            onPressEnter={() => setPagination({ ...pagination, page: 1 })}
-            style={{ width: 200 }}
-            allowClear
-          />
+        <div className='flex gap-4 mb-4 flex-wrap'>
+          <Input placeholder='Filter by User ID' value={userIdFilter} onChange={setUserIdFilter} onPressEnter={() => setPagination({ ...pagination, page: 1 })} style={{ width: 200 }} allowClear />
 
-          <Input
-            placeholder="Filter by Action"
-            value={actionFilter}
-            onChange={setActionFilter}
-            onPressEnter={() => setPagination({ ...pagination, page: 1 })}
-            style={{ width: 200 }}
-            allowClear
-          />
+          <Input placeholder='Filter by Action' value={actionFilter} onChange={setActionFilter} onPressEnter={() => setPagination({ ...pagination, page: 1 })} style={{ width: 200 }} allowClear />
 
           <RangePicker
             placeholder={['Start Date', 'End Date']}
@@ -282,12 +261,12 @@ export function AuditLog() {
             setPagination({ ...pagination, page });
           },
         }}
-        rowKey="id"
+        rowKey='id'
         scroll={{ x: 1400 }}
         expandable={{
           expandedRowRender: (record) => (
-            <div className="p-4 bg-gray-50">
-              <div className="grid grid-cols-2 gap-4">
+            <div className='p-4 bg-gray-50'>
+              <div className='grid grid-cols-2 gap-4'>
                 <div>
                   <strong>Full User ID:</strong> {record.user_id}
                 </div>
@@ -304,15 +283,13 @@ export function AuditLog() {
                 {record.user_agent && (
                   <div>
                     <strong>User Agent:</strong>
-                    <pre className="text-xs mt-1 overflow-x-auto">{record.user_agent}</pre>
+                    <pre className='text-xs mt-1 overflow-x-auto'>{record.user_agent}</pre>
                   </div>
                 )}
                 {record.details && (
-                  <div className="col-span-2">
+                  <div className='col-span-2'>
                     <strong>Full Details:</strong>
-                    <pre className="text-xs mt-1 bg-white p-2 rounded border overflow-x-auto">
-                      {formatDetails(record.details)}
-                    </pre>
+                    <pre className='text-xs mt-1 bg-white p-2 rounded border overflow-x-auto'>{formatDetails(record.details)}</pre>
                   </div>
                 )}
               </div>

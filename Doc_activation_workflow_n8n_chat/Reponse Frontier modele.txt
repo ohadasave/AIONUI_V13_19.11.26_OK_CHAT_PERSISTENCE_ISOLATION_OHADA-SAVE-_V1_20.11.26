@@ -1,0 +1,1469 @@
+1. CLAUDE OPUS
+
+Analyse : pourquoi les modifications n8n n’ont aucun effet
+
+D’après le code fourni, la logique source est correcte. Le problème vient de l’état persistant ou de ce que vous exécutez réellement, pas de la dérivation de selectedAgent.
+
+Trois constats avant les réponses
+L’hypothèse du « code compilé périmé » est contredite par vos propres dates. out/main/*.js date de 14h52 et les commits de 13h25-13h45. Le build est donc postérieur aux commits et les contient. Les tests passent aussi (496/496), donc le source se comporte comme prévu.
+Les tests Vitest ne vérifient pas les types. Vitest passe par esbuild, qui supprime les types sans les contrôler. Un platform: 'n8n' invalide (voir Q4) passerait donc les 496 tests et casserait tsc.
+Une valeur persistée écrase très probablement votre défaut 'n8n'. C’est la cause la plus plausible des symptômes 1 et 2 (voir Q1).
+Q1 : pourquoi selectedAgent ne vaut jamais 'n8n'
+
+La dérivation est correcte. Pour selectedAgentKey = 'n8n', selectedAgent vaut bien 'n8n'.
+
+Le problème est l’effet « Load last selected agent » :
+
+ts
+const savedAgentKey = await ConfigStorage.get('guid.lastSelectedAgent');
+...
+if (isInAvailable) _setSelectedAgentKey(savedAgentKey);
+
+Avant le commit, le défaut était 'custom:builtin-n8n-workflow', et setSelectedAgentKey l’a sans doute écrit dans config.json. Au démarrage, cette valeur est relue et écrase votre useState('n8n'). Le défaut du useState n’est donc qu’une valeur transitoire.
+
+Les effets en cascade sont les suivants :
+
+selectedAgent devient 'custom'.
+customAgents est filtré par availableCustomAgentIds. Si builtin-n8n-workflow n’est pas renvoyé par getAvailableAgents avec backend: 'custom', il est écarté.
+findAgentByKey('custom:builtin-n8n-workflow') renvoie alors undefined, donc isPresetAgent = false.
+getEffectiveAgentType(undefined) renvoie 'gemini'.
+Aucune des branches Gemini, OpenClaw, Nanobot ou n8n ne correspond, donc on tombe dans la branche ACP avec backend: 'custom'. Cette conversation ne peut pas démarrer, d’où le bouton qui tourne.
+
+Vérification : dans C:\Users\LEADER\AppData\Roaming\E-audit\config.json, regardez la valeur de guid.lastSelectedAgent.
+
+Q2 : types
+
+Oui, c’est suffisant, et même redondant. AcpBackend = keyof typeof ACP_BACKENDS_ALL, et ACP_BACKENDS_ALL: Record<AcpBackendAll, …> contient déjà 'n8n' et 'n8n-multi-workflow'. AcpBackend | 'custom' | 'n8n' | 'n8n-multi-workflow' se réduit donc à AcpBackend. Ce n’est pas la cause du bug.
+
+Q3 : condition de branche
+
+La condition est valide, mais fragile, car elle dépend de tout l’état amont. Je la remplacerais par un type guard appliqué à la clé, au type effectif et à selectedAgent (code plus bas).
+
+Q4 : placeholder model
+
+C’est probablement un faux positif invisible aux tests. platform: 'n8n' as const ne compile que si 'n8n' figure dans l’union platform de TProviderWithModel, et as const n’y change rien. Pensez aussi à vérifier que 'n8n' et 'n8n-multi-workflow' sont acceptés dans l’union type de conversation.create côté ipcBridge.
+
+Autre point : currentModel || placeholder est incorrect pour n8n. currentModel est le modèle Gemini ou autre sélectionné sur la page, et il passerait à la place du placeholder. Utilisez toujours le placeholder.
+
+powershell
+npx tsc --noEmit
+Q5 : « hot reload » Electron
+
+Il n’y a pas de cache à vider :
+
+Le renderer est servi en mémoire par le serveur Vite. node_modules\.vite ne contient que le pré-bundle des dépendances.
+Main et preload sont compilés une fois au lancement de electron-vite dev et ne sont rechargés que si vous lancez electron-vite dev --watch.
+out\ est réécrit à chaque démarrage, donc le supprimer ne change rien.
+
+La cause la plus probable est que vous n’exécutez pas le processus que vous croyez. Votre taskkill vise electron.exe et node.exe. Or une instance installée (E-audit.exe), éventuellement réduite dans la zone de notification, peut détenir le verrou d’instance unique (requestSingleInstanceLock). Votre instance dev se ferme alors et c’est l’ancienne qui reprend le focus. Les deux partagent aussi le même dossier AppData\Roaming\E-audit.
+
+powershell
+# 1. Tout tuer, y compris le binaire installé
+Get-Process | Where-Object { $_.ProcessName -match 'electron|E-audit|node' } | Stop-Process -Force
+
+# 2. Vérifier qu'il ne reste rien et que le port dev est libre
+Get-Process | Where-Object { $_.ProcessName -match 'electron|E-audit' }
+Get-NetTCPConnection -LocalPort 5173 -ErrorAction SilentlyContinue
+
+# 3. Vérifier que le build contient bien n8n
+Get-ChildItem out\main | Select-Object Name, LastWriteTime
+Select-String -Path out\main\*.js -Pattern "n8n-multi-workflow" -List
+
+# 4. Relancer
+npm run start
+Correctifs proposés
+1. Migrer la clé persistée (useGuidAgentSelection.ts, effet « Load last selected agent »)
+ts
+const LEGACY_AGENT_KEYS: Record<string, string> = {
+  'custom:builtin-n8n-workflow': 'n8n',
+  'custom:builtin-n8n-multi-workflow': 'n8n-multi-workflow',
+};
+
+// dans loadLastSelectedAgent :
+const rawKey = await ConfigStorage.get('guid.lastSelectedAgent');
+if (cancelled || !rawKey) return;
+const savedAgentKey = LEGACY_AGENT_KEYS[rawKey] ?? rawKey;
+
+const isInAvailable = availableAgents.some((agent) => {
+  const key = agent.backend === 'custom' && agent.customAgentId ? `custom:${agent.customAgentId}` : agent.backend;
+  return key === savedAgentKey;
+});
+
+if (isInAvailable) {
+  _setSelectedAgentKey(savedAgentKey);
+  if (savedAgentKey !== rawKey) void ConfigStorage.set('guid.lastSelectedAgent', savedAgentKey);
+}
+2. Type guard et branche n8n unique (useGuidSend.ts)
+ts
+type N8nType = 'n8n' | 'n8n-multi-workflow';
+const isN8nType = (v: string | undefined): v is N8nType => v === 'n8n' || v === 'n8n-multi-workflow';
+
+// après le calcul de finalEffectiveAgentType :
+const n8nType: N8nType | undefined = isN8nType(selectedAgent)
+  ? selectedAgent
+  : isN8nType(selectedAgentKey)
+    ? selectedAgentKey
+    : isPreset && isN8nType(finalEffectiveAgentType)
+      ? finalEffectiveAgentType
+      : undefined;
+
+if (n8nType) {
+  try {
+    // Toujours le placeholder : n8n n'utilise pas les modèles Gemini/ACP
+    const placeholderModel = {
+      id: `${n8nType}-placeholder`,
+      name: n8nType === 'n8n' ? 'n8n' : 'n8n Multi Workflow',
+      useModel: n8nType === 'n8n' ? 'n8n-workflow' : 'n8n-multi-workflow',
+      platform: 'n8n' as const, // à ajouter à l'union TProviderWithModel si tsc refuse
+      baseUrl: '',
+      apiKey: '',
+    };
+    const conversation = await ipcBridge.conversation.create.invoke({
+      type: n8nType,
+      name: input,
+      model: placeholderModel,
+      extra: { /* identique à l'existant */ },
+    });
+    // ... reste identique ; clé sessionStorage `${n8nType}_initial_message_${id}`
+    // (vérifiez que la page de conversation lit bien cette clé)
+  } catch (error: unknown) { /* identique */ }
+  return;
+}
+
+Placez ce bloc avant la branche Gemini. Il remplace les deux branches n8n dupliquées. Dans votre code, la branche multi-workflow écrit la clé n8n_initial_message_ ; vérifiez que la page de conversation correspondante la lit.
+
+Diagnostic en 2 minutes
+
+Ajoutez temporairement ceci dans useGuidAgentSelection, après la dérivation :
+
+ts
+console.log('[guid-debug]', { selectedAgentKey, selectedAgent, preset: isPresetAgent, avail: availableAgents?.map(a => a.backend + ':' + (a.customAgentId ?? '')) });
+
+Ouvrez F12 :
+
+Si selectedAgentKey vaut custom:builtin-n8n-workflow, c’est la valeur persistée (Q1).
+Si le log n’apparaît pas, vous n’exécutez pas le bon processus (Q5).
+Si avail ne contient pas n8n, le Main Process est périmé ou AcpDetector n’a pas été exécuté.
+Symptôme 3 (bouton « ADMIN »)
+
+Je ne peux pas le diagnostiquer sans GuidPage.tsx, qui n’est pas dans ce que vous avez joint. Il s’agit probablement d’un rendu conditionnel lié à l’authentification ou au chargement de availableAgents. Envoyez-moi ce fichier ainsi que la liste acpConversation.getAvailableAgents renvoyée par AcpDetector.
+
+Si vous préférez que je rédige les tests de non-régression (clé legacy, type guard) à la place de ceux de votre liste, dites-le-moi.
+
+
+
+
+
+
+
+2.CLAUDE SONNET
+
+
+Je commence par lire les trois fichiers sources, car leur contenu n’est pas dans ma mémoire de travail.
+
+Je viens de terminer la lecture des trois fichiers et je rédige l’analyse. Elle s’appuie sur le code réel, pas sur le prompt.
+
+Cause racine probable : un état sauvegardé écrase le défaut, plus un fallback silencieux sur Gemini
+
+Ce que le code prouve
+
+useGuidAgentSelection.ts:82 contient bien useState<string>('n8n'). Votre prompt cite la ligne 133, et les fichiers font 618, 462 et 898 lignes au lieu de 520, 412 et 600. Les notes décrivent donc une autre version que celle que j’ai lue. Comparez avec git hash-object sur les fichiers du dépôt.
+La dérivation selectedAgent (ligne 168) est correcte : avec la clé 'n8n', elle renvoie 'n8n'. Votre Test 2 devrait passer sur ce code. S’il échoue, vérifiez ce que renvoie le mock de ConfigStorage.get.
+Le défaut 'n8n' n’est pas définitif. L’effet des lignes 194-222 relit guid.lastSelectedAgent dans config.json et remplace la sélection si cette clé existe dans availableAgents. Chaque setSelectedAgentKey persiste la clé. Avant votre commit, le défaut était custom:builtin-n8n-workflow ou gemini, donc la valeur sauvegardée est probablement l’une des deux. Le useState('n8n') ne sert alors à rien dès que availableAgents est chargé. C’est une cause plausible du symptôme 1.
+
+Pourquoi le bouton tourne (symptôme 2)
+
+Si la clé sauvegardée est custom:builtin-n8n-workflow :
+
+selectedAgent vaut 'custom', et customAgents est filtré (ligne 230) par availableCustomAgentIds, donc il ne garde que les agents backend === 'custom' présents dans availableAgents.
+Si l’agent n’y est pas, resolvePresetAgentType (ligne 487) renvoie 'gemini' par défaut. Vous partez alors sur le chemin Gemini, ou sur le chemin ACP avec backend: 'custom' et sans cliPath.
+Dans les deux cas, la branche n8n n’est jamais atteinte.
+
+Il reste une autre explication. Si la branche n8n est atteinte mais que le process Main ne gère pas le type 'n8n', conversation.create.invoke peut ne jamais se résoudre. sendMessageHandler a un finally, donc un spinner infini signifie que l’invoke ne revient pas. Je n’ai pas vu conversationBridge ni la factory côté Main.
+
+Réponses aux questions
+
+Q2 (types) : l’ajout est redondant mais inoffensif. AcpBackend = keyof typeof ACP_BACKENDS_ALL (acpTypes.ts:488) contient déjà 'n8n' et 'n8n-multi-workflow' (lignes 458-473). L’union élargie dans GuidSendDeps n’apporte rien. Les types disparaissent à la compilation, donc ils ne peuvent pas changer le comportement à l’exécution.
+
+Q3 (condition) : la condition selectedAgent === 'n8n' || (isPreset && finalEffectiveAgentType === 'n8n') est correcte. N’utilisez pas selectedAgentKey, car il vaut custom:... pour un preset. Le vrai problème est en amont : finalEffectiveAgentType dépend de customAgents.
+
+Q4 (placeholder) : il y a deux problèmes.
+
+currentModel || placeholder est un bug. Si un modèle Gemini ou autre est configuré, c’est lui qui part dans la création n8n. Utilisez toujours le placeholder.
+platform: 'n8n' as const ne compile que si l’union de platform dans TProviderWithModel contient 'n8n'. Je n’ai pas vu storage.ts. Vitest ne vérifie pas les types, donc votre 496/496 ne le prouve pas. Lancez npx tsc --noEmit.
+
+Q5 (hot reload) : le renderer a le HMR. Le Main, lui, ne redémarre que si vous lancez electron-vite dev --watch. Sans cela, il faut relancer à la main.
+
+Votre hypothèse « build périmé » est contredite par vos propres chiffres. out/main date de 14h52 et vos commits de 13h25-13h45, donc le build est postérieur aux commits. Vérifiez plutôt :
+
+si l’app que vous regardez est bien lancée depuis g:\Aionui_client et non une version installée de E-audit ;
+si un ancien process tient encore le port 5173.
+powershell
+# 1. Le build contient-il le code ? (non destructif)
+Select-String -Path "out\main\*.js" -Pattern "n8n-multi-workflow" -List
+
+# 2. Qui sert le port 5173 / quels Electron tournent ?
+Get-NetTCPConnection -LocalPort 5173 -ErrorAction SilentlyContinue | Select OwningProcess
+Get-Process electron,node -ErrorAction SilentlyContinue | Select Id,Path,StartTime
+
+# 3. Valeur sauvegardée qui écrase le défaut
+Select-String -Path "$env:APPDATA\E-audit\config.json" -Pattern "lastSelectedAgent"
+
+# 4. Types réels
+npx tsc --noEmit
+
+Ne lancez pas Remove-Item "$env:APPDATA\E-audit\*" (Option C de votre doc). Cela supprime config.json et vos réglages. Les caches Chromium (GPUCache, etc.) ne contiennent pas votre code applicatif en mode dev.
+
+Correctifs
+
+1. Migrer l’ancienne clé (useGuidAgentSelection.ts, effet ligne 194)
+
+typescript
+const LEGACY_AGENT_KEYS: Record<string, string> = {
+  'custom:builtin-n8n-workflow': 'n8n',
+  'custom:builtin-n8n-multi-workflow': 'n8n-multi-workflow',
+};
+
+// dans loadLastSelectedAgent :
+const rawKey = await ConfigStorage.get('guid.lastSelectedAgent');
+if (cancelled || !rawKey) return;
+const savedAgentKey = LEGACY_AGENT_KEYS[rawKey] ?? rawKey;
+
+Si vous voulez toujours démarrer sur n8n, supprimez simplement cet effet de restauration.
+
+2. Supprimer le fallback silencieux sur Gemini (resolvePresetAgentType, ligne 487)
+
+typescript
+const customAgent = customAgents.find((a) => a.id === agentInfo.customAgentId);
+if (customAgent?.presetAgentType) return customAgent.presetAgentType;
+if (agentInfo.customAgentId === 'builtin-n8n-workflow') return 'n8n';
+if (agentInfo.customAgentId === 'builtin-n8n-multi-workflow') return 'n8n-multi-workflow';
+return 'gemini';
+
+3. Une seule branche n8n avec placeholder fixe (useGuidSend.ts, à la place des lignes 260-366)
+
+typescript
+type N8nType = 'n8n' | 'n8n-multi-workflow';
+const isN8nType = (v: string | undefined): v is N8nType => v === 'n8n' || v === 'n8n-multi-workflow';
+
+const n8nType: N8nType | undefined = isN8nType(selectedAgent) ? selectedAgent : isPreset && isN8nType(finalEffectiveAgentType) ? finalEffectiveAgentType : undefined;
+
+if (n8nType) {
+  try {
+    const conversation = await ipcBridge.conversation.create.invoke({
+      type: n8nType,
+      name: input,
+      model: { id: `${n8nType}-placeholder`, name: n8nType, useModel: n8nType, platform: 'n8n' as const, baseUrl: '', apiKey: '' },
+      extra: {
+        defaultFiles: files,
+        workspace: finalWorkspace,
+        customWorkspace: isCustomWorkspace,
+        enabledSkills: isPreset ? enabledSkills : undefined,
+        presetAssistantId: isPreset ? agentInfo?.customAgentId : undefined,
+      },
+    });
+    if (!conversation?.id) {
+      alert(`Failed to create ${n8nType} conversation. Please ensure the n8n backend is running on port 3458.`);
+      return;
+    }
+    if (isCustomWorkspace) {
+      closeAllTabs();
+      updateWorkspaceTime(finalWorkspace);
+      openTab(conversation);
+    }
+    emitter.emit('chat.history.refresh');
+    sessionStorage.setItem(`n8n_initial_message_${conversation.id}`, JSON.stringify({ input, files: files.length > 0 ? files : undefined }));
+    await navigate(`/conversation/${conversation.id}`);
+  } catch (error: unknown) {
+    alert(`Failed to create ${n8nType} conversation: ${error instanceof Error ? error.message : String(error)}`);
+    throw error;
+  }
+  return;
+}
+Ce que je n’ai pas pu vérifier
+Symptôme 3 (clic sur ADMIN) : il se joue dans GuidPage.tsx, que je n’ai pas. Envoyez-le pour que je regarde.
+Handler Main : conversationBridge.ts, la factory de conversations et AcpDetector.ts me permettraient de confirmer ou d’écarter l’hypothèse de l’invoke qui ne revient pas.
+Journalisation : ajoutez temporairement console.log('[Guid]', selectedAgentKey, selectedAgent, isPresetAgent, finalEffectiveAgentType) au début de handleSend. Un seul clic sur Envoyer dira quelle branche est empruntée.
+
+Dites-moi ce que donnent les commandes 1 à 3 et le log, et j’affinerai.
+
+
+
+
+
+
+
+
+
+
+3.GEMINI 3.8 FLASH 
+
+Voici l'analyse complète de votre situation, les réponses détaillées à vos questions ainsi que les correctifs immédiats (code et build).
+🎯 Synthèse de la cause racine
+Le blocage résulte de la convergence de trois facteurs :
+Conflit d'identité (Preset Custom vs Backend Built-in) :
+Le système manipule n8n sous deux identités concurrentes :
+D'un côté comme Preset Custom Agent (id: 'builtin-n8n-workflow', préfixé en custom:builtin-n8n-workflow).
+De l'autre comme Backend ACP Built-in direct (backend: 'n8n').
+Le clic sur ADMIN initialise et injecte les presets dans le store en mémoire. Tant que ce clic n'a pas eu lieu, le hook ne trouve pas l'agent ou subit un état asynchrone non résolu.
+Écrasement de l'état initial par la persistance (config.json) :
+Dans useGuidAgentSelection.ts, useState('n8n') est immédiatement écrasé au premier rendu par ConfigStorage.get('guid.lastSelectedAgent') (qui contient l'ancienne sélection mémorisée dans votre profil utilisateur Windows %APPDATA%\E-audit\config.json). De plus, si la liste availableAgents est vide au démarrage (attente SWR/IPC), l'effet de repli (fallback) réinitialise la sélection vers un agent valide (ex. Gemini).
+Verrouillage de fichiers sous Windows & Nature du Hot Reload Vite :
+Vite HMR ne recharge jamais le Main Process (AcpDetector.ts se compile dans out/main/index.js). Sous Windows, des processus orphelins electron.exe restent fréquemment actifs en arrière-plan, posant un verrou exclusif sur out/main/ et empêchant la réécriture des fichiers JS malgré les messages de compilation Vite.
+🔍 Réponses précises à vos questions
+Question 1 : Pourquoi selectedAgent n'est jamais égal à 'n8n' ?
+Dans useGuidAgentSelection.ts :
+La persistance écrase l'état : Un hook ou effet lit guid.lastSelectedAgent depuis config.json. Si la clé enregistrée était custom:builtin-n8n-workflow ou gemini, selectedAgentKey prend cette valeur dès la fin du montage.
+La dérivation de type :
+TypeScript
+const selectedAgent = selectedAgentKey.startsWith('custom:') ? 'custom' : selectedAgentKey;
+Si l'agent sélectionné provient des presets de configuration, selectedAgentKey vaut 'custom:builtin-n8n-workflow', donc selectedAgent vaut 'custom' et non 'n8n'.
+Le piège du montage asynchrone : Au montage initial, availableAgents est undefined (IPC asynchrone). Si le hook vérifie isMainAgentAvailable('n8n') avant que la liste ne soit peuplée, il déclenche un fallback vers un autre agent disponible.
+Question 2 : Le type union et narrowing dans acpTypes.ts
+Modifier uniquement AcpBackendAll est insuffisant.
+AcpBackend (les backends standards avec CLI) et AcpBackendAll doivent être alignés, mais surtout le type ConversationType (dans src/types/conversation.ts ou équivalent) doit autoriser 'n8n' et 'n8n-multi-workflow'.
+Si conversation.create.invoke({ type: 'n8n', ... }) est appelé, le validateur IPC du Main Process rejette silencieusement ou lève une exception si 'n8n' ne fait pas partie de l'union des types de conversation autorisés.
+Question 3 : Condition de branche dans useGuidSend.ts
+La condition actuelle :
+TypeScript
+if (selectedAgent === 'n8n' || (isPreset && finalEffectiveAgentType === 'n8n'))
+Échoue car :
+Si selectedAgentKey est 'custom:builtin-n8n-workflow', selectedAgent vaut 'custom'.
+isPreset et finalEffectiveAgentType dépendent de selectedAgentInfo. Si selectedAgentInfo n'est pas encore synchronisé, finalEffectiveAgentType est undefined.
+Pourquoi le bouton tourne indéfiniment ? La condition évaluant à false, le code tombe dans la branche par défaut (ACP CLI). Il tente alors d'exécuter un binaire CLI pour un backend sans exécutable (cliPath: undefined), provoquant une promesse IPC qui ne résout jamais et ne remet pas isSending à false.
+Question 4 : Validité du Placeholder Model
+TypeScript
+const placeholderModel = currentModel || {
+  id: 'n8n-placeholder',
+  name: 'n8n',
+  useModel: 'n8n-workflow',
+  platform: 'n8n' as const, // ⚠️ RISQUE ICI
+  baseUrl: '',
+  apiKey: '',
+};
+Si le schéma TypeScript ou Zod de ModelConfig / IModel restreint platform à ('openai' | 'anthropic' | 'gemini' | 'ollama' | 'custom'), platform: 'n8n' échouera au runtime. Il est impératif d'utiliser platform: 'custom' as const si 'n8n' n'a pas été ajouté à l'énumération globale ModelPlatform.
+Question 5 : Cache et Hot Reload Electron
+Vite HMR ne s'applique qu'au Renderer (src/renderer/*).
+Les modifications dans src/agent/* ou src/main/* nécessitent un redémarrage complet du binaire Electron.
+Sous Windows, electron-vite dev échoue à écraser out/main/index.js si un processus Electron fantôme tourne en tâche de fond. Le runtime continue alors d'exécuter l'ancien bundle en mémoire.
+🛠️ Solution 1 : Corrections du Code Source
+1. Fichier src/renderer/pages/guid/hooks/useGuidAgentSelection.ts
+Sécuriser l'état initial, la persistance et la compatibilité entre clé native et clé preset :
+TypeScript
+// FICHIER: src/renderer/pages/guid/hooks/useGuidAgentSelection.ts
+// LIGNES: ~130-145 et ~220-235
+
+// ❌ CODE ACTUEL (FRAGILE)
+const [selectedAgentKey, _setSelectedAgentKey] = useState<string>('n8n');
+
+// ...
+const selectedAgent = useMemo(() => {
+  if (selectedAgentKey.startsWith('custom:')) return 'custom';
+  return selectedAgentKey as AcpBackend;
+}, [selectedAgentKey]);
+
+// ✅ CODE CORRIGÉ
+const DEFAULT_N8N_KEY = 'builtin-n8n-workflow';
+
+// 1. Initialisation résiliente prenant en compte preset et direct
+const [selectedAgentKey, _setSelectedAgentKey] = useState<string>(() => {
+  const saved = ConfigStorage.get('guid.lastSelectedAgent');
+  if (saved && (saved === 'n8n' || saved.includes('n8n'))) {
+    return saved;
+  }
+  return 'n8n';
+});
+
+// 2. Détection infaillible de la nature n8n
+const isN8nAgent = useMemo(() => {
+  return (
+    selectedAgentKey === 'n8n' ||
+    selectedAgentKey === 'n8n-multi-workflow' ||
+    selectedAgentKey === 'custom:builtin-n8n-workflow' ||
+    selectedAgentKey === 'custom:builtin-n8n-multi-workflow' ||
+    selectedAgentKey.includes('n8n')
+  );
+}, [selectedAgentKey]);
+
+// 3. Disponibilité : n8n est TOUJOURS disponible sans attendre le scan CLI
+const isMainAgentAvailable = useCallback(
+  (agentType: string): boolean => {
+    if (
+      agentType === 'n8n' ||
+      agentType === 'n8n-multi-workflow' ||
+      agentType === 'custom:builtin-n8n-workflow' ||
+      agentType === 'custom:builtin-n8n-multi-workflow' ||
+      agentType.includes('n8n')
+    ) {
+      return true;
+    }
+    if (agentType === 'gemini') {
+      return isGoogleAuth || (modelList != null && modelList.length > 0);
+    }
+    return availableAgents?.some((agent) => agent.backend === agentType || agent.id === agentType) ?? false;
+  },
+  [modelList, availableAgents, isGoogleAuth]
+);
+2. Fichier src/renderer/pages/guid/hooks/useGuidSend.ts
+Sécuriser la condition de dispatch et garantir la fin du chargement en cas d'erreur (try...finally) :
+TypeScript
+// FICHIER: src/renderer/pages/guid/hooks/useGuidSend.ts
+// LIGNES: ~175-230
+
+// ❌ CODE ACTUEL (INCORRECT)
+if (selectedAgent === 'n8n' || (isPreset && finalEffectiveAgentType === 'n8n')) {
+  // ...
+}
+
+// ✅ CODE CORRIGÉ
+// Détection unifiée couvrant selectedAgentKey, selectedAgent et preset
+const isN8nWorkflow = 
+  selectedAgent === 'n8n' ||
+  selectedAgentKey === 'n8n' ||
+  selectedAgentKey === 'custom:builtin-n8n-workflow' ||
+  (isPreset && (finalEffectiveAgentType === 'n8n' || selectedPresetAgentType === 'n8n'));
+
+const isN8nMultiWorkflow = 
+  selectedAgent === 'n8n-multi-workflow' ||
+  selectedAgentKey === 'n8n-multi-workflow' ||
+  selectedAgentKey === 'custom:builtin-n8n-multi-workflow' ||
+  (isPreset && (finalEffectiveAgentType === 'n8n-multi-workflow' || selectedPresetAgentType === 'n8n-multi-workflow'));
+
+if (isN8nWorkflow) {
+  try {
+    setIsSending(true);
+    
+    // Utiliser un platform supporté par le schéma de validation global
+    const placeholderModel = currentModel || {
+      id: 'n8n-placeholder',
+      name: 'n8n Workflow',
+      useModel: 'n8n-workflow',
+      platform: 'custom' as const, // 'custom' évite de casser le type check ModelPlatform
+      baseUrl: 'http://localhost:3458',
+      apiKey: '',
+    };
+
+    const conversation = await ipcBridge.conversation.create.invoke({
+      type: 'n8n',
+      name: input.slice(0, 50) || 'Workflow n8n',
+      model: placeholderModel,
+      extra: {
+        agentId: 'builtin-n8n-workflow',
+        createdAt: Date.now()
+      }
+    });
+
+    if (!conversation || !conversation.id) {
+      throw new Error("Échec de la création de la conversation n8n (ID manquant)");
+    }
+
+    sessionStorage.setItem(
+      `n8n_initial_message_${conversation.id}`,
+      JSON.stringify({ input, files })
+    );
+
+    navigate(`/conversation/${conversation.id}`);
+  } catch (error) {
+    console.error('[useGuidSend] Erreur création conversation n8n:', error);
+    // Notification UI d'erreur ici si disponible
+  } finally {
+    setIsSending(false); // ✅ Garantit que le bouton ne tournera plus dans le vide
+  }
+  return;
+}
+
+if (isN8nMultiWorkflow) {
+  try {
+    setIsSending(true);
+    const placeholderModel = currentModel || {
+      id: 'n8n-multi-placeholder',
+      name: 'n8n Multi Workflow',
+      useModel: 'n8n-multi-workflow',
+      platform: 'custom' as const,
+      baseUrl: 'http://localhost:3458',
+      apiKey: '',
+    };
+
+    const conversation = await ipcBridge.conversation.create.invoke({
+      type: 'n8n-multi-workflow',
+      name: input.slice(0, 50) || 'Multi-Workflow n8n',
+      model: placeholderModel,
+      extra: {
+        agentId: 'builtin-n8n-multi-workflow',
+        createdAt: Date.now()
+      }
+    });
+
+    sessionStorage.setItem(
+      `n8n_initial_message_${conversation.id}`,
+      JSON.stringify({ input, files })
+    );
+
+    navigate(`/conversation/${conversation.id}`);
+  } catch (error) {
+    console.error('[useGuidSend] Erreur création conversation n8n multi:', error);
+  } finally {
+    setIsSending(false);
+  }
+  return;
+}
+3. Fichier src/types/acpTypes.ts & src/types/conversation.ts
+Assurer l'interopérabilité des types pour éviter le rejet au runtime IPC :
+TypeScript
+// FICHIER: src/types/acpTypes.ts
+export type AcpBackend =
+  | 'claude'
+  | 'gemini'
+  | 'qwen'
+  | 'codestral'
+  | 'deepseek'
+  | 'n8n'                    // ✅ Ajouter ici aussi
+  | 'n8n-multi-workflow';    // ✅ Ajouter ici aussi
+
+export type AcpBackendAll =
+  | AcpBackend
+  | 'custom';
+
+// FICHIER: src/types/conversation.ts (ou le fichier déclarant ConversationType)
+export type ConversationType = 
+  | 'gemini' 
+  | 'acp' 
+  | 'n8n'                    // ✅ Indispensable pour conversation.create.invoke
+  | 'n8n-multi-workflow'     // ✅ Indispensable
+  | 'custom';
+💻 Solution 2 : Procédure de Reset & Rebuild Purge (PowerShell)
+Pour résoudre définitivement le problème de code compilé périmé (out/main daté de 14h52) et la persistance de l'ancienne configuration bloquante :
+Exécutez ce script dans votre terminal PowerShell à la racine de g:\Aionui_client :
+Powershell
+Write-Host "1. Arrêt forcé des processus résiduels Electron et Node..." -ForegroundColor Cyan
+Get-Process -Name electron, node -ErrorAction SilentlyContinue | Stop-Process -Force
+Start-Sleep -Seconds 2
+
+Write-Host "2. Purge des dossiers de compilation et du cache de dépendances..." -ForegroundColor Cyan
+$foldersToClean = @(
+    "out",
+    "dist",
+    "node_modules\.vite",
+    "$env:APPDATA\E-audit\Cache",
+    "$env:APPDATA\E-audit\Code Cache",
+    "$env:APPDATA\E-audit\GPUCache"
+)
+
+foreach ($folder in $foldersToClean) {
+    if (Test-Path $folder) {
+        Remove-Item -Recurse -Force $folder -ErrorAction SilentlyContinue
+        Write-Host "   Supprimé: $folder" -ForegroundColor Gray
+    }
+}
+
+Write-Host "3. Réinitialisation de la clé d'agent par défaut dans config.json..." -ForegroundColor Cyan
+$configPath = "$env:APPDATA\E-audit\config.json"
+if (Test-Path $configPath) {
+    try {
+        $json = Get-Content $configPath -Raw | ConvertFrom-Json
+        if ($json.guid) {
+            $json.guid.lastSelectedAgent = "n8n"
+            $json | ConvertTo-Json -Depth 10 | Set-Content $configPath
+            Write-Host "   Clé guid.lastSelectedAgent réalignée sur 'n8n'." -ForegroundColor Green
+        }
+    } catch {
+        Write-Host "   Attention: Impossible de parser config.json, écriture ignorée." -ForegroundColor Yellow
+    }
+}
+
+Write-Host "4. Recompilation complète TypeScript et démarrage propre..." -ForegroundColor Cyan
+npm run start
+🏛️ Solution 3 : Clarification d'Architecture (Preset vs Backend)
+Pourquoi ce bug d'accès "ADMIN" se produit-il ?
+Actuellement, l'application est conçue pour charger les presets définis dans config.json uniquement lors de l'accès aux interfaces de gestion (Admin/Settings) via une méthode customAgentsService.loadPresets().
+En voulant court-circuiter cela sur /guid sans que le service n'ait initialisé le preset en mémoire, selectedAgentInfo reste undefined.
+Bonne pratique recommandée : Considérez n8n comme un backend de premier niveau (First-Class Backend), exactement au même titre que Gemini. Il ne doit pas dépendre de la sous-catégorie customAgents.
+En alignant :
+selectedAgentKey = 'n8n'
+AcpDetector qui injecte directement { backend: 'n8n', name: 'n8n Workflow' } au démarrage de l'app dans le Main process.
+useGuidSend.ts qui intercepte selectedAgent === 'n8n' ou selectedAgentKey.includes('n8n') en premier ressort avec son bloc try...finally.
+Vous éliminez toute dépendance au passage par la page Admin, supprimez tout risque de chargement infini sur le bouton d'envoi, et assurez la sélection immédiate de n8n dès l'ouverture de l'application.
+1m33.3s
+Google AI models may make mistakes, so double-check outputs.
+Use Arrow Up and Arrow Down to select a turn, Enter to jump to it, and Escape to return to the chat.
+
+
+
+
+4.CHAT GPT 
+
+
+e commence par lire les trois fichiers sources, car leur contenu n’est pas dans ma mémoire de travail.
+
+Je viens de terminer la lecture des trois fichiers et je rédige l’analyse. Elle s’appuie sur le code réel, pas sur le prompt.
+
+Cause racine probable : un état sauvegardé écrase le défaut, plus un fallback silencieux sur Gemini
+
+Ce que le code prouve
+
+useGuidAgentSelection.ts:82 contient bien useState<string>('n8n'). Votre prompt cite la ligne 133, et les fichiers font 618, 462 et 898 lignes au lieu de 520, 412 et 600. Les notes décrivent donc une autre version que celle que j’ai lue. Comparez avec git hash-object sur les fichiers du dépôt.
+La dérivation selectedAgent (ligne 168) est correcte : avec la clé 'n8n', elle renvoie 'n8n'. Votre Test 2 devrait passer sur ce code. S’il échoue, vérifiez ce que renvoie le mock de ConfigStorage.get.
+Le défaut 'n8n' n’est pas définitif. L’effet des lignes 194-222 relit guid.lastSelectedAgent dans config.json et remplace la sélection si cette clé existe dans availableAgents. Chaque setSelectedAgentKey persiste la clé. Avant votre commit, le défaut était custom:builtin-n8n-workflow ou gemini, donc la valeur sauvegardée est probablement l’une des deux. Le useState('n8n') ne sert alors à rien dès que availableAgents est chargé. C’est une cause plausible du symptôme 1.
+
+Pourquoi le bouton tourne (symptôme 2)
+
+Si la clé sauvegardée est custom:builtin-n8n-workflow :
+
+selectedAgent vaut 'custom', et customAgents est filtré (ligne 230) par availableCustomAgentIds, donc il ne garde que les agents backend === 'custom' présents dans availableAgents.
+Si l’agent n’y est pas, resolvePresetAgentType (ligne 487) renvoie 'gemini' par défaut. Vous partez alors sur le chemin Gemini, ou sur le chemin ACP avec backend: 'custom' et sans cliPath.
+Dans les deux cas, la branche n8n n’est jamais atteinte.
+
+Il reste une autre explication. Si la branche n8n est atteinte mais que le process Main ne gère pas le type 'n8n', conversation.create.invoke peut ne jamais se résoudre. sendMessageHandler a un finally, donc un spinner infini signifie que l’invoke ne revient pas. Je n’ai pas vu conversationBridge ni la factory côté Main.
+
+Réponses aux questions
+
+Q2 (types) : l’ajout est redondant mais inoffensif. AcpBackend = keyof typeof ACP_BACKENDS_ALL (acpTypes.ts:488) contient déjà 'n8n' et 'n8n-multi-workflow' (lignes 458-473). L’union élargie dans GuidSendDeps n’apporte rien. Les types disparaissent à la compilation, donc ils ne peuvent pas changer le comportement à l’exécution.
+
+Q3 (condition) : la condition selectedAgent === 'n8n' || (isPreset && finalEffectiveAgentType === 'n8n') est correcte. N’utilisez pas selectedAgentKey, car il vaut custom:... pour un preset. Le vrai problème est en amont : finalEffectiveAgentType dépend de customAgents.
+
+Q4 (placeholder) : il y a deux problèmes.
+
+currentModel || placeholder est un bug. Si un modèle Gemini ou autre est configuré, c’est lui qui part dans la création n8n. Utilisez toujours le placeholder.
+platform: 'n8n' as const ne compile que si l’union de platform dans TProviderWithModel contient 'n8n'. Je n’ai pas vu storage.ts. Vitest ne vérifie pas les types, donc votre 496/496 ne le prouve pas. Lancez npx tsc --noEmit.
+
+Q5 (hot reload) : le renderer a le HMR. Le Main, lui, ne redémarre que si vous lancez electron-vite dev --watch. Sans cela, il faut relancer à la main.
+
+Votre hypothèse « build périmé » est contredite par vos propres chiffres. out/main date de 14h52 et vos commits de 13h25-13h45, donc le build est postérieur aux commits. Vérifiez plutôt :
+
+si l’app que vous regardez est bien lancée depuis g:\Aionui_client et non une version installée de E-audit ;
+si un ancien process tient encore le port 5173.
+powershell
+# 1. Le build contient-il le code ? (non destructif)
+Select-String -Path "out\main\*.js" -Pattern "n8n-multi-workflow" -List
+
+# 2. Qui sert le port 5173 / quels Electron tournent ?
+Get-NetTCPConnection -LocalPort 5173 -ErrorAction SilentlyContinue | Select OwningProcess
+Get-Process electron,node -ErrorAction SilentlyContinue | Select Id,Path,StartTime
+
+# 3. Valeur sauvegardée qui écrase le défaut
+Select-String -Path "$env:APPDATA\E-audit\config.json" -Pattern "lastSelectedAgent"
+
+# 4. Types réels
+npx tsc --noEmit
+
+Ne lancez pas Remove-Item "$env:APPDATA\E-audit\*" (Option C de votre doc). Cela supprime config.json et vos réglages. Les caches Chromium (GPUCache, etc.) ne contiennent pas votre code applicatif en mode dev.
+
+Correctifs
+
+1. Migrer l’ancienne clé (useGuidAgentSelection.ts, effet ligne 194)
+
+typescript
+const LEGACY_AGENT_KEYS: Record<string, string> = {
+  'custom:builtin-n8n-workflow': 'n8n',
+  'custom:builtin-n8n-multi-workflow': 'n8n-multi-workflow',
+};
+
+// dans loadLastSelectedAgent :
+const rawKey = await ConfigStorage.get('guid.lastSelectedAgent');
+if (cancelled || !rawKey) return;
+const savedAgentKey = LEGACY_AGENT_KEYS[rawKey] ?? rawKey;
+
+Si vous voulez toujours démarrer sur n8n, supprimez simplement cet effet de restauration.
+
+2. Supprimer le fallback silencieux sur Gemini (resolvePresetAgentType, ligne 487)
+
+typescript
+const customAgent = customAgents.find((a) => a.id === agentInfo.customAgentId);
+if (customAgent?.presetAgentType) return customAgent.presetAgentType;
+if (agentInfo.customAgentId === 'builtin-n8n-workflow') return 'n8n';
+if (agentInfo.customAgentId === 'builtin-n8n-multi-workflow') return 'n8n-multi-workflow';
+return 'gemini';
+
+3. Une seule branche n8n avec placeholder fixe (useGuidSend.ts, à la place des lignes 260-366)
+
+typescript
+type N8nType = 'n8n' | 'n8n-multi-workflow';
+const isN8nType = (v: string | undefined): v is N8nType => v === 'n8n' || v === 'n8n-multi-workflow';
+
+const n8nType: N8nType | undefined = isN8nType(selectedAgent) ? selectedAgent : isPreset && isN8nType(finalEffectiveAgentType) ? finalEffectiveAgentType : undefined;
+
+if (n8nType) {
+  try {
+    const conversation = await ipcBridge.conversation.create.invoke({
+      type: n8nType,
+      name: input,
+      model: { id: `${n8nType}-placeholder`, name: n8nType, useModel: n8nType, platform: 'n8n' as const, baseUrl: '', apiKey: '' },
+      extra: {
+        defaultFiles: files,
+        workspace: finalWorkspace,
+        customWorkspace: isCustomWorkspace,
+        enabledSkills: isPreset ? enabledSkills : undefined,
+        presetAssistantId: isPreset ? agentInfo?.customAgentId : undefined,
+      },
+    });
+    if (!conversation?.id) {
+      alert(`Failed to create ${n8nType} conversation. Please ensure the n8n backend is running on port 3458.`);
+      return;
+    }
+    if (isCustomWorkspace) {
+      closeAllTabs();
+      updateWorkspaceTime(finalWorkspace);
+      openTab(conversation);
+    }
+    emitter.emit('chat.history.refresh');
+    sessionStorage.setItem(`n8n_initial_message_${conversation.id}`, JSON.stringify({ input, files: files.length > 0 ? files : undefined }));
+    await navigate(`/conversation/${conversation.id}`);
+  } catch (error: unknown) {
+    alert(`Failed to create ${n8nType} conversation: ${error instanceof Error ? error.message : String(error)}`);
+    throw error;
+  }
+  return;
+}
+Ce que je n’ai pas pu vérifier
+Symptôme 3 (clic sur ADMIN) : il se joue dans GuidPage.tsx, que je n’ai pas. Envoyez-le pour que je regarde.
+Handler Main : conversationBridge.ts, la factory de conversations et AcpDetector.ts me permettraient de confirmer ou d’écarter l’hypothèse de l’invoke qui ne revient pas.
+Journalisation : ajoutez temporairement console.log('[Guid]', selectedAgentKey, selectedAgent, isPresetAgent, finalEffectiveAgentType) au début de handleSend. Un seul clic sur Envoyer dira quelle branche est empruntée.
+
+Dites-moi ce que donnent les commandes 1 à 3 et le log, et j’affinerai.
+
+
+
+
+6. CHAT GPT
+
+
+
+Diagnostic technique — AionUi E-audit v1.8.25 / intégration n8n
+Votre dossier permet déjà d'identifier plusieurs pistes importantes. Je vais distinguer les problèmes de logique React/TypeScript, les problèmes de configuration et de persistance, et les problèmes de build Electron.
+
+Le point le plus important : votre hypothèse sur un code compilé périmé est plausible, mais elle n'est pas encore prouvée. Il faut éviter de continuer à supprimer des caches sans vérifier quel code tourne réellement.
+1. Diagnostic prioritaire : selectedAgentKey et selectedAgent sont deux variables différentes
+Votre architecture distingue bien :
+- selectedAgentKey : identifiant de sélection UI.
+- selectedAgentInfo : objet de l'assistant correspondant à cette clé.
+- selectedAgent : backend ou type d'assistant transmis à useGuidSend.
+Ces trois valeurs peuvent être différentes, même si leur nom paraît proche.
+
+La situation peut être résumée ainsi :
+#chatgpt-mermaid-_r_b9_{font-family:-apple-system-body,ui-sans-serif,-apple-system,system-ui,"Segoe UI",Helvetica,"Apple Color Emoji",Arial,sans-serif,"Segoe UI Emoji","Segoe UI Symbol";font-size:16px;fill:rgb(237, 237, 237);}@keyframes edge-animation-frame{from{stroke-dashoffset:0;}}@keyframes dash{to{stroke-dashoffset:0;}}#chatgpt-mermaid-_r_b9_ .edge-animation-slow{stroke-dasharray:9,5!important;stroke-dashoffset:900;animation:dash 50s linear infinite;stroke-linecap:round;}#chatgpt-mermaid-_r_b9_ .edge-animation-fast{stroke-dasharray:9,5!important;stroke-dashoffset:900;animation:dash 20s linear infinite;stroke-linecap:round;}#chatgpt-mermaid-_r_b9_ .error-icon{fill:rgb(48, 48, 48);}#chatgpt-mermaid-_r_b9_ .error-text{fill:rgb(237, 237, 237);stroke:rgb(237, 237, 237);}#chatgpt-mermaid-_r_b9_ .edge-thickness-normal{stroke-width:1px;}#chatgpt-mermaid-_r_b9_ .edge-thickness-thick{stroke-width:3.5px;}#chatgpt-mermaid-_r_b9_ .edge-pattern-solid{stroke-dasharray:0;}#chatgpt-mermaid-_r_b9_ .edge-thickness-invisible{stroke-width:0;fill:none;}#chatgpt-mermaid-_r_b9_ .edge-pattern-dashed{stroke-dasharray:3;}#chatgpt-mermaid-_r_b9_ .edge-pattern-dotted{stroke-dasharray:2;}#chatgpt-mermaid-_r_b9_ .marker{fill:rgb(175, 175, 175);stroke:rgb(175, 175, 175);}#chatgpt-mermaid-_r_b9_ .marker.cross{stroke:rgb(175, 175, 175);}#chatgpt-mermaid-_r_b9_ svg{font-family:-apple-system-body,ui-sans-serif,-apple-system,system-ui,"Segoe UI",Helvetica,"Apple Color Emoji",Arial,sans-serif,"Segoe UI Emoji","Segoe UI Symbol";font-size:16px;}#chatgpt-mermaid-_r_b9_ p{margin:0;}#chatgpt-mermaid-_r_b9_ .label{font-family:-apple-system-body,ui-sans-serif,-apple-system,system-ui,"Segoe UI",Helvetica,"Apple Color Emoji",Arial,sans-serif,"Segoe UI Emoji","Segoe UI Symbol";color:rgb(237, 237, 237);}#chatgpt-mermaid-_r_b9_ .cluster-label text{fill:rgb(237, 237, 237);}#chatgpt-mermaid-_r_b9_ .cluster-label span{color:rgb(237, 237, 237);}#chatgpt-mermaid-_r_b9_ .cluster-label span p{background-color:transparent;}#chatgpt-mermaid-_r_b9_ .label text,#chatgpt-mermaid-_r_b9_ span{fill:rgb(237, 237, 237);color:rgb(237, 237, 237);}#chatgpt-mermaid-_r_b9_ .node rect,#chatgpt-mermaid-_r_b9_ .node circle,#chatgpt-mermaid-_r_b9_ .node ellipse,#chatgpt-mermaid-_r_b9_ .node polygon,#chatgpt-mermaid-_r_b9_ .node path{fill:rgb(9, 23, 44);stroke:rgb(31, 78, 148);stroke-width:1px;}#chatgpt-mermaid-_r_b9_ .rough-node .label text,#chatgpt-mermaid-_r_b9_ .node .label text,#chatgpt-mermaid-_r_b9_ .image-shape .label,#chatgpt-mermaid-_r_b9_ .icon-shape .label{text-anchor:middle;}#chatgpt-mermaid-_r_b9_ .node .katex path{fill:#000;stroke:#000;stroke-width:1px;}#chatgpt-mermaid-_r_b9_ .rough-node .label,#chatgpt-mermaid-_r_b9_ .node .label,#chatgpt-mermaid-_r_b9_ .image-shape .label,#chatgpt-mermaid-_r_b9_ .icon-shape .label{text-align:center;}#chatgpt-mermaid-_r_b9_ .node.clickable{cursor:pointer;}#chatgpt-mermaid-_r_b9_ .root .anchor path{fill:rgb(175, 175, 175)!important;stroke-width:0;stroke:rgb(175, 175, 175);}#chatgpt-mermaid-_r_b9_ .arrowheadPath{fill:rgb(175, 175, 175);}#chatgpt-mermaid-_r_b9_ .edgePath .path{stroke:rgb(175, 175, 175);stroke-width:1px;}#chatgpt-mermaid-_r_b9_ .flowchart-link{stroke:rgb(175, 175, 175);fill:none;}#chatgpt-mermaid-_r_b9_ .edgeLabel{background-color:rgb(0, 0, 0);text-align:center;}#chatgpt-mermaid-_r_b9_ .edgeLabel p{background-color:rgb(0, 0, 0);}#chatgpt-mermaid-_r_b9_ .edgeLabel rect{opacity:0.5;background-color:rgb(0, 0, 0);fill:rgb(0, 0, 0);}#chatgpt-mermaid-_r_b9_ .labelBkg{background-color:rgba(0, 0, 0, 0.5);}#chatgpt-mermaid-_r_b9_ .cluster rect{fill:rgb(48, 48, 48);stroke:rgba(255, 255, 255, 0.15);stroke-width:1px;}#chatgpt-mermaid-_r_b9_ .cluster text{fill:rgb(237, 237, 237);}#chatgpt-mermaid-_r_b9_ .cluster span{color:rgb(237, 237, 237);}#chatgpt-mermaid-_r_b9_ div.mermaidTooltip{position:absolute;text-align:center;max-width:200px;padding:2px;font-family:-apple-system-body,ui-sans-serif,-apple-system,system-ui,"Segoe UI",Helvetica,"Apple Color Emoji",Arial,sans-serif,"Segoe UI Emoji","Segoe UI Symbol";font-size:12px;background:rgb(48, 48, 48);border:1px solid rgba(255, 255, 255, 0.15);border-radius:2px;pointer-events:none;z-index:100;}#chatgpt-mermaid-_r_b9_ .flowchartTitleText{text-anchor:middle;font-size:18px;fill:rgb(237, 237, 237);}#chatgpt-mermaid-_r_b9_ rect.text{fill:none;stroke-width:0;}#chatgpt-mermaid-_r_b9_ .icon-shape,#chatgpt-mermaid-_r_b9_ .image-shape{background-color:rgb(0, 0, 0);text-align:center;}#chatgpt-mermaid-_r_b9_ .icon-shape p,#chatgpt-mermaid-_r_b9_ .image-shape p{background-color:rgb(0, 0, 0);padding:2px;}#chatgpt-mermaid-_r_b9_ .icon-shape .label rect,#chatgpt-mermaid-_r_b9_ .image-shape .label rect{opacity:0.5;background-color:rgb(0, 0, 0);fill:rgb(0, 0, 0);}#chatgpt-mermaid-_r_b9_ .label-icon{display:inline-block;height:1em;overflow:visible;vertical-align:-0.125em;}#chatgpt-mermaid-_r_b9_ .node .label-icon path{fill:currentColor;stroke:revert;stroke-width:revert;}#chatgpt-mermaid-_r_b9_ .node .neo-node{stroke:rgb(31, 78, 148);}#chatgpt-mermaid-_r_b9_ [data-look="neo"].node rect,#chatgpt-mermaid-_r_b9_ [data-look="neo"].cluster rect,#chatgpt-mermaid-_r_b9_ [data-look="neo"].node polygon{stroke:url(#chatgpt-mermaid-_r_b9_-gradient);filter:drop-shadow( 1px 2px 2px rgba(185,185,185,1));}#chatgpt-mermaid-_r_b9_ [data-look="neo"].swimlane.cluster rect{filter:none;}#chatgpt-mermaid-_r_b9_ [data-look="neo"].node path{stroke:url(#chatgpt-mermaid-_r_b9_-gradient);stroke-width:1px;}#chatgpt-mermaid-_r_b9_ [data-look="neo"].node .outer-path{filter:drop-shadow( 1px 2px 2px rgba(185,185,185,1));}#chatgpt-mermaid-_r_b9_ [data-look="neo"].node .neo-line path{stroke:rgb(31, 78, 148);filter:none;}#chatgpt-mermaid-_r_b9_ [data-look="neo"].node circle{stroke:url(#chatgpt-mermaid-_r_b9_-gradient);filter:drop-shadow( 1px 2px 2px rgba(185,185,185,1));}#chatgpt-mermaid-_r_b9_ [data-look="neo"].node circle .state-start{fill:#000000;}#chatgpt-mermaid-_r_b9_ [data-look="neo"].icon-shape .icon{fill:url(#chatgpt-mermaid-_r_b9_-gradient);filter:drop-shadow( 1px 2px 2px rgba(185,185,185,1));}#chatgpt-mermaid-_r_b9_ [data-look="neo"].icon-shape .icon-neo path{stroke:url(#chatgpt-mermaid-_r_b9_-gradient);filter:drop-shadow( 1px 2px 2px rgba(185,185,185,1));}#chatgpt-mermaid-_r_b9_ .node text{font-size:14px;font-weight:600;letter-spacing:normal;fill:rgb(153, 206, 255);}#chatgpt-mermaid-_r_b9_ .edgeLabels text{font-size:13px;font-weight:600;letter-spacing:-0.08px;fill:rgb(153, 206, 255);}#chatgpt-mermaid-_r_b9_ .node tspan[font-weight="normal"],#chatgpt-mermaid-_r_b9_ .edgeLabels tspan[font-weight="normal"]{font-weight:600;}#chatgpt-mermaid-_r_b9_ .edgeLabel .label rect{opacity:1;rx:13px;ry:13px;fill:rgb(0, 14, 26);stroke:rgb(26, 62, 95);stroke-width:1px;}#chatgpt-mermaid-_r_b9_ .node rect,#chatgpt-mermaid-_r_b9_ .node circle,#chatgpt-mermaid-_r_b9_ .node ellipse,#chatgpt-mermaid-_r_b9_ .node polygon,#chatgpt-mermaid-_r_b9_ .node path{fill:rgb(0, 40, 77);stroke:rgba(255, 255, 255, 0.1);stroke-width:1px;}#chatgpt-mermaid-_r_b9_ .node rect{rx:16px;ry:16px;}#chatgpt-mermaid-_r_b9_ .mermaid-decision .label-container{fill:rgb(0, 14, 26);stroke:rgb(26, 62, 95);stroke-dasharray:2,2;}#chatgpt-mermaid-_r_b9_ .edgePaths .flowchart-link{stroke:rgb(175, 175, 175);stroke-width:1px;stroke-linecap:round;stroke-linejoin:round;}#chatgpt-mermaid-_r_b9_ .marker{fill:rgb(175, 175, 175);stroke:rgb(175, 175, 175);}#chatgpt-mermaid-_r_b9_ :root{--mermaid-font-family:-apple-system-body,ui-sans-serif,-apple-system,system-ui,"Segoe UI",Helvetica,"Apple Color Emoji",Arial,sans-serif,"Segoe UI Emoji","Segoe UI Symbol";}selectedAgentKey = 'n8n'Recherche selectedAgentInfoAgent trouvé ?selectedAgentInfo.presetAgentTypeFallback / custom / undefinedselectedAgentuseGuidSend.handleSend()selectedAgent === 'n8n' ?Création conversation n8nAutre branche ACPOuiNonOuiNon
+
+
+
+
+
+Si la recherche de selectedAgentInfo ne trouve pas l'assistant, ou si sa conversion retourne autre chose que n8n, alors selectedAgentKey = 'n8n' ne garantit absolument pas que selectedAgent = 'n8n'.
+2. Question 1 — Pourquoi selectedAgent peut ne jamais être 'n8n' ?
+Cause probable : une conversion incorrecte entre clé de sélection et type backend
+Dans votre description, la sélection initiale est :
+const [selectedAgentKey, setSelectedAgentKey] =
+  useState<string>('n8n');
+
+
+Mais votre système comporte aussi des agents presets et custom, notamment :
+'custom:builtin-n8n-workflow'
+
+
+Il faut donc vérifier précisément la transformation entre la clé de sélection et le backend.
+Cas A — La clé est n8n, mais le code traite uniquement les clés custom:
+Exemple de logique potentiellement problématique :
+const selectedAgent = selectedAgentKey.startsWith('custom:')
+  ? 'custom'
+  : selectedAgentInfo?.presetAgentType;
+
+
+Si selectedAgentKey = 'n8n' et que selectedAgentInfo est undefined, alors selectedAgent peut être undefined au lieu de 'n8n'.
+Cas B — selectedAgentInfo cherche uniquement dans availableAgents
+Par exemple :
+const selectedAgentInfo = useMemo(
+  () => availableAgents?.find(agent => agent.id === selectedAgentKey),
+  [availableAgents, selectedAgentKey]
+);
+
+
+Si availableAgents ne contient pas l'agent sous l'identifiant n8n, la recherche échoue.
+
+Or, votre architecture décrit deux représentations possibles :
+Élément	Valeur possible
+Backend	n8n
+ID du preset	builtin-n8n-workflow
+Clé custom	custom:builtin-n8n-workflow
+Nom affiché	n8n Workflow
+
+Ce ne sont pas des identifiants interchangeables. Il faut définir un mapping unique entre ces valeurs.
+Correction recommandée : centraliser la résolution
+Voici un exemple de logique plus robuste, à adapter aux types et à la structure exacte de vos objets.
+type N8nAgentType = 'n8n' | 'n8n-multi-workflow';
+
+const N8N_AGENT_TYPES: readonly N8nAgentType[] = [
+  'n8n',
+  'n8n-multi-workflow',
+];
+
+const isN8nAgent = (
+  value: string | undefined
+): value is N8nAgentType => {
+  return value !== undefined &&
+    N8N_AGENT_TYPES.includes(value as N8nAgentType);
+};
+
+
+Puis, dans la résolution de l'agent, évitez que l'identifiant n8n dépende exclusivement d'une recherche dans une liste asynchrone :
+const selectedAgent = useMemo(() => {
+  if (isN8nAgent(selectedAgentKey)) {
+    return selectedAgentKey;
+  }
+
+  if (selectedAgentKey.startsWith('custom:')) {
+    return 'custom';
+  }
+
+  return selectedAgentInfo?.presetAgentType;
+}, [selectedAgentKey, selectedAgentInfo]);
+
+
+Attention : cet exemple ne constitue pas encore un remplacement exact de votre hook. La logique actuelle de sélection des agents classiques doit être conservée, et il faut vérifier les types de retour réels de presetAgentType.
+Pourquoi le useMemo peut poser problème ?
+Le useMemo ne rend pas les données synchrones. Il ne fait que recalculer sa valeur lorsque ses dépendances changent.
+
+Par exemple :
+const selectedAgentInfo = useMemo(
+  () => findAgentByKey(selectedAgentKey),
+  [selectedAgentKey, availableAgents]
+);
+
+
+Au premier rendu :
+selectedAgentKey = 'n8n'
+availableAgents = undefined
+selectedAgentInfo = undefined
+
+
+Après la réponse IPC :
+selectedAgentKey = 'n8n'
+availableAgents = [ ...agents... ]
+selectedAgentInfo = résultat de la recherche
+
+
+Si la clé n8n ne correspond pas aux identifiants de la liste reçue, l'agent ne sera toujours pas résolu.
+
+Le problème n'est donc pas le useMemo en lui-même, mais sa dépendance à une source de données asynchrone et au mapping des identifiants.
+
+3. Question 2 — Le type AcpBackendAll est-il suffisant ?
+Non, pas à lui seul.
+
+L'ajout de 'n8n' et 'n8n-multi-workflow' dans AcpBackendAll permet au compilateur de reconnaître ces chaînes dans les endroits qui utilisent effectivement ce type.
+
+Mais il ne garantit pas :
+- que AcpBackend contient lui aussi ces valeurs ;
+- que les interfaces Conversation, ConversationCreateParams ou Model les acceptent ;
+- que le handler IPC accepte type: 'n8n' ;
+- que les switches ou dispatchers backend savent traiter n8n ;
+- que le runtime a réellement chargé la nouvelle version du code.
+Distinction essentielle
+export type AcpBackendAll =
+  | 'claude'
+  | 'gemini'
+  | 'n8n'
+  | 'n8n-multi-workflow'
+  | 'custom';
+
+
+Si vous utilisez :
+type GuidSendDeps = {
+  selectedAgent: AcpBackend | 'custom' | 'n8n' | 'n8n-multi-workflow';
+};
+
+
+Cela autorise cette propriété dans GuidSendDeps. Mais le type de la conversation passée à IPC peut encore refuser :
+await ipcBridge.conversation.create.invoke({
+  type: 'n8n',
+  // ...
+});
+
+
+Si conversation.create attend un type différent, élargir GuidSendDeps ne corrige pas cette incompatibilité.
+Recommandation : une source unique de vérité
+Si ces backends sont des types de conversation réellement supportés par l'application, utilisez un type métier commun à la conversation et au dispatcher, plutôt que d'élargir localement le type de useGuidSend.
+
+Exemple de modèle conceptuel :
+export type ConversationBackend =
+  | AcpBackend
+  | 'n8n'
+  | 'n8n-multi-workflow'
+  | 'custom';
+
+
+Puis :
+type GuidSendDeps = {
+  selectedAgent: ConversationBackend;
+};
+
+
+Et dans les paramètres de création :
+type ConversationCreateParams = {
+  type: ConversationBackend;
+  name: string;
+  model: Model;
+};
+
+
+Important : ne créez pas cette nouvelle union si le projet possède déjà un type central équivalent. Il faut d'abord réutiliser et élargir le type existant à la bonne couche.
+TypeScript ne valide pas les valeurs à l'exécution
+Ce code :
+type Backend = 'claude' | 'n8n';
+
+const backend: Backend = 'n8n';
+
+
+ne crée aucun mécanisme runtime qui active n8n.
+
+Il faut également que le Main Process, les handlers IPC, le factory/dispatcher et le gestionnaire n8n acceptent ce backend.
+
+4. Question 3 — La condition de branche n8n est-elle correcte ?
+Votre condition actuelle est valide en TypeScript et en JavaScript :
+if (
+  selectedAgent === 'n8n' ||
+  (isPreset && finalEffectiveAgentType === 'n8n')
+) {
+  // Création conversation n8n
+}
+
+
+Mais elle est fragile fonctionnellement, car elle dépend de selectedAgent correctement dérivé et de finalEffectiveAgentType correctement calculé.
+
+Si la résolution de l'assistant est précisément le maillon défaillant, cette condition peut ne jamais s'exécuter.
+Correction de sécurisation recommandée
+Lorsque la clé de sélection est un backend n8n explicite, utilisez-la également dans le dispatch.
+const isN8nSelected =
+  selectedAgent === 'n8n' ||
+  selectedAgentKey === 'n8n' ||
+  (isPreset && finalEffectiveAgentType === 'n8n');
+
+if (isN8nSelected) {
+  // Création conversation n8n
+}
+
+
+Et pour le multi-workflow :
+const isN8nMultiSelected =
+  selectedAgent === 'n8n-multi-workflow' ||
+  selectedAgentKey === 'n8n-multi-workflow' ||
+  (isPreset &&
+    finalEffectiveAgentType === 'n8n-multi-workflow');
+
+if (isN8nMultiSelected) {
+  // Création conversation n8n multi-workflow
+}
+
+
+Version plus propre avec type guard
+type N8nBackend =
+  | 'n8n'
+  | 'n8n-multi-workflow';
+
+const isN8nBackend = (
+  value: string | undefined
+): value is N8nBackend => {
+  return value === 'n8n' ||
+    value === 'n8n-multi-workflow';
+};
+
+
+Utilisation :
+const n8nBackend =
+  isN8nBackend(selectedAgentKey)
+    ? selectedAgentKey
+    : isN8nBackend(finalEffectiveAgentType)
+      ? finalEffectiveAgentType
+      : isN8nBackend(selectedAgent)
+        ? selectedAgent
+        : undefined;
+
+if (n8nBackend === 'n8n') {
+  // Branche workflow simple
+} else if (n8nBackend === 'n8n-multi-workflow') {
+  // Branche multi-workflow
+}
+
+
+Cette version a un avantage : elle identifie explicitement le backend réel au lieu de répéter plusieurs conditions dispersées.
+Mon conseil
+Pour votre débogage immédiat, utilisez d'abord la version de sécurisation, puis ajoutez temporairement des logs :
+console.log('[GUID SEND DEBUG]', {
+  selectedAgentKey,
+  selectedAgent,
+  selectedAgentInfo,
+  isPreset,
+  finalEffectiveAgentType,
+  n8nBackend,
+});
+
+
+Vous devez obtenir un résultat de ce type avant d'appuyer sur Envoyer :
+{
+  "selectedAgentKey": "n8n",
+  "selectedAgent": "n8n",
+  "isPreset": false,
+  "finalEffectiveAgentType": "n8n",
+  "n8nBackend": "n8n"
+}
+
+
+Le statut isPreset peut varier selon votre implémentation. Le résultat important est que le backend résolu soit bien n8n.
+
+5. Question 4 — Le placeholderModel est-il valide ?
+Votre structure :
+const placeholderModel = currentModel || {
+  id: 'n8n-placeholder',
+  name: 'n8n',
+  useModel: 'n8n-workflow',
+  platform: 'n8n' as const,
+  baseUrl: '',
+  apiKey: '',
+};
+
+
+Elle est syntaxiquement valide, mais sa validité au regard des interfaces de votre projet ne peut pas être confirmée sans le type exact Model et la signature IPC conversation.create.invoke().
+Points à vérifier
+Champ	Diagnostic
+id	OK si Model exige un identifiant
+name	OK si nom affiché obligatoire
+useModel	Vérifier si cette propriété est obligatoire et son union
+platform	'n8n' as const conserve le type littéral
+baseUrl	Peut être vide si le backend n'en dépend pas
+apiKey	Peut être vide si la configuration n'utilise pas ce champ
+Autres propriétés	Peut manquer des champs requis par l'interface Model
+
+Recommandation de typage
+Si votre projet possède une interface Model exportée, préférez un typage explicite :
+const n8nPlaceholderModel: Model = {
+  id: 'n8n-placeholder',
+  name: 'n8n',
+  useModel: 'n8n-workflow',
+  platform: 'n8n',
+  baseUrl: '',
+  apiKey: '',
+};
+
+
+Si le modèle est destiné à satisfaire une interface sans effectuer une conversion, satisfies peut être préférable :
+const n8nPlaceholderModel = {
+  id: 'n8n-placeholder',
+  name: 'n8n',
+  useModel: 'n8n-workflow',
+  platform: 'n8n',
+  baseUrl: '',
+  apiKey: '',
+} satisfies Model;
+
+
+Ne forcez pas le type par cast pour masquer une incompatibilité réelle.
+
+Par exemple, évitez :
+const placeholderModel = {
+  // ...
+} as Model;
+
+
+Cette méthode peut supprimer l'erreur du compilateur tout en laissant un objet invalide à l'exécution.
+Architecture plus propre
+Si n8n ne consomme pas réellement un modèle LLM conventionnel, l'idéal serait que le backend conversationnel n8n ne soit pas dépendant artificiellement d'un Model obligatoire.
+
+Par exemple :
+type N8nConversationConfig = {
+  type: 'n8n';
+  name: string;
+  extra: {
+    endpoint: string;
+    workflowId?: string;
+  };
+};
+
+
+Puis l'API de création de conversation pourrait distinguer :
+- conversation LLM classique ;
+- conversation ACP ;
+- conversation n8n.
+Cela supprimerait la nécessité de maintenir un faux modèle uniquement pour satisfaire le type.
+
+6. Question 5 — Electron Main Process : pourquoi le rebuild ne s'applique-t-il pas ?
+Votre document d'architecture indique que le Renderer et le Main Process ne sont pas compilés ni rechargés de la même façon.
+Deux pipelines de développement distincts
+Renderer — React
+
+src/renderer/ → Vite → serveur dev → Chromium
+
+HMR généralement disponible
+
+Main Process — Electron / Node
+
+src/main/ → build Electron Vite → out/main/ → processus Electron
+
+Redémarrage du processus nécessaire
+
+Preload
+
+src/preload/ → build → chargement dans le BrowserWindow
+
+Vérifier que la fenêtre charge le preload fraîchement compilé
+
+
+Pourquoi le build peut réussir sans que le changement soit visible ?
+Un build réussi signifie que le processus de compilation a produit des sorties sans erreur bloquante. Cela ne garantit pas que l'application ouverte utilise ces sorties.
+
+Les causes les plus probables sont :
+1. Mauvais processus Electron : une ancienne instance reste ouverte.
+2. Mauvais dossier de sortie : vous inspectez out/main, mais Electron utilise une autre entrée.
+3. Mauvaise configuration de lancement : npm run start démarre un autre script, une autre copie du projet ou une version installée.
+4. Renderer en mode dev, Main obsolète : le serveur Vite fonctionne, mais le Main Process ne redémarre pas correctement.
+5. State persisté : guid.lastSelectedAgent ou les presets enregistrés écrasent votre valeur par défaut.
+6. Migration/configuration : une migration de config ou une valeur déjà sauvegardée restaure un ancien agent.
+7. Rebuild partiel : certaines sorties sont mises à jour, d'autres non.
+Le cache Electron n'est pas la première cause à rechercher
+Un cache Chromium comme GPUCache, Cache, Code Cache ou Service Worker peut affecter le Renderer dans certains cas.
+
+Cependant, un cache Chromium ne réécrit pas normalement votre logique JavaScript du Main Process. Si AcpDetector.initialize() ne contient pas le nouveau code dans le processus exécuté, le problème est davantage lié au build, à l'entrée de démarrage ou au processus actif.
+
+Il faut donc vérifier les fichiers réellement exécutés avant de vider massivement AppData.
+
+7. Plan de nettoyage et rebuild PowerShell
+Je recommande un nettoyage contrôlé, plutôt qu'une suppression de toutes les données applicatives.
+Étape 1 — Arrêter les processus
+Dans les terminaux qui exécutent Vite ou Electron, faites Ctrl+C.
+
+Puis dans PowerShell :
+# Arrêter les processus Electron
+taskkill /F /IM electron.exe 2>$null
+
+# Vérifier qu'aucune instance Electron ne reste active
+Get-Process electron -ErrorAction SilentlyContinue
+
+
+Évitez taskkill /F /IM node.exe si vous avez d'autres projets Node, n8n, des serveurs ou des outils de développement actifs. Cette commande pourrait les interrompre aussi.
+Étape 2 — Vérifier le répertoire du projet
+Set-Location "G:\Aionui_client"
+
+git status
+git log -6 --oneline
+
+# Vérifier les scripts du package
+npm pkg get scripts
+
+
+Étape 3 — Nettoyage des artefacts compilés
+# Nettoyer les sorties Electron Vite
+Remove-Item -Recurse -Force "out" -ErrorAction SilentlyContinue
+
+# Nettoyer les caches Vite si présents
+Remove-Item -Recurse -Force "node_modules\.vite" -ErrorAction SilentlyContinue
+
+# Nettoyer les sorties de production si elles sont générées dans dist
+Remove-Item -Recurse -Force "dist" -ErrorAction SilentlyContinue
+
+
+Ne supprimez pas node_modules ni le lockfile dans un premier temps. Ce n'est pas nécessaire pour corriger un problème de code compilé obsolète, et cela peut introduire des problèmes de dépendances supplémentaires.
+Étape 4 — Rebuild et vérification
+Utilisez les scripts réels déclarés dans package.json.
+
+Si npm run start est votre script de développement :
+npm run start
+
+
+Si le projet possède un script build :
+npm run build
+
+
+Après la compilation, vérifiez les sorties :
+# Localiser les fichiers contenant les backends n8n
+Get-ChildItem -Path "out" -Recurse -File |
+    Select-String -Pattern "n8n-multi-workflow|n8n-placeholder|n8n-workflow"
+
+# Vérifier les dates de génération
+Get-ChildItem "out\main" -Recurse -File |
+    Sort-Object LastWriteTime -Descending |
+    Select-Object -First 10 FullName, LastWriteTime
+
+
+Attention : si votre build est minifié, la recherche du texte selectedAgentKey peut ne rien retourner, même lorsque le bon code est présent. Recherchez plutôt les chaînes constantes telles que n8n-placeholder ou n8n-multi-workflow, qui ont davantage de chances d'être conservées.
+Étape 5 — Vérifier que vous lancez la bonne application
+# Identifier les instances Electron
+Get-CimInstance Win32_Process |
+    Where-Object { $_.Name -match "electron" } |
+    Select-Object ProcessId, Name, ExecutablePath, CommandLine
+
+
+C'est une étape essentielle si vous avez :
+- une version portable ;
+- une version installée ;
+- une copie de développement ;
+- plusieurs dossiers AionUi/E-audit.
+
+8. Symptôme 3 — Pourquoi faut-il cliquer sur ADMIN ?
+Ce symptôme est particulièrement important, car il ne correspond pas forcément à un problème de cache.
+
+Si la liste des assistants apparaît uniquement après le clic sur ADMIN, plusieurs hypothèses doivent être testées.
+Hypothèse A — L'initialisation des assistants dépend d'un état UI
+Exemple problématique :
+useEffect(() => {
+  if (!isAdminOpen) {
+    return;
+  }
+
+  loadAvailableAgents();
+}, [isAdminOpen]);
+
+
+Dans ce cas, la liste n'est chargée qu'après ouverture de l'interface Admin.
+Hypothèse B — La requête IPC n'est pas déclenchée au montage de la page
+L'appel :
+useSWR('acp.agents.available', fetchAvailableAgents);
+
+
+peut être conditionné par un enabled, un état de connexion, une route ou un composant qui ne monte qu'après l'action ADMIN.
+Hypothèse C — Les assistants sont filtrés
+Il est possible que les agents détectés existent bien, mais qu'ils soient filtrés avant d'être affichés :
+const visibleAgents = availableAgents?.filter(
+  agent => agent.enabled
+);
+
+
+Si le preset n'est pas correctement enregistré, enabled peut être absent, false, ou si le mapping des presets échoue, l'assistant disparaît.
+Hypothèse D — Une configuration persistée écrase la valeur par défaut
+Votre architecture mentionne :
+guid.lastSelectedAgent
+
+
+Si cette valeur contient encore :
+custom:builtin-n8n-workflow
+
+
+ou une autre sélection, elle peut prendre priorité sur votre useState('n8n').
+
+C'est une piste prioritaire à vérifier avant de modifier à nouveau le code.
+Test rapide à réaliser dans la console
+Ajoutez des logs à quatre endroits distincts.
+
+Dans AcpDetector.initialize() :
+console.info('[AcpDetector] detectedAgents:', detected);
+
+
+Dans le hook de sélection :
+console.info('[Guid Selection]', {
+  selectedAgentKey,
+  availableAgents,
+  selectedAgentInfo,
+  selectedAgent,
+});
+
+
+Dans GuidPage.tsx :
+console.info('[GuidPage] mounted');
+
+
+Au début de handleSend() :
+console.info('[GuidSend] START', {
+  selectedAgentKey,
+  selectedAgent,
+  input,
+});
+
+
+Cela permet de localiser la rupture :
+Résultat observé	Cause à investiguer
+n8n absent dans AcpDetector	Main Process / initialisation
+n8n présent dans Detector, absent dans IPC	Handler IPC / bridge
+n8n présent dans IPC, absent dans hook	Filtrage / mapping / SWR
+selectedAgentKey = n8n, selectedAgent différent	Résolution / mapping
+Backend n8n correct mais handleSend échoue	Création conversation / IPC / manager
+Tous les logs sont anciens ou absents	Application / build / mauvais processus
+
+
+9. Solution architecturale alternative — n8n ne devrait pas nécessairement être un ACP backend
+Votre intégration n8n est décrite comme un backend HTTP/service, tandis que le système ACP d'origine est organisé autour de la détection et du lancement d'agents CLI.
+
+Il faut donc éviter de confondre :
+- ACP backend : moteur de lancement/communication avec les agents ACP ;
+- n8n backend : moteur d'exécution de workflows via HTTP ;
+- Assistant/preset : choix visible dans l'interface utilisateur ;
+- Conversation type : catégorie de conversation persistée et routée dans l'application.
+L'ajout de n8n dans AcpBackendAll peut être techniquement valide pour certains types, mais s'il entraîne n8n dans les mécanismes ACP CLI par défaut, ce serait une mauvaise abstraction.
+Architecture que je recommande
+#chatgpt-mermaid-_r_ig_{font-family:-apple-system-body,ui-sans-serif,-apple-system,system-ui,"Segoe UI",Helvetica,"Apple Color Emoji",Arial,sans-serif,"Segoe UI Emoji","Segoe UI Symbol";font-size:16px;fill:rgb(237, 237, 237);}@keyframes edge-animation-frame{from{stroke-dashoffset:0;}}@keyframes dash{to{stroke-dashoffset:0;}}#chatgpt-mermaid-_r_ig_ .edge-animation-slow{stroke-dasharray:9,5!important;stroke-dashoffset:900;animation:dash 50s linear infinite;stroke-linecap:round;}#chatgpt-mermaid-_r_ig_ .edge-animation-fast{stroke-dasharray:9,5!important;stroke-dashoffset:900;animation:dash 20s linear infinite;stroke-linecap:round;}#chatgpt-mermaid-_r_ig_ .error-icon{fill:rgb(48, 48, 48);}#chatgpt-mermaid-_r_ig_ .error-text{fill:rgb(237, 237, 237);stroke:rgb(237, 237, 237);}#chatgpt-mermaid-_r_ig_ .edge-thickness-normal{stroke-width:1px;}#chatgpt-mermaid-_r_ig_ .edge-thickness-thick{stroke-width:3.5px;}#chatgpt-mermaid-_r_ig_ .edge-pattern-solid{stroke-dasharray:0;}#chatgpt-mermaid-_r_ig_ .edge-thickness-invisible{stroke-width:0;fill:none;}#chatgpt-mermaid-_r_ig_ .edge-pattern-dashed{stroke-dasharray:3;}#chatgpt-mermaid-_r_ig_ .edge-pattern-dotted{stroke-dasharray:2;}#chatgpt-mermaid-_r_ig_ .marker{fill:rgb(175, 175, 175);stroke:rgb(175, 175, 175);}#chatgpt-mermaid-_r_ig_ .marker.cross{stroke:rgb(175, 175, 175);}#chatgpt-mermaid-_r_ig_ svg{font-family:-apple-system-body,ui-sans-serif,-apple-system,system-ui,"Segoe UI",Helvetica,"Apple Color Emoji",Arial,sans-serif,"Segoe UI Emoji","Segoe UI Symbol";font-size:16px;}#chatgpt-mermaid-_r_ig_ p{margin:0;}#chatgpt-mermaid-_r_ig_ .label{font-family:-apple-system-body,ui-sans-serif,-apple-system,system-ui,"Segoe UI",Helvetica,"Apple Color Emoji",Arial,sans-serif,"Segoe UI Emoji","Segoe UI Symbol";color:rgb(237, 237, 237);}#chatgpt-mermaid-_r_ig_ .cluster-label text{fill:rgb(237, 237, 237);}#chatgpt-mermaid-_r_ig_ .cluster-label span{color:rgb(237, 237, 237);}#chatgpt-mermaid-_r_ig_ .cluster-label span p{background-color:transparent;}#chatgpt-mermaid-_r_ig_ .label text,#chatgpt-mermaid-_r_ig_ span{fill:rgb(237, 237, 237);color:rgb(237, 237, 237);}#chatgpt-mermaid-_r_ig_ .node rect,#chatgpt-mermaid-_r_ig_ .node circle,#chatgpt-mermaid-_r_ig_ .node ellipse,#chatgpt-mermaid-_r_ig_ .node polygon,#chatgpt-mermaid-_r_ig_ .node path{fill:rgb(9, 23, 44);stroke:rgb(31, 78, 148);stroke-width:1px;}#chatgpt-mermaid-_r_ig_ .rough-node .label text,#chatgpt-mermaid-_r_ig_ .node .label text,#chatgpt-mermaid-_r_ig_ .image-shape .label,#chatgpt-mermaid-_r_ig_ .icon-shape .label{text-anchor:middle;}#chatgpt-mermaid-_r_ig_ .node .katex path{fill:#000;stroke:#000;stroke-width:1px;}#chatgpt-mermaid-_r_ig_ .rough-node .label,#chatgpt-mermaid-_r_ig_ .node .label,#chatgpt-mermaid-_r_ig_ .image-shape .label,#chatgpt-mermaid-_r_ig_ .icon-shape .label{text-align:center;}#chatgpt-mermaid-_r_ig_ .node.clickable{cursor:pointer;}#chatgpt-mermaid-_r_ig_ .root .anchor path{fill:rgb(175, 175, 175)!important;stroke-width:0;stroke:rgb(175, 175, 175);}#chatgpt-mermaid-_r_ig_ .arrowheadPath{fill:rgb(175, 175, 175);}#chatgpt-mermaid-_r_ig_ .edgePath .path{stroke:rgb(175, 175, 175);stroke-width:1px;}#chatgpt-mermaid-_r_ig_ .flowchart-link{stroke:rgb(175, 175, 175);fill:none;}#chatgpt-mermaid-_r_ig_ .edgeLabel{background-color:rgb(0, 0, 0);text-align:center;}#chatgpt-mermaid-_r_ig_ .edgeLabel p{background-color:rgb(0, 0, 0);}#chatgpt-mermaid-_r_ig_ .edgeLabel rect{opacity:0.5;background-color:rgb(0, 0, 0);fill:rgb(0, 0, 0);}#chatgpt-mermaid-_r_ig_ .labelBkg{background-color:rgba(0, 0, 0, 0.5);}#chatgpt-mermaid-_r_ig_ .cluster rect{fill:rgb(48, 48, 48);stroke:rgba(255, 255, 255, 0.15);stroke-width:1px;}#chatgpt-mermaid-_r_ig_ .cluster text{fill:rgb(237, 237, 237);}#chatgpt-mermaid-_r_ig_ .cluster span{color:rgb(237, 237, 237);}#chatgpt-mermaid-_r_ig_ div.mermaidTooltip{position:absolute;text-align:center;max-width:200px;padding:2px;font-family:-apple-system-body,ui-sans-serif,-apple-system,system-ui,"Segoe UI",Helvetica,"Apple Color Emoji",Arial,sans-serif,"Segoe UI Emoji","Segoe UI Symbol";font-size:12px;background:rgb(48, 48, 48);border:1px solid rgba(255, 255, 255, 0.15);border-radius:2px;pointer-events:none;z-index:100;}#chatgpt-mermaid-_r_ig_ .flowchartTitleText{text-anchor:middle;font-size:18px;fill:rgb(237, 237, 237);}#chatgpt-mermaid-_r_ig_ rect.text{fill:none;stroke-width:0;}#chatgpt-mermaid-_r_ig_ .icon-shape,#chatgpt-mermaid-_r_ig_ .image-shape{background-color:rgb(0, 0, 0);text-align:center;}#chatgpt-mermaid-_r_ig_ .icon-shape p,#chatgpt-mermaid-_r_ig_ .image-shape p{background-color:rgb(0, 0, 0);padding:2px;}#chatgpt-mermaid-_r_ig_ .icon-shape .label rect,#chatgpt-mermaid-_r_ig_ .image-shape .label rect{opacity:0.5;background-color:rgb(0, 0, 0);fill:rgb(0, 0, 0);}#chatgpt-mermaid-_r_ig_ .label-icon{display:inline-block;height:1em;overflow:visible;vertical-align:-0.125em;}#chatgpt-mermaid-_r_ig_ .node .label-icon path{fill:currentColor;stroke:revert;stroke-width:revert;}#chatgpt-mermaid-_r_ig_ .node .neo-node{stroke:rgb(31, 78, 148);}#chatgpt-mermaid-_r_ig_ [data-look="neo"].node rect,#chatgpt-mermaid-_r_ig_ [data-look="neo"].cluster rect,#chatgpt-mermaid-_r_ig_ [data-look="neo"].node polygon{stroke:url(#chatgpt-mermaid-_r_ig_-gradient);filter:drop-shadow( 1px 2px 2px rgba(185,185,185,1));}#chatgpt-mermaid-_r_ig_ [data-look="neo"].swimlane.cluster rect{filter:none;}#chatgpt-mermaid-_r_ig_ [data-look="neo"].node path{stroke:url(#chatgpt-mermaid-_r_ig_-gradient);stroke-width:1px;}#chatgpt-mermaid-_r_ig_ [data-look="neo"].node .outer-path{filter:drop-shadow( 1px 2px 2px rgba(185,185,185,1));}#chatgpt-mermaid-_r_ig_ [data-look="neo"].node .neo-line path{stroke:rgb(31, 78, 148);filter:none;}#chatgpt-mermaid-_r_ig_ [data-look="neo"].node circle{stroke:url(#chatgpt-mermaid-_r_ig_-gradient);filter:drop-shadow( 1px 2px 2px rgba(185,185,185,1));}#chatgpt-mermaid-_r_ig_ [data-look="neo"].node circle .state-start{fill:#000000;}#chatgpt-mermaid-_r_ig_ [data-look="neo"].icon-shape .icon{fill:url(#chatgpt-mermaid-_r_ig_-gradient);filter:drop-shadow( 1px 2px 2px rgba(185,185,185,1));}#chatgpt-mermaid-_r_ig_ [data-look="neo"].icon-shape .icon-neo path{stroke:url(#chatgpt-mermaid-_r_ig_-gradient);filter:drop-shadow( 1px 2px 2px rgba(185,185,185,1));}#chatgpt-mermaid-_r_ig_ .node text{font-size:14px;font-weight:600;letter-spacing:normal;fill:rgb(153, 206, 255);}#chatgpt-mermaid-_r_ig_ .edgeLabels text{font-size:13px;font-weight:600;letter-spacing:-0.08px;fill:rgb(153, 206, 255);}#chatgpt-mermaid-_r_ig_ .node tspan[font-weight="normal"],#chatgpt-mermaid-_r_ig_ .edgeLabels tspan[font-weight="normal"]{font-weight:600;}#chatgpt-mermaid-_r_ig_ .edgeLabel .label rect{opacity:1;rx:13px;ry:13px;fill:rgb(0, 14, 26);stroke:rgb(26, 62, 95);stroke-width:1px;}#chatgpt-mermaid-_r_ig_ .node rect,#chatgpt-mermaid-_r_ig_ .node circle,#chatgpt-mermaid-_r_ig_ .node ellipse,#chatgpt-mermaid-_r_ig_ .node polygon,#chatgpt-mermaid-_r_ig_ .node path{fill:rgb(0, 40, 77);stroke:rgba(255, 255, 255, 0.1);stroke-width:1px;}#chatgpt-mermaid-_r_ig_ .node rect{rx:16px;ry:16px;}#chatgpt-mermaid-_r_ig_ .mermaid-decision .label-container{fill:rgb(0, 14, 26);stroke:rgb(26, 62, 95);stroke-dasharray:2,2;}#chatgpt-mermaid-_r_ig_ .edgePaths .flowchart-link{stroke:rgb(175, 175, 175);stroke-width:1px;stroke-linecap:round;stroke-linejoin:round;}#chatgpt-mermaid-_r_ig_ .marker{fill:rgb(175, 175, 175);stroke:rgb(175, 175, 175);}#chatgpt-mermaid-_r_ig_ :root{--mermaid-font-family:-apple-system-body,ui-sans-serif,-apple-system,system-ui,"Segoe UI",Helvetica,"Apple Color Emoji",Arial,sans-serif,"Segoe UI Emoji","Segoe UI Symbol";}GuidPageAssistant RegistryACP Assistantsn8n Workflown8n Multi-WorkflowACP Conversation FactoryN8n Conversation FactoryN8n Multi FactoryACP EngineN8nAgentManager
+
+
+
+
+
+L'interface devrait sélectionner un assistant. La sélection ne devrait pas dépendre de la présence d'un CLI ni de la manière dont un preset est enregistré.
+Exemple de modèle de registre
+export type AssistantId =
+  | 'claude'
+  | 'gemini'
+  | 'n8n'
+  | 'n8n-multi-workflow';
+
+export type AssistantDefinition = {
+  id: AssistantId;
+  name: string;
+  category: 'acp' | 'workflow';
+  available: boolean;
+};
+
+export const ASSISTANTS: AssistantDefinition[] = [
+  {
+    id: 'n8n',
+    name: 'n8n Workflow',
+    category: 'workflow',
+    available: true,
+  },
+  {
+    id: 'n8n-multi-workflow',
+    name: 'n8n Multi Workflow',
+    category: 'workflow',
+    available: true,
+  },
+];
+
+
+La page d'accueil peut alors choisir un assistant indépendamment de la détection ACP.
+
+Avantage : n8n ne dépend plus du cycle de détection des CLI ACP, ni de leur disponibilité, ni de leur installation sur la machine.
+
+10. Tests de validation : les 496 tests ne suffisent pas à prouver le fonctionnement runtime
+Vos 496 tests sont un bon indicateur, mais ils peuvent passer tout en laissant subsister le bug, notamment si les tests :
+- mockent availableAgents avec des données idéales ;
+- n'utilisent pas les mêmes IDs que la configuration persistée ;
+- vérifient selectedAgentKey mais pas selectedAgent ;
+- ne testent pas le chemin IPC réel ;
+- testent une branche n8n avec des dépendances préconfigurées qui ne sont pas présentes en runtime.
+Tests supplémentaires à ajouter
+describe('n8n default selection', () => {
+  it('should select n8n by default', () => {
+    const { result } = renderHook(() =>
+      useGuidAgentSelection(/* deps */)
+    );
+
+    expect(result.current.selectedAgentKey).toBe('n8n');
+  });
+
+  it('should derive n8n backend from n8n key', () => {
+    const { result } = renderHook(() =>
+      useGuidAgentSelection(/* deps */)
+    );
+
+    expect(result.current.selectedAgent).toBe('n8n');
+  });
+});
+
+
+Mais attention : il faut isoler le test de l'état persistant. Si le hook initialise la sélection à partir de la configuration, le mock doit simuler une configuration vide ou explicitement 'n8n'.
+Test d'envoi
+it('creates an n8n conversation when n8n is selected', async () => {
+  const mockCreate = vi.fn().mockResolvedValue({
+    id: 'conversation-123',
+  });
+
+  // Configurer le hook avec :
+  // selectedAgentKey = 'n8n'
+  // selectedAgent = 'n8n'
+  // conversation.create.invoke = mockCreate
+
+  await act(async () => {
+    await result.current.handleSend();
+  });
+
+  expect(mockCreate).toHaveBeenCalledWith(
+    expect.objectContaining({
+      type: 'n8n',
+    })
+  );
+});
+
+
+Test de régression indispensable : clé n8n mais agent non résolu
+Ce test reproduit précisément votre problème :
+it('routes to n8n when n8n key is selected but agent info is unresolved', async () => {
+  // selectedAgentKey = 'n8n'
+  // selectedAgentInfo = undefined
+  // selectedAgent éventuellement non résolu
+
+  await act(async () => {
+    await result.current.handleSend();
+  });
+
+  expect(mockCreate).toHaveBeenCalledWith(
+    expect.objectContaining({
+      type: 'n8n',
+    })
+  );
+});
+
+
+C'est ce dernier scénario qui doit être couvert, et non uniquement le scénario idéal dans lequel toutes les données de sélection sont déjà disponibles.
+Test de fin de chargement
+Le spinner infini doit aussi faire l'objet d'un test :
+it('always clears sending state after conversation creation failure', async () => {
+  mockCreate.mockRejectedValue(new Error('n8n unavailable'));
+
+  await act(async () => {
+    await result.current.handleSend();
+  });
+
+  expect(result.current.isSending).toBe(false);
+});
+
+
+Adaptez isSending et les noms de mocks à votre hook. L'objectif est de garantir que chaque chemin d'erreur passe par un finally :
+try {
+  // Validation + création + navigation
+} catch (error) {
+  console.error('[GuidSend] Failed:', error);
+  // Afficher une erreur utilisateur
+} finally {
+  setIsSending(false);
+}
+
+
+
+11. Ordre exact dans lequel je vous recommande d'intervenir
+Ne faites pas 6 nouveaux commits de modifications simultanées. Procédez par diagnostic, puis par correction ciblée.
+Plan de déblocage
+1. Vérifier le code réellement exécuté : processus Electron, chemins d'entrée, timestamps et sorties de compilation.
+2. Vérifier AcpDetector : confirmer que n8n est réellement présent dans la liste retournée par l'IPC.
+3. Vérifier la sélection : comparer selectedAgentKey, selectedAgentInfo et selectedAgent sur le même rendu.
+4. Corriger la résolution : ne pas faire dépendre n8n uniquement de la résolution asynchrone des presets.
+5. Sécuriser handleSend : dispatch explicite n8n et n8n-multi-workflow à partir de l'identifiant et du backend résolu.
+6. Valider le contrat IPC : vérifier que conversation.create et le Main Process acceptent réellement type: 'n8n'.
+7. Vérifier la configuration persistée : guid.lastSelectedAgent et les presets activés.
+8. Rebuild propre et test runtime : vérifier les 3 symptômes dans l'application, pas seulement dans Vitest.
+
+12. Mon diagnostic final
+Priorité	Cause probable	Niveau de certitude
+P1	Mapping selectedAgentKey → selectedAgent incorrect	Hypothèse forte, code source non inspecté
+P1	ID n8n incohérent entre backend, preset et agent sélectionné	Hypothèse forte
+P1	Config persistée qui écrase la sélection initiale	À vérifier immédiatement
+P1	Main Process ou Renderer exécutant un autre build	Plausible, non prouvé
+P2	Handler IPC ou conversation factory non compatible n8n	À vérifier
+P2	Dépendance du chargement des assistants à l'interface ADMIN	Piste sérieuse pour le symptôme 3
+P3	Cache Chromium / Electron	Possible, mais moins probable comme cause racine du dispatch
+
+Les deux documents que vous avez fournis décrivent bien l'architecture et les hypothèses de panne, mais ils ne contiennent pas le code source complet des hooks. Ils ne permettent donc pas de confirmer une ligne précise ni de produire une correction exacte sans risquer de modifier une logique existante qui fonctionne.
+Ce qu'il me faut pour vous donner le correctif définitif
+Vous aviez annoncé les trois fichiers suivants, mais je ne les ai pas reçus dans les pièces jointes actuelles :
+- useGuidSend.ts — 412 lignes
+- useGuidAgentSelection.ts — 520 lignes
+- acpTypes.ts — 600+ lignes
+Pour confirmer la cause racine et vous retourner le code corrigé exact, avec les modifications localisées et sans vous faire réécrire inutilement l'architecture, joignez ces trois fichiers TypeScript, puis idéalement AcpDetector.ts et GuidPage.tsx en complément.
+
+Je pourrai alors faire l'analyse des flux réels, identifier précisément le bug du useMemo, du mapping custom: et du dispatch, puis vous fournir les blocs corrigés complets et les tests de régression à appliquer.
+
+Le plus important à ce stade : ne faites plus de commits de correction sur la base de l'hypothèse du cache tant que le mapping réel de selectedAgentKey vers selectedAgent n'a pas été vérifié. C'est le premier maillon à investiguer.
+
+
+
+
+
+
+
+
+
+
+
+
+Vous avez atteint votre limite de pièces jointes disponibles pour le moment. Passez à une offre supérieure pour en avoir davantage, ou réessayez demain après 16:29.
+Passer à Plus

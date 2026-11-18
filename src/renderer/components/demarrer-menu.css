@@ -18,19 +18,19 @@
   --demarrer-primary-hover-dark: rgba(107, 17, 2, 0.2);
   --demarrer-accent: #ff6b5b;
   --demarrer-shadow: rgba(107, 17, 2, 0.3);
-  
+
   --demarrer-bg-light: #ffffff;
   --demarrer-bg-dark: #1f2937;
   --demarrer-bg-gray-50: #f9fafb;
   --demarrer-bg-gray-100: #f3f4f6;
   --demarrer-bg-gray-800: rgba(31, 41, 55, 0.8);
   --demarrer-bg-gray-900: rgba(17, 24, 39, 0.5);
-  
+
   --demarrer-border-light: #e5e7eb;
   --demarrer-border-dark: #374151;
   --demarrer-border-gray-100: #f3f4f6;
   --demarrer-border-gray-700: rgba(55, 65, 81, 0.5);
-  
+
   --demarrer-text-primary: #1f2937;
   --demarrer-text-secondary: #6b7280;
   --demarrer-text-light: #9ca3af;
@@ -679,7 +679,7 @@
     min-width: 260px;
     max-width: 90vw;
   }
-  
+
   .demarrer-submenu {
     min-width: 200px;
     max-width: 280px;

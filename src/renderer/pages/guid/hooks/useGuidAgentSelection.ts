@@ -198,8 +198,17 @@ export const useGuidAgentSelection = ({ modelList, isGoogleAuth, localeKey }: Us
 
     const loadLastSelectedAgent = async () => {
       try {
-        const savedAgentKey = await ConfigStorage.get('guid.lastSelectedAgent');
-        if (cancelled || !savedAgentKey) return;
+        // Migration map: ancienne clé → nouvelle clé
+        const LEGACY_AGENT_KEYS: Record<string, string> = {
+          'custom:builtin-n8n-workflow': 'n8n',
+          'custom:builtin-n8n-multi-workflow': 'n8n-multi-workflow',
+        };
+
+        const rawKey = await ConfigStorage.get('guid.lastSelectedAgent');
+        if (cancelled || !rawKey) return;
+
+        // Appliquer la migration si nécessaire
+        const savedAgentKey = LEGACY_AGENT_KEYS[rawKey] ?? rawKey;
 
         const isInAvailable = availableAgents.some((agent) => {
           const key = agent.backend === 'custom' && agent.customAgentId ? `custom:${agent.customAgentId}` : agent.backend;
@@ -208,6 +217,11 @@ export const useGuidAgentSelection = ({ modelList, isGoogleAuth, localeKey }: Us
 
         if (isInAvailable) {
           _setSelectedAgentKey(savedAgentKey);
+
+          // Persister la nouvelle clé si migration appliquée
+          if (savedAgentKey !== rawKey) {
+            void ConfigStorage.set('guid.lastSelectedAgent', savedAgentKey);
+          }
         }
       } catch (error) {
         console.error('Failed to load last selected agent:', error);

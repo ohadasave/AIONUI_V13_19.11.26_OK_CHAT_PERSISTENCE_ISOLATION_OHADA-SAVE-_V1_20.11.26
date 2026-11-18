@@ -1,7 +1,7 @@
 import { ArrowCircleLeft, ListCheckbox, Plus, SettingTwo } from '@icon-park/react';
 import { IconMoonFill, IconSunFill } from '@arco-design/web-react/icon';
 import classNames from 'classnames';
-import React, { Suspense, useEffect, useRef, useState } from 'react';
+import React, { Suspense, useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { iconColors } from './theme/colors';
@@ -12,6 +12,10 @@ import { useLayoutContext } from './context/LayoutContext';
 import { blurActiveElement } from './utils/focus';
 import { useThemeContext } from './context/ThemeContext';
 import { useLastConversation } from './hooks/useLastConversation';
+import { ipcBridge } from '@/common';
+import type { TChatConversation } from '@/common/storage';
+import { v4 as uuid } from 'uuid';
+import { emitter } from './utils/emitter';
 
 const WorkspaceGroupedHistory = React.lazy(() => import('./pages/conversation/WorkspaceGroupedHistory'));
 const SettingsSider = React.lazy(() => import('./pages/settings/SettingsSider'));
@@ -64,9 +68,50 @@ const Sider: React.FC<SiderProps> = ({ onSessionClick, collapsed = false }) => {
   const handleToggleBatchMode = () => {
     setIsBatchMode((prev) => !prev);
   };
+
   const handleQuickThemeToggle = () => {
     void setTheme(theme === 'dark' ? 'light' : 'dark');
   };
+
+  // Créer une nouvelle conversation n8n directement
+  const handleCreateN8nConversation = useCallback(async () => {
+    cleanupSiderTooltips();
+    blurActiveElement();
+    closePreview();
+    setIsBatchMode(false);
+
+    try {
+      const newId = uuid();
+
+      const newConversation: TChatConversation = {
+        id: newId,
+        name: t('conversation.welcome.newConversation'),
+        type: 'n8n',
+        createTime: Date.now(),
+        modifyTime: Date.now(),
+        extra: {},
+      };
+
+      await ipcBridge.conversation.createWithConversation.invoke({
+        conversation: newConversation,
+      });
+
+      // Navigation forcée avec window.location.hash au lieu de navigate()
+      window.location.hash = `#/conversation/${newId}`;
+
+      // Rafraîchir l'historique
+      emitter.emit('chat.history.refresh');
+
+      // Cacher la sidebar sur mobile
+      if (onSessionClick) {
+        onSessionClick();
+      }
+    } catch (error) {
+      console.error('[NEW CHAT] Failed to create n8n conversation:', error);
+      // Fallback vers /guid en cas d'erreur
+      window.location.hash = '#/guid';
+    }
+  }, [closePreview, onSessionClick, t]);
   const workspaceHistoryProps = {
     collapsed,
     tooltipEnabled: collapsed && !isMobile,
@@ -89,22 +134,7 @@ const Sider: React.FC<SiderProps> = ({ onSessionClick, collapsed = false }) => {
           <div className='size-full flex flex-col'>
             <div className='mb-8px shrink-0 flex items-center gap-8px'>
               <Tooltip {...siderTooltipProps} content={t('conversation.welcome.newConversation')} position='right'>
-                <div
-                  className={classNames('h-40px flex-1 flex items-center justify-start gap-10px px-12px hover:bg-hover rd-0.5rem cursor-pointer group', isMobile && 'sider-action-btn-mobile')}
-                  onClick={() => {
-                    cleanupSiderTooltips();
-                    blurActiveElement();
-                    closePreview();
-                    setIsBatchMode(false);
-                    Promise.resolve(navigate('/guid')).catch((error) => {
-                      console.error('Navigation failed:', error);
-                    });
-                    // 点击new chat后自动隐藏sidebar / Hide sidebar after starting new chat on mobile
-                    if (onSessionClick) {
-                      onSessionClick();
-                    }
-                  }}
-                >
+                <div className={classNames('h-40px flex-1 flex items-center justify-start gap-10px px-12px hover:bg-hover rd-0.5rem cursor-pointer group', isMobile && 'sider-action-btn-mobile')} onClick={handleCreateN8nConversation}>
                   <Plus theme='outline' size='24' fill={iconColors.primary} className='block leading-none shrink-0' style={{ lineHeight: 0 }} />
                   <span className='collapsed-hidden font-bold text-t-primary leading-24px'>{t('conversation.welcome.newConversation')}</span>
                 </div>

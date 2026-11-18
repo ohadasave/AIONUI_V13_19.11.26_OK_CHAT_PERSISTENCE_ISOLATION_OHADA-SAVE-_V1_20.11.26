@@ -1,6 +1,6 @@
 /**
  * DemarrerMenu Component - Version complète avec structure E-revision
- * 
+ *
  * Menu contextuel hiérarchique pour automatiser les prompts E-audit
  * Design inspiré du menu Claude/ChatGPT avec deux panneaux côte à côte
  */
@@ -8,38 +8,7 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import ReactDOM from 'react-dom';
 import './demarrer-menu.css';
-import {
-  Play,
-  ChevronRight,
-  FileText,
-  Shield,
-  ClipboardList,
-  FileCheck,
-  AlertTriangle,
-  Map,
-  BarChart3,
-  Calculator,
-  Briefcase,
-  X,
-  Zap,
-  TrendingUp,
-  User,
-  Package,
-  Building,
-  Users,
-  Truck,
-  UserCheck,
-  PiggyBank,
-  Receipt,
-  Target,
-  FileSearch,
-  CheckSquare,
-  BookOpen,
-  HelpCircle,
-  Settings,
-  GraduationCap,
-  Cog
-} from 'lucide-react';
+import { Play, ChevronRight, FileText, Shield, ClipboardList, FileCheck, AlertTriangle, Map, BarChart3, Calculator, Briefcase, X, Zap, TrendingUp, User, Package, Building, Users, Truck, UserCheck, PiggyBank, Receipt, Target, FileSearch, CheckSquare, BookOpen, HelpCircle, Settings, GraduationCap, Cog } from 'lucide-react';
 
 // ============================================================
 // TYPES
@@ -102,7 +71,7 @@ const MODES: ModeItem[] = [
   { id: 'normal', label: 'Normal', prefix: '' },
   { id: 'demo', label: 'Demo', prefix: '[Demo] = Activate\n' },
   { id: 'avance', label: 'Avancé', prefix: '[Mode] = Avancé\n' },
-  { id: 'manuel', label: 'Manuel', prefix: '[Mode] = Manuel\n' }
+  { id: 'manuel', label: 'Manuel', prefix: '[Mode] = Manuel\n' },
 ];
 
 // ============================================================
@@ -113,7 +82,7 @@ const MENU_DATA: LogicielItem[] = [
   {
     id: 'e-audit-pro',
     label: 'E-audit pro',
-    icon: <Briefcase className="w-4 h-4" />,
+    icon: <Briefcase className='w-4 h-4' />,
     phases: [
       {
         id: 'phase-preparation',
@@ -122,7 +91,7 @@ const MENU_DATA: LogicielItem[] = [
           {
             id: 'collecte-documentaire',
             label: 'Collecte documentaire',
-            icon: <FileSearch className="w-4 h-4" />,
+            icon: <FileSearch className='w-4 h-4' />,
             modes: [
               {
                 id: 'normal',
@@ -132,7 +101,7 @@ const MENU_DATA: LogicielItem[] = [
 [Etape précédente] = Cartographie des risques
 [Etape de mission] = Collecte documentaire
 [Modele] : Processus, document, Direction, operationnel
-[Nb de lignes] = 30`
+[Nb de lignes] = 30`,
               },
               {
                 id: 'avance',
@@ -144,14 +113,14 @@ const MENU_DATA: LogicielItem[] = [
 [Modele] : Processus, document, Direction, operationnel
 [Variable 1] = Contenu de [Variable 1]
 [Variable 2] = Contenu de [Variable 2]
-[Nb de lignes] = 30`
-              }
-            ]
+[Nb de lignes] = 30`,
+              },
+            ],
           },
           {
             id: 'questionnaire-prise-connaissance',
             label: 'Questionnaire prise de connaissance',
-            icon: <HelpCircle className="w-4 h-4" />,
+            icon: <HelpCircle className='w-4 h-4' />,
             modes: [
               {
                 id: 'normal',
@@ -161,7 +130,7 @@ const MENU_DATA: LogicielItem[] = [
 [Etape précédente] = Collecte documentaire
 [Etape de mission] = Questionnaire prise de connaissance
 [Modele] : Processus, sous processus, Questionnaire de prise de connaissance
-[Nb de lignes] = 30`
+[Nb de lignes] = 30`,
               },
               {
                 id: 'avance',
@@ -173,14 +142,14 @@ const MENU_DATA: LogicielItem[] = [
 [Modele] : Processus, sous processus, Questionnaire de prise de connaissance
 [Variable 1] = Contenu de [Variable 1]
 [Variable 2] = Contenu de [Variable 2]
-[Nb de lignes] = 30`
-              }
-            ]
+[Nb de lignes] = 30`,
+              },
+            ],
           },
           {
             id: 'cartographie-processus',
             label: 'Cartographie des processus',
-            icon: <Map className="w-4 h-4" />,
+            icon: <Map className='w-4 h-4' />,
             modes: [
               {
                 id: 'normal',
@@ -190,7 +159,7 @@ const MENU_DATA: LogicielItem[] = [
 [Etape précédente] = Questionnaire prise de connaissance
 [Etape de mission] = Cartographie des processus
 [Modele] : Cycle, Processus, sous processus, operations
-[Nb de lignes] = 30`
+[Nb de lignes] = 30`,
               },
               {
                 id: 'avance',
@@ -202,21 +171,21 @@ const MENU_DATA: LogicielItem[] = [
 [Modele] : Cycle, Processus, sous processus, operations
 [Variable 1] = Contenu de [Variable 1]
 [Variable 2] = Contenu de [Variable 2]
-[Nb de lignes] = 30`
-              }
-            ]
+[Nb de lignes] = 30`,
+              },
+            ],
           },
           {
             id: 'cartographie-risques',
             label: 'Cartographie des risques',
-            icon: <AlertTriangle className="w-4 h-4" />,
+            icon: <AlertTriangle className='w-4 h-4' />,
             modes: [
               {
                 id: 'normal',
                 label: 'Normal',
                 command: `[Command] = /Cartographie des risques
 [Processus] = Sécurité trésorerie
-[Nb de lignes] = 30`
+[Nb de lignes] = 30`,
               },
               {
                 id: 'avance',
@@ -228,14 +197,14 @@ const MENU_DATA: LogicielItem[] = [
 [Integration] = integration_min
 [Variable 1] = Contenu de [Variable 1]
 [Variable 2] = Contenu de [Variable 2]
-[Nb de lignes] = 40`
-              }
-            ]
+[Nb de lignes] = 40`,
+              },
+            ],
           },
           {
             id: 'referentiel-ci',
             label: 'Referentiel de controle interne',
-            icon: <Shield className="w-4 h-4" />,
+            icon: <Shield className='w-4 h-4' />,
             modes: [
               {
                 id: 'normal',
@@ -245,7 +214,7 @@ const MENU_DATA: LogicielItem[] = [
 [Etape précédente] = Cartographie des risques
 [Etape de mission] = Referentiel de controle interne
 [Modele] : Processus, Tache clé, objectif de contrôle, risques, contrôles clé
-[Nb de lignes] = 30`
+[Nb de lignes] = 30`,
               },
               {
                 id: 'avance',
@@ -257,14 +226,14 @@ const MENU_DATA: LogicielItem[] = [
 [Modele] : Processus, Tache clé, objectif de contrôle, risques, contrôles clé
 [Variable 1] = Contenu de [Variable 1]
 [Variable 2] = Contenu de [Variable 2]
-[Nb de lignes] = 30`
-              }
-            ]
+[Nb de lignes] = 30`,
+              },
+            ],
           },
           {
             id: 'rapport-orientation',
             label: "Rapport d'orientation",
-            icon: <Target className="w-4 h-4" />,
+            icon: <Target className='w-4 h-4' />,
             modes: [
               {
                 id: 'normal',
@@ -274,7 +243,7 @@ const MENU_DATA: LogicielItem[] = [
 [Etape précédente] = Referentiel de controle interne
 [Etape de mission] = Rapport d'orientation
 [Modele] : Processus, Objectifs generaux de contrôle interne, Objectifs spécifiques
-[Nb de lignes] = 30`
+[Nb de lignes] = 30`,
               },
               {
                 id: 'avance',
@@ -286,21 +255,21 @@ const MENU_DATA: LogicielItem[] = [
 [Modele] : Processus, Objectifs generaux de contrôle interne, Objectifs spécifiques
 [Variable 1] = Contenu de [Variable 1]
 [Variable 2] = Contenu de [Variable 2]
-[Nb de lignes] = 30`
-              }
-            ]
+[Nb de lignes] = 30`,
+              },
+            ],
           },
           {
             id: 'programme-travail',
             label: 'Programme de travail',
-            icon: <FileText className="w-4 h-4" />,
+            icon: <FileText className='w-4 h-4' />,
             modes: [
               {
                 id: 'normal',
                 label: 'Normal',
                 command: `[Command] = Programme de travail
 [Processus] = inventaire de caisse
-[Nb de lignes] = 25`
+[Nb de lignes] = 25`,
               },
               {
                 id: 'avance',
@@ -313,11 +282,11 @@ const MENU_DATA: LogicielItem[] = [
 [Directive] = Cibler uniquement les operations d'inventaire de caisse en priorite
 [Variable 1] = Contenu de [Variable 1]
 [Variable 2] = Contenu de [Variable 2]
-[Nb de lignes] = 20`
-              }
-            ]
-          }
-        ]
+[Nb de lignes] = 20`,
+              },
+            ],
+          },
+        ],
       },
       {
         id: 'phase-realisation',
@@ -327,15 +296,15 @@ const MENU_DATA: LogicielItem[] = [
             id: 'feuille-couverture',
             label: 'Feuille couverture',
             norme: '14.6 Documentation relative à la mission',
-            icon: <FileCheck className="w-4 h-4" />,
+            icon: <FileCheck className='w-4 h-4' />,
             command: `[Command] = Couverture
 [Processus] = Sécurité trésorerie
 [Contrôle] = Verifier l exhaustivite des inventaires de caisse
 [Instruction] = Template
 [Modele de test] = no, compte, site, libelle, solde BG, Solde Pv inventaire
-[Nb de lignes] = 15`
-          }
-        ]
+[Nb de lignes] = 15`,
+          },
+        ],
       },
       {
         id: 'phase-conclusion',
@@ -345,7 +314,7 @@ const MENU_DATA: LogicielItem[] = [
             id: 'frap',
             label: 'Frap',
             norme: '14.3 Évaluation des constats',
-            icon: <AlertTriangle className="w-4 h-4" />,
+            icon: <AlertTriangle className='w-4 h-4' />,
             modes: [
               {
                 id: 'normal',
@@ -354,7 +323,7 @@ const MENU_DATA: LogicielItem[] = [
 [Processus] = Elaboration des rapprochement bancaires
 [Assertion] = validité, formalisation
 [Anomalie] = les rapprochements bancaire ne sont pas verifié par le DAF
-[Constat] = inexistence de rapprochement bancaires signés pour les mois de juin a decembre 2025`
+[Constat] = inexistence de rapprochement bancaires signés pour les mois de juin a decembre 2025`,
               },
               {
                 id: 'avance',
@@ -365,21 +334,21 @@ const MENU_DATA: LogicielItem[] = [
 [Anomalie] = les rapprochements bancaire ne sont pas verifié par le DAF
 [Constat] = inexistence de rapprochement bancaires signés pour les mois de juin a decembre 2025
 [Variable 1] = Contenu de [Variable 1]
-[Variable 2] = Contenu de [Variable 2]`
-              }
-            ]
+[Variable 2] = Contenu de [Variable 2]`,
+              },
+            ],
           },
           {
             id: 'synthese-frap',
             label: 'Synthèse des Frap',
             norme: '14.2 Analyses et constats potentiels de la mission',
-            icon: <FileSearch className="w-4 h-4" />,
+            icon: <FileSearch className='w-4 h-4' />,
             modes: [
               {
                 id: 'normal',
                 label: 'Normal',
                 command: `[Command] = Table_Template
-[Node] = Frap`
+[Node] = Frap`,
               },
               {
                 id: 'avance',
@@ -389,21 +358,21 @@ const MENU_DATA: LogicielItem[] = [
 [Étape précédente] = Frap
 [Étape mission] = Synthèse des Frap
 [Modèle] = 
-[Pièces jointes] = Frap de la mission`
-              }
-            ]
+[Pièces jointes] = Frap de la mission`,
+              },
+            ],
           },
           {
             id: 'rapport-provisoire',
             label: 'Rapport provisoire',
             norme: '14.5 Conclusions de la mission',
-            icon: <FileText className="w-4 h-4" />,
+            icon: <FileText className='w-4 h-4' />,
             modes: [
               {
                 id: 'normal',
                 label: 'Normal',
                 command: `[Command] = Table_Template
-[Node] = Synthèse`
+[Node] = Synthèse`,
               },
               {
                 id: 'avance',
@@ -413,30 +382,30 @@ const MENU_DATA: LogicielItem[] = [
 [Étape précédente] = Synthèse des Frap
 [Étape mission] = Rapport provisoire
 [Modèle] = 
-[Pièces jointes] = Synthèse des Frap`
-              }
-            ]
+[Pièces jointes] = Synthèse des Frap`,
+              },
+            ],
           },
           {
             id: 'reunion-cloture',
             label: 'Réunion de clôture',
             norme: '11.3 Communication des résultats',
-            icon: <CheckSquare className="w-4 h-4" />,
+            icon: <CheckSquare className='w-4 h-4' />,
             command: `[Command] = Réunion de clôture
 [Processus] = 
-[Objectif] = `
+[Objectif] = `,
           },
           {
             id: 'rapport-final',
             label: 'Rapport final',
             norme: '15.1 Communication des résultats définitifs de la mission',
-            icon: <FileCheck className="w-4 h-4" />,
+            icon: <FileCheck className='w-4 h-4' />,
             modes: [
               {
                 id: 'normal',
                 label: 'Normal',
                 command: `[Command] = Table_Template
-[Node] = Rapport provisoire`
+[Node] = Rapport provisoire`,
               },
               {
                 id: 'avance',
@@ -446,21 +415,21 @@ const MENU_DATA: LogicielItem[] = [
 [Étape précédente] = Rapport provisoire
 [Étape mission] = Rapport final
 [Modèle] = 
-[Pièces jointes] = Rapport provisoire`
-              }
-            ]
+[Pièces jointes] = Rapport provisoire`,
+              },
+            ],
           },
           {
             id: 'suivi-recos',
             label: 'Suivi des recos',
             norme: '15.2 Suivi des recommandations',
-            icon: <CheckSquare className="w-4 h-4" />,
+            icon: <CheckSquare className='w-4 h-4' />,
             modes: [
               {
                 id: 'normal',
                 label: 'Normal',
                 command: `[Command] = Table_Template
-[Node] = Rapport final`
+[Node] = Rapport final`,
               },
               {
                 id: 'avance',
@@ -470,18 +439,18 @@ const MENU_DATA: LogicielItem[] = [
 [Étape précédente] = Rapport final
 [Étape mission] = Suivi des recos
 [Modèle] = 
-[Pièces jointes] = Rapport final`
-              }
-            ]
-          }
-        ]
-      }
-    ]
+[Pièces jointes] = Rapport final`,
+              },
+            ],
+          },
+        ],
+      },
+    ],
   },
   {
     id: 'e-revision',
     label: 'E-revision',
-    icon: <Calculator className="w-4 h-4" />,
+    icon: <Calculator className='w-4 h-4' />,
     phases: [
       {
         id: 'planification',
@@ -490,7 +459,7 @@ const MENU_DATA: LogicielItem[] = [
           {
             id: 'design',
             label: 'Design',
-            icon: <Settings className="w-4 h-4" />,
+            icon: <Settings className='w-4 h-4' />,
             modes: [
               {
                 id: 'normal',
@@ -503,7 +472,7 @@ const MENU_DATA: LogicielItem[] = [
 [Modele] : Sous processus, Objectif de contrôle, Taches cle, Questionnaire identification risque, Assertion, Dispositif de maitrises des risques du client, Contrôle cle attendus, references documentaire, Anomalies, Conclusion
 [Directive] = Remplir toutes les colonnes en simulant des lignes satisfaisante t des lignes non satisfaisantes
 [Integration] = Design
-[Nb de lignes] = 10`
+[Nb de lignes] = 10`,
               },
               {
                 id: 'demo',
@@ -517,14 +486,14 @@ const MENU_DATA: LogicielItem[] = [
 [Directive] = Remplir toutes les colonnes en simulant des lignes satisfaisante t des lignes non satisfaisantes
 [Integration] = Design
 [Demo] = Activate
-[Nb de lignes] = 10`
-              }
-            ]
+[Nb de lignes] = 10`,
+              },
+            ],
           },
           {
             id: 'implementation',
             label: 'Implementation',
-            icon: <Cog className="w-4 h-4" />,
+            icon: <Cog className='w-4 h-4' />,
             modes: [
               {
                 id: 'normal',
@@ -541,7 +510,7 @@ Contenu de [Contexte de base]
 { "Etape mission - Design": [ { "table 1": { "Etape": "Programme de travail / Questionnaire de Contrôle Interne", "Normes": "Norme 2240 - Programme de travail de la mission", "Reference": "PRG-TRESO-002", "Methode": "Méthode des assertions par les objectifs de contrôle" } }, { "table 2": [ { "no": 1, "Sous processus": "Organisation et Séparation des tâches", "Objectif de contrôle": "Garantir l'indépendance de la fonction de rapprochement bancaire.", "Taches cle": "Définition des rôles", "Questionnaire identification risque": "La personne effectuant le rapprochement est-elle indépendante de la tenue de la caisse et de l'émission des paiements ?", "Assertion": "Séparation des exercices", "Dispositif de maitrises des risques du client": "Le comptable fournisseurs effectue les paiements et réalise également le rapprochement bancaire sur le logiciel Sage.", "Contrôle cle attendus": "Le Responsable Administratif et Financier s'assure que l'agent en charge du rapprochement n'a pas accès aux moyens de paiement ni aux écritures de caisse.", "references documentaire": "Fiches de poste, Matrice des droits d'accès SI", "Anomalies": "Cumul de fonctions incompatible créant un risque de dissimulation de fraude.", "Conclusion": "Non-Satisfaisant" } ] } ] }
 [Modele] : Objectif de contrôle, Travaux a effectuer, Resultat, Tableau de test , Document de test, Echantillon, Conclusion
 [Integration] = Implementation_modelisation
-[Nb de lignes] = 25`
+[Nb de lignes] = 25`,
               },
               {
                 id: 'demo',
@@ -559,14 +528,14 @@ Contenu de [Contexte de base]
 [Modele] : Objectif de contrôle, Travaux a effectuer, Resultat, Tableau de test , Document de test, Echantillon, Conclusion
 [Integration] = Implementation_modelisation
 [Demo] = Activate
-[Nb de lignes] = 25`
-              }
-            ]
+[Nb de lignes] = 25`,
+              },
+            ],
           },
           {
             id: 'evaluation-risque',
             label: 'Evaluation risque',
-            icon: <AlertTriangle className="w-4 h-4" />,
+            icon: <AlertTriangle className='w-4 h-4' />,
             modes: [
               {
                 id: 'normal',
@@ -578,7 +547,7 @@ Contenu de [Contexte de base]
 [Contexte de base]
 [Modelisation] : les informations des rapprochements bancaires
 [Integration] = Implementation_cartographie
-[Nb de lignes] = 25`
+[Nb de lignes] = 25`,
               },
               {
                 id: 'demo',
@@ -591,14 +560,14 @@ Contenu de [Contexte de base]
 [Modelisation] : les informations des rapprochements bancaires
 [Integration] = Implementation_cartographie
 [Demo] = Activate
-[Nb de lignes] = 25`
-              }
-            ]
+[Nb de lignes] = 25`,
+              },
+            ],
           },
           {
             id: 'feuille-couverture-implementation',
             label: 'Feuille de couverture implementation',
-            icon: <FileText className="w-4 h-4" />,
+            icon: <FileText className='w-4 h-4' />,
             modes: [
               {
                 id: 'normal',
@@ -609,7 +578,7 @@ Contenu de [Contexte de base]
 [Contexte de base]
 [Modelisation] : les informations des rapprochements bancaires
 [Integration] = Implementation_programme_controle
-[Nb de lignes] = 25`
+[Nb de lignes] = 25`,
               },
               {
                 id: 'demo',
@@ -621,14 +590,14 @@ Contenu de [Contexte de base]
 [Modelisation] : les informations des rapprochements bancaires
 [Integration] = Implementation_programme_controle
 [Demo] = Activate
-[Nb de lignes] = 25`
-              }
-            ]
+[Nb de lignes] = 25`,
+              },
+            ],
           },
           {
             id: 'programme-controle-comptes',
             label: 'Programme de controle des comptes',
-            icon: <CheckSquare className="w-4 h-4" />,
+            icon: <CheckSquare className='w-4 h-4' />,
             modes: [
               {
                 id: 'normal',
@@ -639,7 +608,7 @@ Contenu de [Contexte de base]
 [Programme standard]
 [Modelisation] : les informations des rapprochements bancaires
 [Contexte de base]
-[Integration] = Programme_controle_comptes`
+[Integration] = Programme_controle_comptes`,
               },
               {
                 id: 'demo',
@@ -651,11 +620,11 @@ Contenu de [Contexte de base]
 [Modelisation] : les informations des rapprochements bancaires
 [Contexte de base]
 [Integration] = Programme_controle_comptes
-[Demo] = Activate`
-              }
-            ]
-          }
-        ]
+[Demo] = Activate`,
+              },
+            ],
+          },
+        ],
       },
       {
         id: 'revue-analytique',
@@ -664,7 +633,7 @@ Contenu de [Contexte de base]
           {
             id: 'revue-analytique-generale',
             label: 'Revue analytique générale',
-            icon: <BarChart3 className="w-4 h-4" />,
+            icon: <BarChart3 className='w-4 h-4' />,
             modes: [
               {
                 id: 'normal',
@@ -672,7 +641,7 @@ Contenu de [Contexte de base]
                 command: `[Command] = Revue analytique
 [Processus] = 
 [Période] = 
-[Objectif] = `
+[Objectif] = `,
               },
               {
                 id: 'avance',
@@ -682,14 +651,14 @@ Contenu de [Contexte de base]
 [Période] = 
 [Objectif] = 
 [Variable 1] = Contenu de [Variable 1]
-[Variable 2] = Contenu de [Variable 2]`
-              }
-            ]
+[Variable 2] = Contenu de [Variable 2]`,
+              },
+            ],
           },
           {
             id: 'analyse-variations',
             label: 'Analyse des variations',
-            icon: <TrendingUp className="w-4 h-4" />,
+            icon: <TrendingUp className='w-4 h-4' />,
             modes: [
               {
                 id: 'normal',
@@ -697,7 +666,7 @@ Contenu de [Contexte de base]
                 command: `[Command] = Analyse des variations
 [Compte] = 
 [Période] = 
-[Seuil] = `
+[Seuil] = `,
               },
               {
                 id: 'avance',
@@ -707,11 +676,11 @@ Contenu de [Contexte de base]
 [Période] = 
 [Seuil] = 
 [Variable 1] = Contenu de [Variable 1]
-[Variable 2] = Contenu de [Variable 2]`
-              }
-            ]
-          }
-        ]
+[Variable 2] = Contenu de [Variable 2]`,
+              },
+            ],
+          },
+        ],
       },
       {
         id: 'programme-controle',
@@ -720,7 +689,7 @@ Contenu de [Contexte de base]
           {
             id: 'cycle-tresorerie',
             label: 'Trésorerie',
-            icon: <Calculator className="w-4 h-4" />,
+            icon: <Calculator className='w-4 h-4' />,
             tests: [
               {
                 id: 'tresorerie-aa040',
@@ -731,7 +700,7 @@ Contenu de [Contexte de base]
 [Processus] = Trésorerie
 [test] = AA040
 [reference] = Rapprochements
-[Nb de lignes] = 10`
+[Nb de lignes] = 10`,
               },
               {
                 id: 'tresorerie-aa145',
@@ -742,7 +711,7 @@ Contenu de [Contexte de base]
 [Processus] = Trésorerie
 [test] = AA145
 [reference] = Test sur les décaissements après la clôture
-[Nb de lignes] = 10`
+[Nb de lignes] = 10`,
               },
               {
                 id: 'tresorerie-aa160',
@@ -753,7 +722,7 @@ Contenu de [Contexte de base]
 [Processus] = Trésorerie
 [test] = AA160
 [reference] = Test sur les décaissements avant la clôture
-[Nb de lignes] = 10`
+[Nb de lignes] = 10`,
               },
               {
                 id: 'tresorerie-aa200',
@@ -764,9 +733,8 @@ Contenu de [Contexte de base]
 [Processus] = Trésorerie
 [test] = AA200
 [reference] = Caisse
-[Nb de lignes] = 10`
-              }
-              ,
+[Nb de lignes] = 10`,
+              },
               {
                 id: 'tresorerie-aa400',
                 reference: 'AA400',
@@ -776,7 +744,7 @@ Contenu de [Contexte de base]
 [Processus] = Trésorerie
 [test] = AA400
 [reference] = Suspens Banque
-[Nb de lignes] = 10`
+[Nb de lignes] = 10`,
               },
               {
                 id: 'tresorerie-aa465',
@@ -787,7 +755,7 @@ Contenu de [Contexte de base]
 [Processus] = Trésorerie
 [test] = AA465
 [reference] = Note de synthèse rapprochement
-[Nb de lignes] = 10`
+[Nb de lignes] = 10`,
               },
               {
                 id: 'tresorerie-aa02',
@@ -798,7 +766,7 @@ Contenu de [Contexte de base]
 [Processus] = Trésorerie
 [test] = AA02
 [reference] = Feuilles maîtresses-TRESORERIE
-[Nb de lignes] = 10`
+[Nb de lignes] = 10`,
               },
               {
                 id: 'tresorerie-aa02-travaux',
@@ -809,7 +777,7 @@ Contenu de [Contexte de base]
 [Processus] = Trésorerie
 [test] = AA02
 [reference] = Travaux analytiques caisse
-[Nb de lignes] = 10`
+[Nb de lignes] = 10`,
               },
               {
                 id: 'tresorerie-aa03',
@@ -820,7 +788,7 @@ Contenu de [Contexte de base]
 [Processus] = Trésorerie
 [test] = AA03
 [reference] = Revue du Contrôle interne
-[Nb de lignes] = 10`
+[Nb de lignes] = 10`,
               },
               {
                 id: 'tresorerie-aa04',
@@ -831,14 +799,14 @@ Contenu de [Contexte de base]
 [Processus] = Trésorerie
 [test] = AA04
 [reference] = Revue des techniques comptables
-[Nb de lignes] = 10`
-              }
-            ]
+[Nb de lignes] = 10`,
+              },
+            ],
           },
           {
             id: 'cycle-ventes',
             label: 'Ventes',
-            icon: <BarChart3 className="w-4 h-4" />,
+            icon: <BarChart3 className='w-4 h-4' />,
             tests: [
               {
                 id: 'ventes-bb040',
@@ -849,7 +817,7 @@ Contenu de [Contexte de base]
 [Processus] = VENTES
 [test] = BB040
 [reference] = Rapprochement CA
-[Nb de lignes] = 10`
+[Nb de lignes] = 10`,
               },
               {
                 id: 'ventes-bb145',
@@ -860,7 +828,7 @@ Contenu de [Contexte de base]
 [Processus] = VENTES
 [test] = BB145
 [reference] = Test de séparation des exercices ventes
-[Nb de lignes] = 10`
+[Nb de lignes] = 10`,
               },
               {
                 id: 'ventes-bb160',
@@ -871,7 +839,7 @@ Contenu de [Contexte de base]
 [Processus] = VENTES
 [test] = BB160
 [reference] = Test de séparation des exercices avoir
-[Nb de lignes] = 10`
+[Nb de lignes] = 10`,
               },
               {
                 id: 'ventes-bb300',
@@ -882,7 +850,7 @@ Contenu de [Contexte de base]
 [Processus] = VENTES
 [test] = BB300
 [reference] = Test de validation analytique
-[Nb de lignes] = 10`
+[Nb de lignes] = 10`,
               },
               {
                 id: 'ventes-bb545',
@@ -893,7 +861,7 @@ Contenu de [Contexte de base]
 [Processus] = VENTES
 [test] = BB545
 [reference] = Note de synthèse Test de séparation des exercices
-[Nb de lignes] = 10`
+[Nb de lignes] = 10`,
               },
               {
                 id: 'ventes-bb30',
@@ -904,9 +872,8 @@ Contenu de [Contexte de base]
 [Processus] = VENTES
 [test] = BB30
 [reference] = CA-TSE-TVA
-[Nb de lignes] = 10`
-              }
-              ,
+[Nb de lignes] = 10`,
+              },
               {
                 id: 'ventes-bb20',
                 reference: 'BB20',
@@ -916,18 +883,18 @@ Contenu de [Contexte de base]
 [Processus] = VENTES
 [test] = BB20
 [reference] = Rapprochement de solde CA TVA_TSE
-[Nb de lignes] = 10`
+[Nb de lignes] = 10`,
               },
               {
                 id: 'ventes-bb02',
                 reference: 'BB02',
-                label: 'Feuilles maîtresses-CHIFFRE D\'AFFAIRES',
+                label: "Feuilles maîtresses-CHIFFRE D'AFFAIRES",
                 processus: 'VENTES',
                 command: `[Command] = /feuille couverture
 [Processus] = VENTES
 [test] = BB02
 [reference] = Feuilles maîtresses-CHIFFRE D'AFFAIRES
-[Nb de lignes] = 10`
+[Nb de lignes] = 10`,
               },
               {
                 id: 'ventes-bb02-travaux',
@@ -938,7 +905,7 @@ Contenu de [Contexte de base]
 [Processus] = VENTES
 [test] = BB02
 [reference] = Travaux analytiques CA
-[Nb de lignes] = 10`
+[Nb de lignes] = 10`,
               },
               {
                 id: 'ventes-bb03',
@@ -949,7 +916,7 @@ Contenu de [Contexte de base]
 [Processus] = VENTES
 [test] = BB03
 [reference] = Revue du Contrôle interne
-[Nb de lignes] = 10`
+[Nb de lignes] = 10`,
               },
               {
                 id: 'ventes-bb04',
@@ -960,14 +927,14 @@ Contenu de [Contexte de base]
 [Processus] = VENTES
 [test] = BB04
 [reference] = Revue des techniques comptables
-[Nb de lignes] = 10`
-              }
-            ]
+[Nb de lignes] = 10`,
+              },
+            ],
           },
           {
             id: 'cycle-stocks',
             label: 'Stocks',
-            icon: <Package className="w-4 h-4" />,
+            icon: <Package className='w-4 h-4' />,
             tests: [
               {
                 id: 'stocks-cc020',
@@ -978,7 +945,7 @@ Contenu de [Contexte de base]
 [Processus] = Stock
 [test] = CC020
 [reference] = Test sur la centralisation
-[Nb de lignes] = 10`
+[Nb de lignes] = 10`,
               },
               {
                 id: 'stocks-cc025',
@@ -989,7 +956,7 @@ Contenu de [Contexte de base]
 [Processus] = Stock
 [test] = CC025
 [reference] = Test Stock Phys_Théorique
-[Nb de lignes] = 10`
+[Nb de lignes] = 10`,
               },
               {
                 id: 'stocks-cc030',
@@ -1000,7 +967,7 @@ Contenu de [Contexte de base]
 [Processus] = Stock
 [test] = CC030
 [reference] = Test Stock Physi_Inventorié
-[Nb de lignes] = 10`
+[Nb de lignes] = 10`,
               },
               {
                 id: 'stocks-cc035',
@@ -1011,7 +978,7 @@ Contenu de [Contexte de base]
 [Processus] = Stock
 [test] = CC035
 [reference] = Test Stock PV_Valorisé
-[Nb de lignes] = 10`
+[Nb de lignes] = 10`,
               },
               {
                 id: 'stocks-cc040',
@@ -1022,7 +989,7 @@ Contenu de [Contexte de base]
 [Processus] = Stock
 [test] = CC040
 [reference] = Rapprochement de solde BG AAchier stock
-[Nb de lignes] = 10`
+[Nb de lignes] = 10`,
               },
               {
                 id: 'stocks-cc104',
@@ -1033,9 +1000,8 @@ Contenu de [Contexte de base]
 [Processus] = Stock
 [test] = CC104
 [reference] = Test la variation stock
-[Nb de lignes] = 10`
-              }
-              ,
+[Nb de lignes] = 10`,
+              },
               {
                 id: 'stocks-cc120',
                 reference: 'CC120',
@@ -1045,7 +1011,7 @@ Contenu de [Contexte de base]
 [Processus] = Stock
 [test] = CC120
 [reference] = Rapprochement de solde Valorisation
-[Nb de lignes] = 10`
+[Nb de lignes] = 10`,
               },
               {
                 id: 'stocks-cc145',
@@ -1056,7 +1022,7 @@ Contenu de [Contexte de base]
 [Processus] = Stock
 [test] = CC145
 [reference] = Valorisation en CUMP AAN
-[Nb de lignes] = 10`
+[Nb de lignes] = 10`,
               },
               {
                 id: 'stocks-cc300',
@@ -1067,7 +1033,7 @@ Contenu de [Contexte de base]
 [Processus] = Stock
 [test] = CC300
 [reference] = Provisions Dépréciation
-[Nb de lignes] = 10`
+[Nb de lignes] = 10`,
               },
               {
                 id: 'stocks-cc02',
@@ -1078,7 +1044,7 @@ Contenu de [Contexte de base]
 [Processus] = Stock
 [test] = CC02
 [reference] = Feuilles maîtresses-STOCKS
-[Nb de lignes] = 10`
+[Nb de lignes] = 10`,
               },
               {
                 id: 'stocks-cc02-travaux',
@@ -1089,7 +1055,7 @@ Contenu de [Contexte de base]
 [Processus] = Stock
 [test] = CC02
 [reference] = Travaux analytiques -Stocks
-[Nb de lignes] = 10`
+[Nb de lignes] = 10`,
               },
               {
                 id: 'stocks-cc03',
@@ -1100,7 +1066,7 @@ Contenu de [Contexte de base]
 [Processus] = Stock
 [test] = CC03
 [reference] = Revue du Contrôle interne
-[Nb de lignes] = 10`
+[Nb de lignes] = 10`,
               },
               {
                 id: 'stocks-cc04',
@@ -1111,14 +1077,14 @@ Contenu de [Contexte de base]
 [Processus] = Stock
 [test] = CC04
 [reference] = Revue des techniques comptables
-[Nb de lignes] = 10`
-              }
-            ]
+[Nb de lignes] = 10`,
+              },
+            ],
           },
           {
             id: 'cycle-immobilisations',
             label: 'Immobilisations',
-            icon: <Building className="w-4 h-4" />,
+            icon: <Building className='w-4 h-4' />,
             tests: [
               {
                 id: 'immobilisations-dd040',
@@ -1129,7 +1095,7 @@ Contenu de [Contexte de base]
 [Processus] = IMMOBILISATIONS
 [test] = DD040
 [reference] = Tableau Mouv immobilisations
-[Nb de lignes] = 10`
+[Nb de lignes] = 10`,
               },
               {
                 id: 'immobilisations-dd043',
@@ -1140,7 +1106,7 @@ Contenu de [Contexte de base]
 [Processus] = IMMOBILISATIONS
 [test] = DD043
 [reference] = Tableau mouv Dotations
-[Nb de lignes] = 10`
+[Nb de lignes] = 10`,
               },
               {
                 id: 'immobilisations-dd045',
@@ -1151,7 +1117,7 @@ Contenu de [Contexte de base]
 [Processus] = IMMOBILISATIONS
 [test] = DD045
 [reference] = Rapprochement de solde BG AAchier immob
-[Nb de lignes] = 10`
+[Nb de lignes] = 10`,
               },
               {
                 id: 'immobilisations-dd104',
@@ -1162,7 +1128,7 @@ Contenu de [Contexte de base]
 [Processus] = IMMOBILISATIONS
 [test] = DD104
 [reference] = Test acquisitions
-[Nb de lignes] = 10`
+[Nb de lignes] = 10`,
               },
               {
                 id: 'immobilisations-dd120',
@@ -1173,7 +1139,7 @@ Contenu de [Contexte de base]
 [Processus] = IMMOBILISATIONS
 [test] = DD120
 [reference] = Test sur les cessions
-[Nb de lignes] = 10`
+[Nb de lignes] = 10`,
               },
               {
                 id: 'immobilisations-dd145',
@@ -1184,9 +1150,8 @@ Contenu de [Contexte de base]
 [Processus] = IMMOBILISATIONS
 [test] = DD145
 [reference] = Test dotation aux amortissements
-[Nb de lignes] = 10`
-              }
-              ,
+[Nb de lignes] = 10`,
+              },
               {
                 id: 'immobilisations-dd155',
                 reference: 'DD155',
@@ -1196,7 +1161,7 @@ Contenu de [Contexte de base]
 [Processus] = IMMOBILISATIONS
 [test] = DD155
 [reference] = IMMOBILISATIONS
-[Nb de lignes] = 10`
+[Nb de lignes] = 10`,
               },
               {
                 id: 'immobilisations-dd160',
@@ -1207,7 +1172,7 @@ Contenu de [Contexte de base]
 [Processus] = IMMOBILISATIONS
 [test] = DD160
 [reference] = Test sur les Encours
-[Nb de lignes] = 10`
+[Nb de lignes] = 10`,
               },
               {
                 id: 'immobilisations-dd180',
@@ -1218,7 +1183,7 @@ Contenu de [Contexte de base]
 [Processus] = IMMOBILISATIONS
 [test] = DD180
 [reference] = Test entretien charges
-[Nb de lignes] = 10`
+[Nb de lignes] = 10`,
               },
               {
                 id: 'immobilisations-dd02',
@@ -1229,7 +1194,7 @@ Contenu de [Contexte de base]
 [Processus] = IMMOBILISATIONS
 [test] = DD02
 [reference] = Feuilles maîtresses-IMMOBILISATIONS
-[Nb de lignes] = 10`
+[Nb de lignes] = 10`,
               },
               {
                 id: 'immobilisations-dd02-travaux',
@@ -1240,7 +1205,7 @@ Contenu de [Contexte de base]
 [Processus] = IMMOBILISATIONS
 [test] = DD02
 [reference] = Travaux analytiques -Immo
-[Nb de lignes] = 10`
+[Nb de lignes] = 10`,
               },
               {
                 id: 'immobilisations-dd03',
@@ -1251,7 +1216,7 @@ Contenu de [Contexte de base]
 [Processus] = IMMOBILISATIONS
 [test] = DD03
 [reference] = Revue du Contrôle interne
-[Nb de lignes] = 10`
+[Nb de lignes] = 10`,
               },
               {
                 id: 'immobilisations-dd04',
@@ -1262,14 +1227,14 @@ Contenu de [Contexte de base]
 [Processus] = IMMOBILISATIONS
 [test] = DD04
 [reference] = Revue des techniques comptables
-[Nb de lignes] = 10`
-              }
-            ]
+[Nb de lignes] = 10`,
+              },
+            ],
           },
           {
             id: 'cycle-clients',
             label: 'Clients',
-            icon: <Users className="w-4 h-4" />,
+            icon: <Users className='w-4 h-4' />,
             tests: [
               {
                 id: 'clients-fe040',
@@ -1280,7 +1245,7 @@ Contenu de [Contexte de base]
 [Processus] = client
 [test] = FE040
 [reference] = Circularisation client
-[Nb de lignes] = 10`
+[Nb de lignes] = 10`,
               },
               {
                 id: 'clients-fe200',
@@ -1291,7 +1256,7 @@ Contenu de [Contexte de base]
 [Processus] = client
 [test] = FE200
 [reference] = Procédure alternative
-[Nb de lignes] = 10`
+[Nb de lignes] = 10`,
               },
               {
                 id: 'clients-fe300',
@@ -1302,7 +1267,7 @@ Contenu de [Contexte de base]
 [Processus] = client
 [test] = FE300
 [reference] = Test de séparation des exercices Client
-[Nb de lignes] = 10`
+[Nb de lignes] = 10`,
               },
               {
                 id: 'clients-fe340',
@@ -1313,7 +1278,7 @@ Contenu de [Contexte de base]
 [Processus] = client
 [test] = FE340
 [reference] = Test de séparation des exercices Avoirs
-[Nb de lignes] = 10`
+[Nb de lignes] = 10`,
               },
               {
                 id: 'clients-fe345',
@@ -1324,7 +1289,7 @@ Contenu de [Contexte de base]
 [Processus] = client
 [test] = FE345
 [reference] = Créances provisionnées
-[Nb de lignes] = 10`
+[Nb de lignes] = 10`,
               },
               {
                 id: 'clients-fe360',
@@ -1335,7 +1300,7 @@ Contenu de [Contexte de base]
 [Processus] = client
 [test] = FE360
 [reference] = Revue Balance agée
-[Nb de lignes] = 10`
+[Nb de lignes] = 10`,
               },
               {
                 id: 'clients-fe02',
@@ -1346,7 +1311,7 @@ Contenu de [Contexte de base]
 [Processus] = client
 [test] = FE02
 [reference] = Feuilles maîtresses-CLIENTS
-[Nb de lignes] = 10`
+[Nb de lignes] = 10`,
               },
               {
                 id: 'clients-fe02-travaux',
@@ -1357,7 +1322,7 @@ Contenu de [Contexte de base]
 [Processus] = client
 [test] = FE02
 [reference] = Travaux analytiques -Clients
-[Nb de lignes] = 10`
+[Nb de lignes] = 10`,
               },
               {
                 id: 'clients-fe03',
@@ -1368,7 +1333,7 @@ Contenu de [Contexte de base]
 [Processus] = client
 [test] = FE03
 [reference] = Revue du Contrôle interne
-[Nb de lignes] = 10`
+[Nb de lignes] = 10`,
               },
               {
                 id: 'clients-fe04',
@@ -1379,14 +1344,14 @@ Contenu de [Contexte de base]
 [Processus] = client
 [test] = FE04
 [reference] = Revue des techniques comptables
-[Nb de lignes] = 10`
-              }
-            ]
+[Nb de lignes] = 10`,
+              },
+            ],
           },
           {
             id: 'cycle-fournisseurs',
             label: 'Fournisseurs',
-            icon: <Truck className="w-4 h-4" />,
+            icon: <Truck className='w-4 h-4' />,
             tests: [
               {
                 id: 'fournisseurs-ff040',
@@ -1397,7 +1362,7 @@ Contenu de [Contexte de base]
 [Processus] = fournisseur
 [test] = FF040
 [reference] = Circularisation fournisseurs
-[Nb de lignes] = 10`
+[Nb de lignes] = 10`,
               },
               {
                 id: 'fournisseurs-ff041',
@@ -1408,7 +1373,7 @@ Contenu de [Contexte de base]
 [Processus] = fournisseur
 [test] = FF041
 [reference] = TEST FNP_BBE
-[Nb de lignes] = 10`
+[Nb de lignes] = 10`,
               },
               {
                 id: 'fournisseurs-ff045',
@@ -1419,7 +1384,7 @@ Contenu de [Contexte de base]
 [Processus] = fournisseur
 [test] = FF045
 [reference] = Rapprochement de solde BA-BG
-[Nb de lignes] = 10`
+[Nb de lignes] = 10`,
               },
               {
                 id: 'fournisseurs-ff200',
@@ -1430,7 +1395,7 @@ Contenu de [Contexte de base]
 [Processus] = fournisseur
 [test] = FF200
 [reference] = Procédure alternative FRS
-[Nb de lignes] = 10`
+[Nb de lignes] = 10`,
               },
               {
                 id: 'fournisseurs-ff300',
@@ -1441,7 +1406,7 @@ Contenu de [Contexte de base]
 [Processus] = fournisseur
 [test] = FF300
 [reference] = Test de séparation des exercices Fournisseurs
-[Nb de lignes] = 10`
+[Nb de lignes] = 10`,
               },
               {
                 id: 'fournisseurs-ff345',
@@ -1452,7 +1417,7 @@ Contenu de [Contexte de base]
 [Processus] = fournisseur
 [test] = FF345
 [reference] = Test de séparation des exercices Avoirs
-[Nb de lignes] = 10`
+[Nb de lignes] = 10`,
               },
               {
                 id: 'fournisseurs-ff400',
@@ -1463,7 +1428,7 @@ Contenu de [Contexte de base]
 [Processus] = fournisseur
 [test] = FF400
 [reference] = Test PCA_CCA
-[Nb de lignes] = 10`
+[Nb de lignes] = 10`,
               },
               {
                 id: 'fournisseurs-ff420',
@@ -1474,7 +1439,7 @@ Contenu de [Contexte de base]
 [Processus] = fournisseur
 [test] = FF420
 [reference] = TEST AAR_AAE
-[Nb de lignes] = 10`
+[Nb de lignes] = 10`,
               },
               {
                 id: 'fournisseurs-ff445',
@@ -1485,7 +1450,7 @@ Contenu de [Contexte de base]
 [Processus] = fournisseur
 [test] = FF445
 [reference] = Test charges récurrentes
-[Nb de lignes] = 10`
+[Nb de lignes] = 10`,
               },
               {
                 id: 'fournisseurs-ff465',
@@ -1496,7 +1461,7 @@ Contenu de [Contexte de base]
 [Processus] = fournisseur
 [test] = FF465
 [reference] = Rapprochement fournisseurs
-[Nb de lignes] = 10`
+[Nb de lignes] = 10`,
               },
               {
                 id: 'fournisseurs-ff02',
@@ -1507,7 +1472,7 @@ Contenu de [Contexte de base]
 [Processus] = fournisseur
 [test] = FF02
 [reference] = Feuilles maîtresses-FOURNISSEURS
-[Nb de lignes] = 10`
+[Nb de lignes] = 10`,
               },
               {
                 id: 'fournisseurs-ff02-travaux',
@@ -1518,7 +1483,7 @@ Contenu de [Contexte de base]
 [Processus] = fournisseur
 [test] = FF02
 [reference] = Travaux analytiques -Fournisseurs
-[Nb de lignes] = 10`
+[Nb de lignes] = 10`,
               },
               {
                 id: 'fournisseurs-ff03',
@@ -1529,7 +1494,7 @@ Contenu de [Contexte de base]
 [Processus] = fournisseur
 [test] = FF03
 [reference] = Revue du Contrôle interne
-[Nb de lignes] = 10`
+[Nb de lignes] = 10`,
               },
               {
                 id: 'fournisseurs-ff04',
@@ -1540,14 +1505,14 @@ Contenu de [Contexte de base]
 [Processus] = fournisseur
 [test] = FF04
 [reference] = Revue des techniques comptables
-[Nb de lignes] = 10`
-              }
-            ]
+[Nb de lignes] = 10`,
+              },
+            ],
           },
           {
             id: 'cycle-personnel',
             label: 'Personnel',
-            icon: <UserCheck className="w-4 h-4" />,
+            icon: <UserCheck className='w-4 h-4' />,
             tests: [
               {
                 id: 'personnel-fp040',
@@ -1558,7 +1523,7 @@ Contenu de [Contexte de base]
 [Processus] = personnel
 [test] = FP040
 [reference] = Test CotisationsFiscales
-[Nb de lignes] = 10`
+[Nb de lignes] = 10`,
               },
               {
                 id: 'personnel-fp045',
@@ -1569,7 +1534,7 @@ Contenu de [Contexte de base]
 [Processus] = personnel
 [test] = FP045
 [reference] = Rapprochement de solde BG-livre de paie
-[Nb de lignes] = 10`
+[Nb de lignes] = 10`,
               },
               {
                 id: 'personnel-fp130',
@@ -1580,7 +1545,7 @@ Contenu de [Contexte de base]
 [Processus] = personnel
 [test] = FP130
 [reference] = Validation base imposable
-[Nb de lignes] = 10`
+[Nb de lignes] = 10`,
               },
               {
                 id: 'personnel-fp145',
@@ -1591,7 +1556,7 @@ Contenu de [Contexte de base]
 [Processus] = personnel
 [test] = FP145
 [reference] = Travaux analytiques salaire
-[Nb de lignes] = 10`
+[Nb de lignes] = 10`,
               },
               {
                 id: 'personnel-nn200',
@@ -1602,7 +1567,7 @@ Contenu de [Contexte de base]
 [Processus] = personnel
 [test] = NN200
 [reference] = Provisions congés
-[Nb de lignes] = 10`
+[Nb de lignes] = 10`,
               },
               {
                 id: 'personnel-fp02',
@@ -1613,7 +1578,7 @@ Contenu de [Contexte de base]
 [Processus] = personnel
 [test] = FP02
 [reference] = Feuilles maîtresses-PERSONNEL
-[Nb de lignes] = 10`
+[Nb de lignes] = 10`,
               },
               {
                 id: 'personnel-fp02-travaux',
@@ -1624,7 +1589,7 @@ Contenu de [Contexte de base]
 [Processus] = personnel
 [test] = FP02
 [reference] = Travaux analytiques -Personnel
-[Nb de lignes] = 10`
+[Nb de lignes] = 10`,
               },
               {
                 id: 'personnel-fp03',
@@ -1635,7 +1600,7 @@ Contenu de [Contexte de base]
 [Processus] = personnel
 [test] = FP03
 [reference] = Revue du Contrôle interne
-[Nb de lignes] = 10`
+[Nb de lignes] = 10`,
               },
               {
                 id: 'personnel-fp04',
@@ -1646,7 +1611,7 @@ Contenu de [Contexte de base]
 [Processus] = personnel
 [test] = FP04
 [reference] = Revue des techniques comptables
-[Nb de lignes] = 10`
+[Nb de lignes] = 10`,
               },
               {
                 id: 'personnel-nn02',
@@ -1657,7 +1622,7 @@ Contenu de [Contexte de base]
 [Processus] = personnel
 [test] = NN02
 [reference] = Feuilles maîtresses-PROVISIONS RISK&CHARGE
-[Nb de lignes] = 10`
+[Nb de lignes] = 10`,
               },
               {
                 id: 'personnel-nn02-travaux',
@@ -1668,7 +1633,7 @@ Contenu de [Contexte de base]
 [Processus] = personnel
 [test] = NN02
 [reference] = Travaux analytiques -Prov Risk
-[Nb de lignes] = 10`
+[Nb de lignes] = 10`,
               },
               {
                 id: 'personnel-nn03',
@@ -1679,7 +1644,7 @@ Contenu de [Contexte de base]
 [Processus] = personnel
 [test] = NN03
 [reference] = Revue du Contrôle interne
-[Nb de lignes] = 10`
+[Nb de lignes] = 10`,
               },
               {
                 id: 'personnel-nn04',
@@ -1690,14 +1655,14 @@ Contenu de [Contexte de base]
 [Processus] = personnel
 [test] = NN04
 [reference] = Revue des techniques comptables
-[Nb de lignes] = 10`
-              }
-            ]
+[Nb de lignes] = 10`,
+              },
+            ],
           },
           {
             id: 'cycle-capitaux-propres',
             label: 'Capitaux propres',
-            icon: <PiggyBank className="w-4 h-4" />,
+            icon: <PiggyBank className='w-4 h-4' />,
             tests: [
               {
                 id: 'capitaux-fq040',
@@ -1708,7 +1673,7 @@ Contenu de [Contexte de base]
 [Processus] = capitaux propres
 [test] = FQ040
 [reference] = Mouvement Résultat net
-[Nb de lignes] = 10`
+[Nb de lignes] = 10`,
               },
               {
                 id: 'capitaux-fq200',
@@ -1719,7 +1684,7 @@ Contenu de [Contexte de base]
 [Processus] = capitaux propres
 [test] = FQ200
 [reference] = Emprunts et dettes
-[Nb de lignes] = 10`
+[Nb de lignes] = 10`,
               },
               {
                 id: 'capitaux-fq300',
@@ -1730,7 +1695,7 @@ Contenu de [Contexte de base]
 [Processus] = capitaux propres
 [test] = FQ300
 [reference] = Tableau provision RC
-[Nb de lignes] = 10`
+[Nb de lignes] = 10`,
               },
               {
                 id: 'capitaux-fq400',
@@ -1741,7 +1706,7 @@ Contenu de [Contexte de base]
 [Processus] = capitaux propres
 [test] = FQ400
 [reference] = Subventions
-[Nb de lignes] = 10`
+[Nb de lignes] = 10`,
               },
               {
                 id: 'capitaux-fq02',
@@ -1752,7 +1717,7 @@ Contenu de [Contexte de base]
 [Processus] = capitaux propres
 [test] = FQ02
 [reference] = Feuilles maîtresses-CAPITAUX PROPRES
-[Nb de lignes] = 10`
+[Nb de lignes] = 10`,
               },
               {
                 id: 'capitaux-fq02-travaux',
@@ -1763,7 +1728,7 @@ Contenu de [Contexte de base]
 [Processus] = capitaux propres
 [test] = FQ02
 [reference] = Travaux analytiques capitaux
-[Nb de lignes] = 10`
+[Nb de lignes] = 10`,
               },
               {
                 id: 'capitaux-fq03',
@@ -1774,7 +1739,7 @@ Contenu de [Contexte de base]
 [Processus] = capitaux propres
 [test] = FQ03
 [reference] = Revue du Contrôle interne
-[Nb de lignes] = 10`
+[Nb de lignes] = 10`,
               },
               {
                 id: 'capitaux-fq04',
@@ -1785,120 +1750,120 @@ Contenu de [Contexte de base]
 [Processus] = capitaux propres
 [test] = FQ04
 [reference] = Revue des techniques comptables
-[Nb de lignes] = 10`
-              }
-            ]
+[Nb de lignes] = 10`,
+              },
+            ],
           },
           {
             id: 'cycle-charges-exploitation',
-            label: 'Charges d\'exploitation',
-            icon: <Receipt className="w-4 h-4" />,
+            label: "Charges d'exploitation",
+            icon: <Receipt className='w-4 h-4' />,
             tests: [
               {
                 id: 'charges-mm042',
                 reference: 'MM042',
                 label: 'TEST DETAIL PUB',
-                processus: 'charge d\'exploitation',
+                processus: "charge d'exploitation",
                 command: `[Command] = /feuille couverture
 [Processus] = charge d'exploitation
 [test] = MM042
 [reference] = TEST DETAIL PUB
-[Nb de lignes] = 10`
+[Nb de lignes] = 10`,
               },
               {
                 id: 'charges-mm200',
                 reference: 'MM200',
                 label: 'Test sur les charges prestations',
-                processus: 'charge d\'exploitation',
+                processus: "charge d'exploitation",
                 command: `[Command] = /feuille couverture
 [Processus] = charge d'exploitation
 [test] = MM200
 [reference] = Test sur les charges prestations
-[Nb de lignes] = 10`
+[Nb de lignes] = 10`,
               },
               {
                 id: 'charges-mm245',
                 reference: 'MM245',
                 label: 'Test TSE',
-                processus: 'charge d\'exploitation',
+                processus: "charge d'exploitation",
                 command: `[Command] = /feuille couverture
 [Processus] = charge d'exploitation
 [test] = MM245
 [reference] = Test TSE
-[Nb de lignes] = 10`
+[Nb de lignes] = 10`,
               },
               {
                 id: 'charges-mm300',
                 reference: 'MM300',
                 label: 'Test patentes',
-                processus: 'charge d\'exploitation',
+                processus: "charge d'exploitation",
                 command: `[Command] = /feuille couverture
 [Processus] = charge d'exploitation
 [test] = MM300
 [reference] = Test patentes
-[Nb de lignes] = 10`
+[Nb de lignes] = 10`,
               },
               {
                 id: 'charges-mm400',
                 reference: 'MM400',
                 label: 'Test impôt Foncier',
-                processus: 'charge d\'exploitation',
+                processus: "charge d'exploitation",
                 command: `[Command] = /feuille couverture
 [Processus] = charge d'exploitation
 [test] = MM400
 [reference] = Test impôt Foncier
-[Nb de lignes] = 10`
+[Nb de lignes] = 10`,
               },
               {
                 id: 'charges-mm02',
                 reference: 'MM02',
-                label: 'Feuilles maîtresses-CHARGES D\'EXPL°',
-                processus: 'charge d\'exploitation',
+                label: "Feuilles maîtresses-CHARGES D'EXPL°",
+                processus: "charge d'exploitation",
                 command: `[Command] = /feuille couverture
 [Processus] = charge d'exploitation
 [test] = MM02
 [reference] = Feuilles maîtresses-CHARGES D'EXPL°
-[Nb de lignes] = 10`
+[Nb de lignes] = 10`,
               },
               {
                 id: 'charges-mm02-revue',
                 reference: 'MM02',
                 label: 'Revue analytique Charges',
-                processus: 'charge d\'exploitation',
+                processus: "charge d'exploitation",
                 command: `[Command] = /feuille couverture
 [Processus] = charge d'exploitation
 [test] = MM02
 [reference] = Revue analytique Charges
-[Nb de lignes] = 10`
+[Nb de lignes] = 10`,
               },
               {
                 id: 'charges-mm03',
                 reference: 'MM03',
                 label: 'Revue du Contrôle interne',
-                processus: 'charge d\'exploitation',
+                processus: "charge d'exploitation",
                 command: `[Command] = /feuille couverture
 [Processus] = charge d'exploitation
 [test] = MM03
 [reference] = Revue du Contrôle interne
-[Nb de lignes] = 10`
+[Nb de lignes] = 10`,
               },
               {
                 id: 'charges-mm04',
                 reference: 'MM04',
                 label: 'Revue des techniques comptables',
-                processus: 'charge d\'exploitation',
+                processus: "charge d'exploitation",
                 command: `[Command] = /feuille couverture
 [Processus] = charge d'exploitation
 [test] = MM04
 [reference] = Revue des techniques comptables
-[Nb de lignes] = 10`
-              }
-            ]
+[Nb de lignes] = 10`,
+              },
+            ],
           },
           {
             id: 'cycle-impots-taxes',
             label: 'Impôts et taxes',
-            icon: <FileText className="w-4 h-4" />,
+            icon: <FileText className='w-4 h-4' />,
             tests: [
               {
                 id: 'impots-nn040',
@@ -1909,7 +1874,7 @@ Contenu de [Contexte de base]
 [Processus] = impôt et taxes
 [test] = NN040
 [reference] = Rapprochement de solde TVA - CA
-[Nb de lignes] = 10`
+[Nb de lignes] = 10`,
               },
               {
                 id: 'impots-nn200',
@@ -1920,7 +1885,7 @@ Contenu de [Contexte de base]
 [Processus] = impôt et taxes
 [test] = NN200
 [reference] = Test CN
-[Nb de lignes] = 10`
+[Nb de lignes] = 10`,
               },
               {
                 id: 'impots-nn220',
@@ -1931,7 +1896,7 @@ Contenu de [Contexte de base]
 [Processus] = impôt et taxes
 [test] = NN220
 [reference] = Test IGR
-[Nb de lignes] = 10`
+[Nb de lignes] = 10`,
               },
               {
                 id: 'impots-nn245',
@@ -1942,7 +1907,7 @@ Contenu de [Contexte de base]
 [Processus] = impôt et taxes
 [test] = NN245
 [reference] = Test IRC
-[Nb de lignes] = 10`
+[Nb de lignes] = 10`,
               },
               {
                 id: 'impots-nn300',
@@ -1953,7 +1918,7 @@ Contenu de [Contexte de base]
 [Processus] = impôt et taxes
 [test] = NN300
 [reference] = Test IRVM
-[Nb de lignes] = 10`
+[Nb de lignes] = 10`,
               },
               {
                 id: 'impots-nn02',
@@ -1964,7 +1929,7 @@ Contenu de [Contexte de base]
 [Processus] = impôt et taxes
 [test] = NN02
 [reference] = Feuilles maîtresses-DETTES FISCAL& SOCIAL
-[Nb de lignes] = 10`
+[Nb de lignes] = 10`,
               },
               {
                 id: 'impots-nn02-revue',
@@ -1975,7 +1940,7 @@ Contenu de [Contexte de base]
 [Processus] = impôt et taxes
 [test] = NN02
 [reference] = Revue analytique Dettes Fiscales
-[Nb de lignes] = 10`
+[Nb de lignes] = 10`,
               },
               {
                 id: 'impots-nn03',
@@ -1986,11 +1951,11 @@ Contenu de [Contexte de base]
 [Processus] = impôt et taxes
 [test] = NN03
 [reference] = Revue du Contrôle interne
-[Nb de lignes] = 10`
-              }
-            ]
-          }
-        ]
+[Nb de lignes] = 10`,
+              },
+            ],
+          },
+        ],
       },
       {
         id: 'synthese-mission',
@@ -1999,7 +1964,7 @@ Contenu de [Contexte de base]
           {
             id: 'frap',
             label: 'Frap',
-            icon: <AlertTriangle className="w-4 h-4" />,
+            icon: <AlertTriangle className='w-4 h-4' />,
             modes: [
               {
                 id: 'normal',
@@ -2008,7 +1973,7 @@ Contenu de [Contexte de base]
 [Cycle] = Tresorerie
 [Assertion] = validité, formalisation
 [Anomalie] = pertes des factures pour 888 0000 FCFA
-[Integration] = integration_min`
+[Integration] = integration_min`,
               },
               {
                 id: 'avance',
@@ -2019,20 +1984,20 @@ Contenu de [Contexte de base]
 [Anomalie] = pertes des factures pour 888 0000 FCFA
 [Integration] = integration_min
 [Variable 1] = Contenu de [Variable 1]
-[Variable 2] = Contenu de [Variable 2]`
-              }
-            ]
+[Variable 2] = Contenu de [Variable 2]`,
+              },
+            ],
           },
           {
             id: 'synthese-frap',
             label: 'Synthèse des frap',
-            icon: <FileSearch className="w-4 h-4" />,
+            icon: <FileSearch className='w-4 h-4' />,
             modes: [
               {
                 id: 'normal',
                 label: 'Normal',
                 command: `[Command] = Table_Template
-[Node] = Frap`
+[Node] = Frap`,
               },
               {
                 id: 'avance',
@@ -2044,20 +2009,20 @@ Contenu de [Contexte de base]
 [Modèle] = 
 [Pièces jointes] = Frap de la mission
 [Variable 1] = Contenu de [Variable 1]
-[Variable 2] = Contenu de [Variable 2]`
-              }
-            ]
+[Variable 2] = Contenu de [Variable 2]`,
+              },
+            ],
           },
           {
             id: 'rapport-provisoire',
             label: 'Rapport provisoire',
-            icon: <FileText className="w-4 h-4" />,
+            icon: <FileText className='w-4 h-4' />,
             modes: [
               {
                 id: 'normal',
                 label: 'Normal',
                 command: `[Command] = Table_Template
-[Node] = Synthèse`
+[Node] = Synthèse`,
               },
               {
                 id: 'avance',
@@ -2069,20 +2034,20 @@ Contenu de [Contexte de base]
 [Modèle] = 
 [Pièces jointes] = Synthèse des Frap
 [Variable 1] = Contenu de [Variable 1]
-[Variable 2] = Contenu de [Variable 2]`
-              }
-            ]
+[Variable 2] = Contenu de [Variable 2]`,
+              },
+            ],
           },
           {
             id: 'rapport-final',
             label: 'Rapport final',
-            icon: <FileCheck className="w-4 h-4" />,
+            icon: <FileCheck className='w-4 h-4' />,
             modes: [
               {
                 id: 'normal',
                 label: 'Normal',
                 command: `[Command] = Table_Template
-[Node] = Rapport provisoire`
+[Node] = Rapport provisoire`,
               },
               {
                 id: 'avance',
@@ -2094,20 +2059,20 @@ Contenu de [Contexte de base]
 [Modèle] = 
 [Pièces jointes] = Rapport provisoire
 [Variable 1] = Contenu de [Variable 1]
-[Variable 2] = Contenu de [Variable 2]`
-              }
-            ]
+[Variable 2] = Contenu de [Variable 2]`,
+              },
+            ],
           },
           {
             id: 'suivi-recos',
             label: 'Suivi des recos',
-            icon: <CheckSquare className="w-4 h-4" />,
+            icon: <CheckSquare className='w-4 h-4' />,
             modes: [
               {
                 id: 'normal',
                 label: 'Normal',
                 command: `[Command] = Table_Template
-[Node] = Rapport final`
+[Node] = Rapport final`,
               },
               {
                 id: 'avance',
@@ -2119,18 +2084,18 @@ Contenu de [Contexte de base]
 [Modèle] = 
 [Pièces jointes] = Rapport final
 [Variable 1] = Contenu de [Variable 1]
-[Variable 2] = Contenu de [Variable 2]`
-              }
-            ]
-          }
-        ]
-      }
-    ]
+[Variable 2] = Contenu de [Variable 2]`,
+              },
+            ],
+          },
+        ],
+      },
+    ],
   },
   {
     id: 'e-audit-plan',
     label: 'E-audit plan',
-    icon: <ClipboardList className="w-4 h-4" />,
+    icon: <ClipboardList className='w-4 h-4' />,
     phases: [
       {
         id: 'analyse-risques',
@@ -2139,7 +2104,7 @@ Contenu de [Contexte de base]
           {
             id: 'eap-cartographie-processus',
             label: 'Cartographie des processus',
-            icon: <Target className="w-4 h-4" />,
+            icon: <Target className='w-4 h-4' />,
             modes: [
               {
                 id: 'normal',
@@ -2151,7 +2116,7 @@ Contenu de [Contexte de base]
 [Etape précédente] = Prise de connaissance
 [Etape de mission] = Cartographie des processus
 [Modele] = Cycle, processus, sous processus, operations
-[Nb de lignes] = 50`
+[Nb de lignes] = 50`,
               },
               {
                 id: 'avance',
@@ -2165,7 +2130,7 @@ Contenu de [Contexte de base]
 [Modele] = Cycle, processus, sous processus, operations
 [Variable 1] = Contenu de [Variable 1]
 [Variable 2] = Contenu de [Variable 2]
-[Nb de lignes] = 50`
+[Nb de lignes] = 50`,
               },
               {
                 id: 'database',
@@ -2182,7 +2147,7 @@ Contenu de [Contexte de base]
 [Router] = Database
 [User_id] = ohada
 [Database] = workspace_02
-[Nb de lignes] = 50`
+[Nb de lignes] = 50`,
               },
               {
                 id: 'document',
@@ -2197,14 +2162,14 @@ Contenu de [Contexte de base]
 [Variable 1] = Contenu de [Variable 1]
 [Variable 2] = Contenu de [Variable 2]
 [Router] = Document
-[Nb de lignes] = 50`
-              }
-            ]
+[Nb de lignes] = 50`,
+              },
+            ],
           },
           {
             id: 'eap-question-identification-risques',
             label: 'Question Identification des risques',
-            icon: <HelpCircle className="w-4 h-4" />,
+            icon: <HelpCircle className='w-4 h-4' />,
             modes: [
               {
                 id: 'normal',
@@ -2215,7 +2180,7 @@ Contenu de [Contexte de base]
 [Etape précédente] = Cartographie des processus
 [Etape de mission] = Question Identification des risques
 [Modele] = Processus, sous processus, Questionnaire Identification des risques, Dispositif de maitrise des risques attendus
-[Nb de lignes] = 50`
+[Nb de lignes] = 50`,
               },
               {
                 id: 'avance',
@@ -2228,7 +2193,7 @@ Contenu de [Contexte de base]
 [Modele] = Processus, sous processus, Questionnaire Identification des risques, Dispositif de maitrise des risques attendus
 [Variable 1] = Contenu de [Variable 1]
 [Variable 2] = Contenu de [Variable 2]
-[Nb de lignes] = 50`
+[Nb de lignes] = 50`,
               },
               {
                 id: 'database',
@@ -2244,7 +2209,7 @@ Contenu de [Contexte de base]
 [Router] = Database
 [User_id] = ohada
 [Database] = workspace_02
-[Nb de lignes] = 50`
+[Nb de lignes] = 50`,
               },
               {
                 id: 'document',
@@ -2258,14 +2223,14 @@ Contenu de [Contexte de base]
 [Variable 1] = Contenu de [Variable 1]
 [Variable 2] = Contenu de [Variable 2]
 [Router] = Document
-[Nb de lignes] = 50`
-              }
-            ]
+[Nb de lignes] = 50`,
+              },
+            ],
           },
           {
             id: 'eap-identification-risques',
             label: 'Identification des risques',
-            icon: <AlertTriangle className="w-4 h-4" />,
+            icon: <AlertTriangle className='w-4 h-4' />,
             modes: [
               {
                 id: 'normal',
@@ -2276,7 +2241,7 @@ Contenu de [Contexte de base]
 [Etape précédente] = Question Identification des risques
 [Etape de mission] = Identification des risques
 [Modele] = sous processus, Point de controle, risque
-[Nb de lignes] = 50`
+[Nb de lignes] = 50`,
               },
               {
                 id: 'avance',
@@ -2289,7 +2254,7 @@ Contenu de [Contexte de base]
 [Modele] = sous processus, Point de controle, risque
 [Variable 1] = Contenu de [Variable 1]
 [Variable 2] = Contenu de [Variable 2]
-[Nb de lignes] = 50`
+[Nb de lignes] = 50`,
               },
               {
                 id: 'database',
@@ -2305,7 +2270,7 @@ Contenu de [Contexte de base]
 [Router] = Database
 [User_id] = ohada
 [Database] = workspace_02
-[Nb de lignes] = 50`
+[Nb de lignes] = 50`,
               },
               {
                 id: 'document',
@@ -2319,14 +2284,14 @@ Contenu de [Contexte de base]
 [Variable 1] = Contenu de [Variable 1]
 [Variable 2] = Contenu de [Variable 2]
 [Router] = Document
-[Nb de lignes] = 50`
-              }
-            ]
+[Nb de lignes] = 50`,
+              },
+            ],
           },
           {
             id: 'eap-evaluation-risques',
             label: 'Évaluation des risques',
-            icon: <BarChart3 className="w-4 h-4" />,
+            icon: <BarChart3 className='w-4 h-4' />,
             modes: [
               {
                 id: 'normal',
@@ -2337,7 +2302,7 @@ Contenu de [Contexte de base]
 [Etape précédente] = Identification des risques
 [Etape de mission] = Evaluation des risques
 [Modele] = Point de controle, risque, évaluation risque, probabilité, impact
-[Nb de lignes] = 50`
+[Nb de lignes] = 50`,
               },
               {
                 id: 'avance',
@@ -2350,7 +2315,7 @@ Contenu de [Contexte de base]
 [Modele] = Point de controle, risque, évaluation risque, probabilité, impact
 [Variable 1] = Contenu de [Variable 1]
 [Variable 2] = Contenu de [Variable 2]
-[Nb de lignes] = 50`
+[Nb de lignes] = 50`,
               },
               {
                 id: 'database',
@@ -2366,7 +2331,7 @@ Contenu de [Contexte de base]
 [Router] = Database
 [User_id] = ohada
 [Database] = workspace_02
-[Nb de lignes] = 50`
+[Nb de lignes] = 50`,
               },
               {
                 id: 'document',
@@ -2380,14 +2345,14 @@ Contenu de [Contexte de base]
 [Variable 1] = Contenu de [Variable 1]
 [Variable 2] = Contenu de [Variable 2]
 [Router] = Document
-[Nb de lignes] = 50`
-              }
-            ]
+[Nb de lignes] = 50`,
+              },
+            ],
           },
           {
             id: 'eap-plan-action-couverture',
             label: "Plan d'action de couverture des risques",
-            icon: <CheckSquare className="w-4 h-4" />,
+            icon: <CheckSquare className='w-4 h-4' />,
             modes: [
               {
                 id: 'normal',
@@ -2398,7 +2363,7 @@ Contenu de [Contexte de base]
 [Etape précédente] = Evaluation des risques
 [Etape de mission] = Plan d'action de couverture des risques
 [Modele] = Point de controle, risque, évaluation risque, probabilité, impact, Plan d'action de couverture des risques
-[Nb de lignes] = 50`
+[Nb de lignes] = 50`,
               },
               {
                 id: 'avance',
@@ -2411,7 +2376,7 @@ Contenu de [Contexte de base]
 [Modele] = Point de controle, risque, évaluation risque, probabilité, impact, Plan d'action de couverture des risques
 [Variable 1] = Contenu de [Variable 1]
 [Variable 2] = Contenu de [Variable 2]
-[Nb de lignes] = 50`
+[Nb de lignes] = 50`,
               },
               {
                 id: 'database',
@@ -2427,7 +2392,7 @@ Contenu de [Contexte de base]
 [Router] = Database
 [User_id] = ohada
 [Database] = workspace_02
-[Nb de lignes] = 50`
+[Nb de lignes] = 50`,
               },
               {
                 id: 'document',
@@ -2441,14 +2406,14 @@ Contenu de [Contexte de base]
 [Variable 1] = Contenu de [Variable 1]
 [Variable 2] = Contenu de [Variable 2]
 [Router] = Document
-[Nb de lignes] = 50`
-              }
-            ]
+[Nb de lignes] = 50`,
+              },
+            ],
           },
           {
             id: 'eap-mise-a-jour-cartographie',
             label: 'Mise à jour cartographie N-1',
-            icon: <FileText className="w-4 h-4" />,
+            icon: <FileText className='w-4 h-4' />,
             modes: [
               {
                 id: 'normal',
@@ -2460,7 +2425,7 @@ Contenu de [Contexte de base]
 [Etape de mission] = Cartographie des risques
 [Modele] = Point de controle, risque, évaluation risque, probabilité, impact, controle audit
 [Extension] = objectif de controle, document
-[Nb de lignes] = 50`
+[Nb de lignes] = 50`,
               },
               {
                 id: 'avance',
@@ -2474,7 +2439,7 @@ Contenu de [Contexte de base]
 [Extension] = objectif de controle, document
 [Variable 1] = Contenu de [Variable 1]
 [Variable 2] = Contenu de [Variable 2]
-[Nb de lignes] = 50`
+[Nb de lignes] = 50`,
               },
               {
                 id: 'database',
@@ -2491,7 +2456,7 @@ Contenu de [Contexte de base]
 [Router] = Database
 [User_id] = ohada
 [Database] = workspace_02
-[Nb de lignes] = 50`
+[Nb de lignes] = 50`,
               },
               {
                 id: 'document',
@@ -2506,14 +2471,14 @@ Contenu de [Contexte de base]
 [Variable 1] = Contenu de [Variable 1]
 [Variable 2] = Contenu de [Variable 2]
 [Router] = Document
-[Nb de lignes] = 50`
-              }
-            ]
+[Nb de lignes] = 50`,
+              },
+            ],
           },
           {
             id: 'eap-hierarchisation-risques',
             label: 'Hiérarchisation des risques',
-            icon: <TrendingUp className="w-4 h-4" />,
+            icon: <TrendingUp className='w-4 h-4' />,
             modes: [
               {
                 id: 'normal',
@@ -2525,7 +2490,7 @@ Contenu de [Contexte de base]
 [Etape de mission] = Hiearchisation des risques
 [Modele] : Point de controle, risque, évaluation risque, probabilité, impact, Plan d'action de couverture des risques
 [Algorithme]= Hiearchisation
-[Nb de lignes] = 30`
+[Nb de lignes] = 30`,
               },
               {
                 id: 'avance',
@@ -2539,7 +2504,7 @@ Contenu de [Contexte de base]
 [Variable 1] = Contenu de [Variable 1]
 [Variable 2] = Contenu de [Variable 2]
 [Algorithme]= Hiearchisation
-[Nb de lignes] = 30`
+[Nb de lignes] = 30`,
               },
               {
                 id: 'database',
@@ -2556,7 +2521,7 @@ Contenu de [Contexte de base]
 [Router] = Database
 [User_id] = ohada
 [Database] = workspace_02
-[Nb de lignes] = 30`
+[Nb de lignes] = 30`,
               },
               {
                 id: 'document',
@@ -2571,14 +2536,14 @@ Contenu de [Contexte de base]
 [Variable 2] = Contenu de [Variable 2]
 [Algorithme]= Hiearchisation
 [Router] = Document
-[Nb de lignes] = 30`
-              }
-            ]
+[Nb de lignes] = 30`,
+              },
+            ],
           },
           {
             id: 'eap-priorisation-risques',
             label: 'Priorisation des risques',
-            icon: <Target className="w-4 h-4" />,
+            icon: <Target className='w-4 h-4' />,
             modes: [
               {
                 id: 'normal',
@@ -2590,7 +2555,7 @@ Contenu de [Contexte de base]
 [Etape de mission] = Priorisation des risques
 [Modele] : Point de controle, risque, évaluation risque, probabilité, impact, Plan d'action de couverture des risques
 [Algorithme]= Priorisation
-[Nb de lignes] = 30`
+[Nb de lignes] = 30`,
               },
               {
                 id: 'avance',
@@ -2604,7 +2569,7 @@ Contenu de [Contexte de base]
 [Algorithme]= Priorisation
 [Variable 1] = Contenu de [Variable 1]
 [Variable 2] = Contenu de [Variable 2]
-[Nb de lignes] = 30`
+[Nb de lignes] = 30`,
               },
               {
                 id: 'document',
@@ -2619,7 +2584,7 @@ Contenu de [Contexte de base]
 [Variable 1] = Contenu de [Variable 1]
 [Variable 2] = Contenu de [Variable 2]
 [Router] = Document
-[Nb de lignes] = 30`
+[Nb de lignes] = 30`,
               },
               {
                 id: 'database',
@@ -2636,14 +2601,14 @@ Contenu de [Contexte de base]
 [Router] = Database
 [User_id] = ohada
 [Database] = workspace_02
-[Nb de lignes] = 30`
-              }
-            ]
+[Nb de lignes] = 30`,
+              },
+            ],
           },
           {
             id: 'eap-plan-annuel-audit',
             label: "Plan annuel d'audit interne",
-            icon: <BookOpen className="w-4 h-4" />,
+            icon: <BookOpen className='w-4 h-4' />,
             modes: [
               {
                 id: 'normal',
@@ -2655,7 +2620,7 @@ Contenu de [Contexte de base]
 [Etape de mission] = Plan annuel d'audit interne
 [Modele] : Point de controle, risque, évaluation risque, probabilité, impact, Plan d'action de couverture des risques
 [Algorithme]= Plan annuel d'audit
-[Nb de lignes] = 30`
+[Nb de lignes] = 30`,
               },
               {
                 id: 'avance',
@@ -2669,7 +2634,7 @@ Contenu de [Contexte de base]
 [Algorithme] = Plan annuel d'audit
 [Variable 1] = Contenu de [Variable 1]
 [Variable 2] = Contenu de [Variable 2]
-[Nb de lignes] = 30`
+[Nb de lignes] = 30`,
               },
               {
                 id: 'document',
@@ -2684,7 +2649,7 @@ Contenu de [Contexte de base]
 [Variable 1] = Contenu de [Variable 1]
 [Variable 2] = Contenu de [Variable 2]
 [Router] = Document
-[Nb de lignes] = 30`
+[Nb de lignes] = 30`,
               },
               {
                 id: 'database',
@@ -2701,14 +2666,14 @@ Contenu de [Contexte de base]
 [Router] = Database
 [User_id] = ohada
 [Database] = workspace_02
-[Nb de lignes] = 30`
-              }
-            ]
+[Nb de lignes] = 30`,
+              },
+            ],
           },
           {
             id: 'eap-rapport-elaboration-plan',
             label: "Rapport d'élaboration du plan annuel d'audit",
-            icon: <FileCheck className="w-4 h-4" />,
+            icon: <FileCheck className='w-4 h-4' />,
             modes: [
               {
                 id: 'normal',
@@ -2719,7 +2684,7 @@ Contenu de [Contexte de base]
 [Etape précédente] = Plan annuel d'audit interne
 [Etape de mission] = Rapport d'élaboration du plan annuel d'audit
 [Modele] : Base
-[Nb de pages] = 5`
+[Nb de pages] = 5`,
               },
               {
                 id: 'avance',
@@ -2732,7 +2697,7 @@ Contenu de [Contexte de base]
 [Modele] : Base
 [Variable 1] = Contenu de [Variable 1]
 [Variable 2] = Contenu de [Variable 2]
-[Nb de pages] = 5`
+[Nb de pages] = 5`,
               },
               {
                 id: 'document',
@@ -2746,7 +2711,7 @@ Contenu de [Contexte de base]
 [Variable 1] = Contenu de [Variable 1]
 [Variable 2] = Contenu de [Variable 2]
 [Router] = Document
-[Nb de pages] = 5`
+[Nb de pages] = 5`,
               },
               {
                 id: 'database',
@@ -2762,18 +2727,18 @@ Contenu de [Contexte de base]
 [Router] = Database
 [User_id] = ohada
 [Database] = workspace_02
-[Nb de pages] = 5`
-              }
-            ]
-          }
-        ]
-      }
-    ]
+[Nb de pages] = 5`,
+              },
+            ],
+          },
+        ],
+      },
+    ],
   },
   {
     id: 'e-cartographie',
     label: 'E-cartographie',
-    icon: <Map className="w-4 h-4" />,
+    icon: <Map className='w-4 h-4' />,
     phases: [
       {
         id: 'analyse-risques',
@@ -2782,7 +2747,7 @@ Contenu de [Contexte de base]
           {
             id: 'cartographie-processus',
             label: 'Cartographie des processus',
-            icon: <Target className="w-4 h-4" />,
+            icon: <Target className='w-4 h-4' />,
             modes: [
               {
                 id: 'normal',
@@ -2793,7 +2758,7 @@ Contenu de [Contexte de base]
 [Etape précédente] = Prise de connaissance
 [Etape de mission] = Cartographie des processus
 [Modele] = Cycle, processus, sous processus, operations
-[Nb de lignes] = 50`
+[Nb de lignes] = 50`,
               },
               {
                 id: 'avance',
@@ -2806,7 +2771,7 @@ Contenu de [Contexte de base]
 [Modele] = Cycle, processus, sous processus, operations
 [Variable 1] = Contenu de [Variable 1]
 [Variable 2] = Contenu de [Variable 2]
-[Nb de lignes] = 50`
+[Nb de lignes] = 50`,
               },
               {
                 id: 'database',
@@ -2822,7 +2787,7 @@ Contenu de [Contexte de base]
 [Router] = Database
 [User_id] = ohada
 [Database] = workspace_02
-[Nb de lignes] = 50`
+[Nb de lignes] = 50`,
               },
               {
                 id: 'document',
@@ -2836,14 +2801,14 @@ Contenu de [Contexte de base]
 [Variable 1] = Contenu de [Variable 1]
 [Variable 2] = Contenu de [Variable 2]
 [Router] = Document
-[Nb de lignes] = 50`
-              }
-            ]
+[Nb de lignes] = 50`,
+              },
+            ],
           },
           {
             id: 'question-identification-risques',
             label: 'Question Identification des risques',
-            icon: <HelpCircle className="w-4 h-4" />,
+            icon: <HelpCircle className='w-4 h-4' />,
             modes: [
               {
                 id: 'normal',
@@ -2853,7 +2818,7 @@ Contenu de [Contexte de base]
 [Etape précédente] = Cartographie des processus
 [Etape de mission] = Question Identification des risques
 [Modele] = Processus, sous processus, Questionnaire Identification des risques, Dispositif de maitrise des risques attendus
-[Nb de lignes] = 50`
+[Nb de lignes] = 50`,
               },
               {
                 id: 'avance',
@@ -2865,7 +2830,7 @@ Contenu de [Contexte de base]
 [Modele] = Processus, sous processus, Questionnaire Identification des risques, Dispositif de maitrise des risques attendus
 [Variable 1] = Contenu de [Variable 1]
 [Variable 2] = Contenu de [Variable 2]
-[Nb de lignes] = 50`
+[Nb de lignes] = 50`,
               },
               {
                 id: 'database',
@@ -2880,7 +2845,7 @@ Contenu de [Contexte de base]
 [Router] = Database
 [User_id] = ohada
 [Database] = workspace_02
-[Nb de lignes] = 50`
+[Nb de lignes] = 50`,
               },
               {
                 id: 'document',
@@ -2893,14 +2858,14 @@ Contenu de [Contexte de base]
 [Variable 1] = Contenu de [Variable 1]
 [Variable 2] = Contenu de [Variable 2]
 [Router] = Document
-[Nb de lignes] = 50`
-              }
-            ]
+[Nb de lignes] = 50`,
+              },
+            ],
           },
           {
             id: 'identification-risques',
             label: 'Identification des risques',
-            icon: <AlertTriangle className="w-4 h-4" />,
+            icon: <AlertTriangle className='w-4 h-4' />,
             modes: [
               {
                 id: 'normal',
@@ -2910,7 +2875,7 @@ Contenu de [Contexte de base]
 [Etape précédente] = Question Identification des risques
 [Etape de mission] = Identification des risques
 [Modele] = sous processus, Point de controle, risque
-[Nb de lignes] = 50`
+[Nb de lignes] = 50`,
               },
               {
                 id: 'avance',
@@ -2922,7 +2887,7 @@ Contenu de [Contexte de base]
 [Modele] = sous processus, Point de controle, risque
 [Variable 1] = Contenu de [Variable 1]
 [Variable 2] = Contenu de [Variable 2]
-[Nb de lignes] = 50`
+[Nb de lignes] = 50`,
               },
               {
                 id: 'database',
@@ -2937,7 +2902,7 @@ Contenu de [Contexte de base]
 [Router] = Database
 [User_id] = ohada
 [Database] = workspace_02
-[Nb de lignes] = 50`
+[Nb de lignes] = 50`,
               },
               {
                 id: 'document',
@@ -2950,14 +2915,14 @@ Contenu de [Contexte de base]
 [Variable 1] = Contenu de [Variable 1]
 [Variable 2] = Contenu de [Variable 2]
 [Router] = Document
-[Nb de lignes] = 50`
-              }
-            ]
+[Nb de lignes] = 50`,
+              },
+            ],
           },
           {
             id: 'evaluation-risques',
             label: 'Évaluation des risques',
-            icon: <BarChart3 className="w-4 h-4" />,
+            icon: <BarChart3 className='w-4 h-4' />,
             modes: [
               {
                 id: 'normal',
@@ -2967,7 +2932,7 @@ Contenu de [Contexte de base]
 [Etape précédente] = Identification des risques
 [Etape de mission] = Evaluation des risques
 [Modele] = Point de controle, risque, évaluation risque, probabilité, impact
-[Nb de lignes] = 50`
+[Nb de lignes] = 50`,
               },
               {
                 id: 'avance',
@@ -2979,7 +2944,7 @@ Contenu de [Contexte de base]
 [Modele] = Point de controle, risque, évaluation risque, probabilité, impact
 [Variable 1] = Contenu de [Variable 1]
 [Variable 2] = Contenu de [Variable 2]
-[Nb de lignes] = 50`
+[Nb de lignes] = 50`,
               },
               {
                 id: 'database',
@@ -2994,7 +2959,7 @@ Contenu de [Contexte de base]
 [Router] = Database
 [User_id] = ohada
 [Database] = workspace_02
-[Nb de lignes] = 50`
+[Nb de lignes] = 50`,
               },
               {
                 id: 'document',
@@ -3007,14 +2972,14 @@ Contenu de [Contexte de base]
 [Variable 1] = Contenu de [Variable 1]
 [Variable 2] = Contenu de [Variable 2]
 [Router] = Document
-[Nb de lignes] = 50`
-              }
-            ]
+[Nb de lignes] = 50`,
+              },
+            ],
           },
           {
             id: 'plan-action-couverture',
-            label: 'Plan d\'action de couverture des risques',
-            icon: <CheckSquare className="w-4 h-4" />,
+            label: "Plan d'action de couverture des risques",
+            icon: <CheckSquare className='w-4 h-4' />,
             modes: [
               {
                 id: 'normal',
@@ -3024,7 +2989,7 @@ Contenu de [Contexte de base]
 [Etape précédente] = Evaluation des risques
 [Etape de mission] = Plan d'action de couverture des risques
 [Modele] = Point de controle, risque, évaluation risque, probabilité, impact, Plan d'action de couverture des risques
-[Nb de lignes] = 50`
+[Nb de lignes] = 50`,
               },
               {
                 id: 'avance',
@@ -3036,7 +3001,7 @@ Contenu de [Contexte de base]
 [Modele] = Point de controle, risque, évaluation risque, probabilité, impact, Plan d'action de couverture des risques
 [Variable 1] = Contenu de [Variable 1]
 [Variable 2] = Contenu de [Variable 2]
-[Nb de lignes] = 50`
+[Nb de lignes] = 50`,
               },
               {
                 id: 'database',
@@ -3051,7 +3016,7 @@ Contenu de [Contexte de base]
 [Router] = Database
 [User_id] = ohada
 [Database] = workspace_02
-[Nb de lignes] = 50`
+[Nb de lignes] = 50`,
               },
               {
                 id: 'document',
@@ -3064,14 +3029,14 @@ Contenu de [Contexte de base]
 [Variable 1] = Contenu de [Variable 1]
 [Variable 2] = Contenu de [Variable 2]
 [Router] = Document
-[Nb de lignes] = 50`
-              }
-            ]
+[Nb de lignes] = 50`,
+              },
+            ],
           },
           {
             id: 'mise-a-jour-cartographie',
             label: 'Mise à jour cartographie N-1',
-            icon: <FileText className="w-4 h-4" />,
+            icon: <FileText className='w-4 h-4' />,
             modes: [
               {
                 id: 'normal',
@@ -3082,7 +3047,7 @@ Contenu de [Contexte de base]
 [Etape de mission] = Cartographie des risques
 [Modele] = Point de controle, risque, évaluation risque, probabilité, impact, controle audit
 [Extension] = objectif de controle, document
-[Nb de lignes] = 50`
+[Nb de lignes] = 50`,
               },
               {
                 id: 'avance',
@@ -3095,7 +3060,7 @@ Contenu de [Contexte de base]
 [Extension] = objectif de controle, document
 [Variable 1] = Contenu de [Variable 1]
 [Variable 2] = Contenu de [Variable 2]
-[Nb de lignes] = 50`
+[Nb de lignes] = 50`,
               },
               {
                 id: 'database',
@@ -3111,7 +3076,7 @@ Contenu de [Contexte de base]
 [Router] = Database
 [User_id] = ohada
 [Database] = workspace_02
-[Nb de lignes] = 50`
+[Nb de lignes] = 50`,
               },
               {
                 id: 'document',
@@ -3125,18 +3090,18 @@ Contenu de [Contexte de base]
 [Variable 1] = Contenu de [Variable 1]
 [Variable 2] = Contenu de [Variable 2]
 [Router] = Document
-[Nb de lignes] = 50`
-              }
-            ]
-          }
-        ]
-      }
-    ]
+[Nb de lignes] = 50`,
+              },
+            ],
+          },
+        ],
+      },
+    ],
   },
   {
     id: 'e-controle',
     label: 'E-contrôle',
-    icon: <Shield className="w-4 h-4" />,
+    icon: <Shield className='w-4 h-4' />,
     phases: [
       {
         id: 'phase-preparation',
@@ -3146,7 +3111,7 @@ Contenu de [Contexte de base]
             id: 'cartographie-risques',
             label: 'Cartographie des risques',
             norme: '13.2 Évaluation des risques dans le cadre de la mission',
-            icon: <Map className="w-4 h-4" />,
+            icon: <Map className='w-4 h-4' />,
             modes: [
               {
                 id: 'normal',
@@ -3154,7 +3119,7 @@ Contenu de [Contexte de base]
                 command: `[Command] = Cartographie des risques
 [Processus] = inventaire de caisse
 [Risques critiques] = fraude
-[Objectif] = couvrir la fraude`
+[Objectif] = couvrir la fraude`,
               },
               {
                 id: 'avance',
@@ -3164,15 +3129,15 @@ Contenu de [Contexte de base]
 [Risques critiques] = fraude
 [Objectif] = couvrir la fraude
 [Variable 1] = Contenu de [Variable 1]
-[Variable 2] = Contenu de [Variable 2]`
-              }
-            ]
+[Variable 2] = Contenu de [Variable 2]`,
+              },
+            ],
           },
           {
             id: 'matrice-surveillance',
             label: 'Matrice de surveillance permanente',
             norme: '13.5 Surveillance permanente des risques',
-            icon: <BarChart3 className="w-4 h-4" />,
+            icon: <BarChart3 className='w-4 h-4' />,
             modes: [
               {
                 id: 'normal',
@@ -3183,7 +3148,7 @@ Contenu de [Contexte de base]
 [Etape de mission] = Matrice de surveillance permanente
 [Modele] = Point de controle, risque, controle de premier niveau, controle de second niveau, document
 [Directives] = 
-[Nb de lignes] = 50`
+[Nb de lignes] = 50`,
               },
               {
                 id: 'avance',
@@ -3196,11 +3161,11 @@ Contenu de [Contexte de base]
 [Directives] = 
 [Variable 1] = Contenu de [Variable 1]
 [Variable 2] = Contenu de [Variable 2]
-[Nb de lignes] = 50`
-              }
-            ]
-          }
-        ]
+[Nb de lignes] = 50`,
+              },
+            ],
+          },
+        ],
       },
       {
         id: 'phase-realisation',
@@ -3210,7 +3175,7 @@ Contenu de [Contexte de base]
             id: 'feuille-couverture',
             label: 'Feuille couverture',
             norme: '14.6 Documentation relative à la mission',
-            icon: <FileCheck className="w-4 h-4" />,
+            icon: <FileCheck className='w-4 h-4' />,
             modes: [
               {
                 id: 'normal',
@@ -3220,7 +3185,7 @@ Contenu de [Contexte de base]
 [Contrôle] = Verifier l exhaustivite des inventaires de caisse
 [Instruction] = Template
 [Modele de test] = no, compte, site, libelle, solde BG, Solde Pv inventaire
-[Nb de lignes] = 15`
+[Nb de lignes] = 15`,
               },
               {
                 id: 'avance',
@@ -3232,11 +3197,11 @@ Contenu de [Contexte de base]
 [Modele de test] = no, compte, site, libelle, solde BG, Solde Pv inventaire
 [Variable 1] = Contenu de [Variable 1]
 [Variable 2] = Contenu de [Variable 2]
-[Nb de lignes] = 15`
-              }
-            ]
-          }
-        ]
+[Nb de lignes] = 15`,
+              },
+            ],
+          },
+        ],
       },
       {
         id: 'phase-conclusion',
@@ -3246,7 +3211,7 @@ Contenu de [Contexte de base]
             id: 'frap',
             label: 'Frap',
             norme: '14.3 Évaluation des constats',
-            icon: <AlertTriangle className="w-4 h-4" />,
+            icon: <AlertTriangle className='w-4 h-4' />,
             modes: [
               {
                 id: 'normal',
@@ -3255,7 +3220,7 @@ Contenu de [Contexte de base]
 [Processus] = Elaboration des rapprochement bancaires
 [Assertion] = validité, formalisation
 [Anomalie] = les rapprochements bancaire ne sont pas verifié par le DAF
-[Constat] = inexistence de rapprochement bancaires signés pour les mois de juin a decembre 2025`
+[Constat] = inexistence de rapprochement bancaires signés pour les mois de juin a decembre 2025`,
               },
               {
                 id: 'avance',
@@ -3266,21 +3231,21 @@ Contenu de [Contexte de base]
 [Anomalie] = les rapprochements bancaire ne sont pas verifié par le DAF
 [Constat] = inexistence de rapprochement bancaires signés pour les mois de juin a decembre 2025
 [Variable 1] = Contenu de [Variable 1]
-[Variable 2] = Contenu de [Variable 2]`
-              }
-            ]
+[Variable 2] = Contenu de [Variable 2]`,
+              },
+            ],
           },
           {
             id: 'synthese-frap',
             label: 'Synthèse des Frap',
             norme: '14.2 Analyses et constats potentiels de la mission',
-            icon: <FileSearch className="w-4 h-4" />,
+            icon: <FileSearch className='w-4 h-4' />,
             modes: [
               {
                 id: 'normal',
                 label: 'Normal',
                 command: `[Command] = Table_Template
-[Node] = Frap`
+[Node] = Frap`,
               },
               {
                 id: 'avance',
@@ -3292,21 +3257,21 @@ Contenu de [Contexte de base]
 [Modèle] = 
 [Pièces jointes] = Frap de la mission
 [Variable 1] = Contenu de [Variable 1]
-[Variable 2] = Contenu de [Variable 2]`
-              }
-            ]
+[Variable 2] = Contenu de [Variable 2]`,
+              },
+            ],
           },
           {
             id: 'rapport-provisoire',
             label: 'Rapport provisoire',
             norme: '14.5 Conclusions de la mission',
-            icon: <FileText className="w-4 h-4" />,
+            icon: <FileText className='w-4 h-4' />,
             modes: [
               {
                 id: 'normal',
                 label: 'Normal',
                 command: `[Command] = Table_Template
-[Node] = Synthèse`
+[Node] = Synthèse`,
               },
               {
                 id: 'avance',
@@ -3318,22 +3283,22 @@ Contenu de [Contexte de base]
 [Modèle] = 
 [Pièces jointes] = Synthèse des Frap
 [Variable 1] = Contenu de [Variable 1]
-[Variable 2] = Contenu de [Variable 2]`
-              }
-            ]
+[Variable 2] = Contenu de [Variable 2]`,
+              },
+            ],
           },
           {
             id: 'reunion-cloture',
             label: 'Réunion de clôture',
             norme: '11.3 Communication des résultats',
-            icon: <CheckSquare className="w-4 h-4" />,
+            icon: <CheckSquare className='w-4 h-4' />,
             modes: [
               {
                 id: 'normal',
                 label: 'Normal',
                 command: `[Command] = Réunion de clôture
 [Processus] = 
-[Objectif] = `
+[Objectif] = `,
               },
               {
                 id: 'avance',
@@ -3342,21 +3307,21 @@ Contenu de [Contexte de base]
 [Processus] = 
 [Objectif] = 
 [Variable 1] = Contenu de [Variable 1]
-[Variable 2] = Contenu de [Variable 2]`
-              }
-            ]
+[Variable 2] = Contenu de [Variable 2]`,
+              },
+            ],
           },
           {
             id: 'rapport-final',
             label: 'Rapport final',
             norme: '15.1 Communication des résultats définitifs de la mission',
-            icon: <FileCheck className="w-4 h-4" />,
+            icon: <FileCheck className='w-4 h-4' />,
             modes: [
               {
                 id: 'normal',
                 label: 'Normal',
                 command: `[Command] = Table_Template
-[Node] = Rapport provisoire`
+[Node] = Rapport provisoire`,
               },
               {
                 id: 'avance',
@@ -3368,21 +3333,21 @@ Contenu de [Contexte de base]
 [Modèle] = 
 [Pièces jointes] = Rapport provisoire
 [Variable 1] = Contenu de [Variable 1]
-[Variable 2] = Contenu de [Variable 2]`
-              }
-            ]
+[Variable 2] = Contenu de [Variable 2]`,
+              },
+            ],
           },
           {
             id: 'suivi-recos',
             label: 'Suivi des recos',
             norme: '15.2 Suivi des recommandations',
-            icon: <CheckSquare className="w-4 h-4" />,
+            icon: <CheckSquare className='w-4 h-4' />,
             modes: [
               {
                 id: 'normal',
                 label: 'Normal',
                 command: `[Command] = Table_Template
-[Node] = Rapport final`
+[Node] = Rapport final`,
               },
               {
                 id: 'avance',
@@ -3394,27 +3359,27 @@ Contenu de [Contexte de base]
 [Modèle] = 
 [Pièces jointes] = Rapport final
 [Variable 1] = Contenu de [Variable 1]
-[Variable 2] = Contenu de [Variable 2]`
-              }
-            ]
-          }
-        ]
-      }
-    ]
+[Variable 2] = Contenu de [Variable 2]`,
+              },
+            ],
+          },
+        ],
+      },
+    ],
   },
   {
     id: 'e-cia-exam-part1',
     label: 'E-CIA exam part 1',
-    icon: <GraduationCap className="w-4 h-4" />,
+    icon: <GraduationCap className='w-4 h-4' />,
     phases: [
       {
         id: 'section-a',
-        label: 'Section A - Fondements de l\'audit interne (35%)',
+        label: "Section A - Fondements de l'audit interne (35%)",
         cycles: [
           {
             id: 'objectif-1',
-            label: 'Objectif 1 - Décrire l\'Objectif de l\'audit interne',
-            icon: <Target className="w-4 h-4" />,
+            label: "Objectif 1 - Décrire l'Objectif de l'audit interne",
+            icon: <Target className='w-4 h-4' />,
             tests: [
               {
                 id: 'obj1-point-a',
@@ -3437,36 +3402,36 @@ Contenu de [Contexte de base]
 [Partie] = partie 1
 [Section] = Section A - Fondements de l'audit interne
 [Objectifs] = Expliquer les objectifs globaux et les avantages de la fonction d'audit interne
-[Points] = Renforcer la capacité de l'organisation à créer, protéger et pérenniser la valeur`
+[Points] = Renforcer la capacité de l'organisation à créer, protéger et pérenniser la valeur`,
               },
               {
                 id: 'obj1-point-b',
                 reference: '1.b',
-                label: 'Décrire les conditions d\'efficacité',
+                label: "Décrire les conditions d'efficacité",
                 processus: 'Section A',
                 command: `[Command] = cours
 [Partie] = partie 1
 [Section] = Section A - Fondements de l'audit interne
 [Objectifs] = Décrire les conditions qui contribuent à l'efficacité de la fonction d'audit interne
-[Points] = Réalisation par des professionnels qualifiés au regard des Normes`
-              }
-            ]
+[Points] = Réalisation par des professionnels qualifiés au regard des Normes`,
+              },
+            ],
           },
           {
             id: 'objectif-2',
-            label: 'Objectif 2 - Expliquer le mandat d\'audit interne',
-            icon: <FileText className="w-4 h-4" />,
+            label: "Objectif 2 - Expliquer le mandat d'audit interne",
+            icon: <FileText className='w-4 h-4' />,
             tests: [
               {
                 id: 'obj2-point-i',
                 reference: '2.i',
-                label: 'Décrire l\'autorité, le rôle et les responsabilités',
+                label: "Décrire l'autorité, le rôle et les responsabilités",
                 processus: 'Section A',
                 command: `[Command] = cours
 [Partie] = partie 1
 [Section] = Section A - Fondements de l'audit interne
 [Objectifs] = Décrire l'autorité, le rôle et les responsabilités de la fonction d'audit interne
-[Points] = L'autorité d'accès libre et illimité aux données, personnes et biens`
+[Points] = L'autorité d'accès libre et illimité aux données, personnes et biens`,
               },
               {
                 id: 'obj2-point-ii',
@@ -3477,7 +3442,7 @@ Contenu de [Contexte de base]
 [Partie] = partie 1
 [Section] = Section A - Fondements de l'audit interne
 [Objectifs] = Expliquer le rôle du chief audit executive (RAI) pour aider le conseil
-[Points] = Fourniture des informations nécessaires pour définir le mandat`
+[Points] = Fourniture des informations nécessaires pour définir le mandat`,
               },
               {
                 id: 'obj2-point-iii',
@@ -3488,14 +3453,14 @@ Contenu de [Contexte de base]
 [Partie] = partie 1
 [Section] = Section A - Fondements de l'audit interne
 [Objectifs] = Expliquer le rôle du conseil et de la direction générale
-[Points] = Approbation de la charte intégrant le mandat et le périmètre`
-              }
-            ]
+[Points] = Approbation de la charte intégrant le mandat et le périmètre`,
+              },
+            ],
           },
           {
             id: 'objectif-3',
-            label: 'Objectif 3 - Reconnaître les exigences d\'une charte',
-            icon: <ClipboardList className="w-4 h-4" />,
+            label: "Objectif 3 - Reconnaître les exigences d'une charte",
+            icon: <ClipboardList className='w-4 h-4' />,
             tests: [
               {
                 id: 'obj3-point-a',
@@ -3506,58 +3471,58 @@ Contenu de [Contexte de base]
 [Partie] = partie 1
 [Section] = Section A - Fondements de l'audit interne
 [Objectifs] = Identifier les composantes requises par les Normes mondiales d'audit interne
-[Points] = Mission, engagement envers les Normes et mandat spécifique`
+[Points] = Mission, engagement envers les Normes et mandat spécifique`,
               },
               {
                 id: 'obj3-point-b',
                 reference: '3.b',
-                label: 'Reconnaître l\'importance de discuter',
+                label: "Reconnaître l'importance de discuter",
                 processus: 'Section A',
                 command: `[Command] = cours
 [Partie] = partie 1
 [Section] = Section A - Fondements de l'audit interne
 [Objectifs] = Reconnaître l'importance de discuter de la charte avec le conseil
-[Points] = Confirmation de la compréhension commune et des attentes`
+[Points] = Confirmation de la compréhension commune et des attentes`,
               },
               {
                 id: 'obj3-point-c',
                 reference: '3.c',
-                label: 'Reconnaître l\'importance de l\'approbation',
+                label: "Reconnaître l'importance de l'approbation",
                 processus: 'Section A',
                 command: `[Command] = cours
 [Partie] = partie 1
 [Section] = Section A - Fondements de l'audit interne
 [Objectifs] = Reconnaître l'importance de l'approbation par le conseil
-[Points] = Validation formelle comme socle de l'autorité de l'audit`
-              }
-            ]
+[Points] = Validation formelle comme socle de l'autorité de l'audit`,
+              },
+            ],
           },
           {
             id: 'objectif-4',
             label: 'Objectif 4 - Interpréter les différences entre services',
-            icon: <BarChart3 className="w-4 h-4" />,
+            icon: <BarChart3 className='w-4 h-4' />,
             tests: [
               {
                 id: 'obj4-point-a',
                 reference: '4.a',
-                label: 'Définir les services d\'assurance',
+                label: "Définir les services d'assurance",
                 processus: 'Section A',
                 command: `[Command] = cours
 [Partie] = partie 1
 [Section] = Section A - Fondements de l'audit interne
 [Objectifs] = Définir les services d'assurance
-[Points] = Évaluations objectives en vue de renforcer la confiance des parties prenantes`
+[Points] = Évaluations objectives en vue de renforcer la confiance des parties prenantes`,
               },
               {
                 id: 'obj4-point-b',
                 reference: '4.b',
-                label: 'Différencier l\'assurance limitée',
+                label: "Différencier l'assurance limitée",
                 processus: 'Section A',
                 command: `[Command] = cours
 [Partie] = partie 1
 [Section] = Section A - Fondements de l'audit interne
 [Objectifs] = Différencier l'assurance limitée de l'assurance raisonnable
-[Points] = Variation selon la nature, le calendrier et l'étendue des tests`
+[Points] = Variation selon la nature, le calendrier et l'étendue des tests`,
               },
               {
                 id: 'obj4-point-c',
@@ -3568,7 +3533,7 @@ Contenu de [Contexte de base]
 [Partie] = partie 1
 [Section] = Section A - Fondements de l'audit interne
 [Objectifs] = Définir les services de conseil
-[Points] = Avis et assistance sans endosser de responsabilités de gestion`
+[Points] = Avis et assistance sans endosser de responsabilités de gestion`,
               },
               {
                 id: 'obj4-point-d',
@@ -3579,7 +3544,7 @@ Contenu de [Contexte de base]
 [Partie] = partie 1
 [Section] = Section A - Fondements de l'audit interne
 [Objectifs] = Décrire comment la nature et le périmètre des services de conseil sont déterminés
-[Points] = Détermination conjointe entre auditeurs et direction de l'activité`
+[Points] = Détermination conjointe entre auditeurs et direction de l'activité`,
               },
               {
                 id: 'obj4-point-e',
@@ -3590,14 +3555,14 @@ Contenu de [Contexte de base]
 [Partie] = partie 1
 [Section] = Section A - Fondements de l'audit interne
 [Objectifs] = Déterminer quel type de service est approprié dans un contexte donné
-[Points] = Choix basé sur les risques identifiés et les attentes de valeur ajoutée`
-              }
-            ]
+[Points] = Choix basé sur les risques identifiés et les attentes de valeur ajoutée`,
+              },
+            ],
           },
           {
             id: 'objectif-7',
-            label: 'Objectif 7 - Identifier les situations d\'atteinte à l\'indépendance',
-            icon: <Shield className="w-4 h-4" />,
+            label: "Objectif 7 - Identifier les situations d'atteinte à l'indépendance",
+            icon: <Shield className='w-4 h-4' />,
             tests: [
               {
                 id: 'obj7-point-a',
@@ -3608,7 +3573,7 @@ Contenu de [Contexte de base]
 [Partie] = partie 1
 [Section] = Section A - Fondements de l'audit interne
 [Objectifs] = Identifier les situations où le rattachement fonctionnel du RAI n'est pas approprié
-[Points] = Incapacité d'interagir directement avec le Conseil`
+[Points] = Incapacité d'interagir directement avec le Conseil`,
               },
               {
                 id: 'obj7-point-b',
@@ -3619,7 +3584,7 @@ Contenu de [Contexte de base]
 [Partie] = partie 1
 [Section] = Section A - Fondements de l'audit interne
 [Objectifs] = Décrire la responsabilité du conseil dans la protection de l'indépendance
-[Points] = Autorisation de nomination et de révocation du RAI`
+[Points] = Autorisation de nomination et de révocation du RAI`,
               },
               {
                 id: 'obj7-point-c',
@@ -3630,7 +3595,7 @@ Contenu de [Contexte de base]
 [Partie] = partie 1
 [Section] = Section A - Fondements de l'audit interne
 [Objectifs] = Décrire la responsabilité du RAI dans la communication des atteintes
-[Points] = Confirmation annuelle de l'indépendance au Conseil`
+[Points] = Confirmation annuelle de l'indépendance au Conseil`,
               },
               {
                 id: 'obj7-point-d',
@@ -3641,7 +3606,7 @@ Contenu de [Contexte de base]
 [Partie] = partie 1
 [Section] = Section A - Fondements de l'audit interne
 [Objectifs] = Identifier les situations où les limitations budgétaires peuvent restreindre
-[Points] = Réduction budgétaire empêchant l'exécution de la charte`
+[Points] = Réduction budgétaire empêchant l'exécution de la charte`,
               },
               {
                 id: 'obj7-point-e',
@@ -3652,14 +3617,14 @@ Contenu de [Contexte de base]
 [Partie] = partie 1
 [Section] = Section A - Fondements de l'audit interne
 [Objectifs] = Décrire les effets des limitations de champ ou d'accès restreint
-[Points] = Restrictions d'accès aux données, installations ou personnes`
-              }
-            ]
+[Points] = Restrictions d'accès aux données, installations ou personnes`,
+              },
+            ],
           },
           {
             id: 'objectif-8',
             label: 'Objectif 8 - Reconnaître le rôle dans la gestion des risques',
-            icon: <AlertTriangle className="w-4 h-4" />,
+            icon: <AlertTriangle className='w-4 h-4' />,
             tests: [
               {
                 id: 'obj8-point-a',
@@ -3670,7 +3635,7 @@ Contenu de [Contexte de base]
 [Partie] = partie 1
 [Section] = Section A - Fondements de l'audit interne
 [Objectifs] = Décrire le Modèle des trois lignes de l'IIA
-[Points] = Rôles respectifs de la direction et de l'audit`
+[Points] = Rôles respectifs de la direction et de l'audit`,
               },
               {
                 id: 'obj8-point-b',
@@ -3681,7 +3646,7 @@ Contenu de [Contexte de base]
 [Partie] = partie 1
 [Section] = Section A - Fondements de l'audit interne
 [Objectifs] = Identifier les responsabilités pouvant compromettre l'indépendance
-[Points] = Prise en charge temporaire de la gestion des risques`
+[Points] = Prise en charge temporaire de la gestion des risques`,
               },
               {
                 id: 'obj8-point-c',
@@ -3692,11 +3657,11 @@ Contenu de [Contexte de base]
 [Partie] = partie 1
 [Section] = Section A - Fondements de l'audit interne
 [Objectifs] = Décrire les sauvegardes lors de l'exercice de telles responsabilités
-[Points] = Supervision des missions par un tiers indépendant extérieur`
-              }
-            ]
-          }
-        ]
+[Points] = Supervision des missions par un tiers indépendant extérieur`,
+              },
+            ],
+          },
+        ],
       },
       {
         id: 'section-b',
@@ -3704,19 +3669,19 @@ Contenu de [Contexte de base]
         cycles: [
           {
             id: 'objectif-b1',
-            label: 'Objectif 1 - Démontrer l\'intégrité',
-            icon: <CheckSquare className="w-4 h-4" />,
+            label: "Objectif 1 - Démontrer l'intégrité",
+            icon: <CheckSquare className='w-4 h-4' />,
             tests: [
               {
                 id: 'objb1-point-a',
                 reference: 'B1.a',
-                label: 'Appliquer l\'honnêteté et le courage professionnel',
+                label: "Appliquer l'honnêteté et le courage professionnel",
                 processus: 'Section B',
                 command: `[Command] = cours
 [Partie] = partie 1
 [Section] = Section B - Éthique et professionnalisme
 [Objectifs] = Appliquer l'honnêteté et le courage professionnel face aux dilemmes
-[Points] = Communication sincère, précise et respectueuse`
+[Points] = Communication sincère, précise et respectueuse`,
               },
               {
                 id: 'objb1-point-b',
@@ -3727,43 +3692,43 @@ Contenu de [Contexte de base]
 [Partie] = partie 1
 [Section] = Section B - Éthique et professionnalisme
 [Objectifs] = Pratiquer un comportement légal et professionnel en toutes situations
-[Points] = Interdiction des activités illégales ou déshonorantes`
-              }
-            ]
+[Points] = Interdiction des activités illégales ou déshonorantes`,
+              },
+            ],
           },
           {
             id: 'objectif-b2',
-            label: 'Objectif 2 - Évaluer les atteintes à l\'objectivité',
-            icon: <Target className="w-4 h-4" />,
+            label: "Objectif 2 - Évaluer les atteintes à l'objectivité",
+            icon: <Target className='w-4 h-4' />,
             tests: [
               {
                 id: 'objb2-point-a',
                 reference: 'B2.a',
-                label: 'Évaluer l\'impact de l\'auto-révision',
+                label: "Évaluer l'impact de l'auto-révision",
                 processus: 'Section B',
                 command: `[Command] = cours
 [Partie] = partie 1
 [Section] = Section B - Éthique et professionnalisme
 [Objectifs] = Évaluer l'impact de l'auto-révision et du biais de familiarité
-[Points] = Le biais d'auto-évaluation : manque de critique sur son propre travail`
+[Points] = Le biais d'auto-évaluation : manque de critique sur son propre travail`,
               },
               {
                 id: 'objb2-point-b',
                 reference: 'B2.b',
-                label: 'Analyser les conflits d\'intérêts',
+                label: "Analyser les conflits d'intérêts",
                 processus: 'Section B',
                 command: `[Command] = cours
 [Partie] = partie 1
 [Section] = Section B - Éthique et professionnalisme
 [Objectifs] = Analyser les situations de conflits d'intérêts potentiels
-[Points] = Intérêts professionnels ou personnels empêchant l'impartialité`
-              }
-            ]
+[Points] = Intérêts professionnels ou personnels empêchant l'impartialité`,
+              },
+            ],
           },
           {
             id: 'objectif-b5',
             label: 'Objectif 5 - Démontrer une conscience professionnelle',
-            icon: <User className="w-4 h-4" />,
+            icon: <User className='w-4 h-4' />,
             tests: [
               {
                 id: 'objb5-point-e',
@@ -3774,11 +3739,11 @@ Contenu de [Contexte de base]
 [Partie] = partie 1
 [Section] = Section B - Éthique et professionnalisme
 [Objectifs] = Pratiquer le scepticisme professionnel et l'évaluation critique
-[Points] = Culture d'un esprit de curiosité et remise en question`
-              }
-            ]
-          }
-        ]
+[Points] = Culture d'un esprit de curiosité et remise en question`,
+              },
+            ],
+          },
+        ],
       },
       {
         id: 'section-c',
@@ -3787,7 +3752,7 @@ Contenu de [Contexte de base]
           {
             id: 'objectif-c1',
             label: 'Objectif 1 - Décrire le concept de gouvernance',
-            icon: <Building className="w-4 h-4" />,
+            icon: <Building className='w-4 h-4' />,
             tests: [
               {
                 id: 'objc1-point-a',
@@ -3798,7 +3763,7 @@ Contenu de [Contexte de base]
 [Partie] = partie 1
 [Section] = Section C - Gouvernance, gestion des risques et contrôle
 [Objectifs] = Décrire les rôles du Conseil, de la direction générale, de la fonction d'audit interne
-[Points] = Identification des structures de surveillance et de direction`
+[Points] = Identification des structures de surveillance et de direction`,
               },
               {
                 id: 'objc1-point-b',
@@ -3809,14 +3774,14 @@ Contenu de [Contexte de base]
 [Partie] = partie 1
 [Section] = Section C - Gouvernance, gestion des risques et contrôle
 [Objectifs] = Reconnaître les cadres de référence, principes et modèles de gouvernance
-[Points] = Connaissance des référentiels mondialement reconnus (COSO, ISO, etc.)`
-              }
-            ]
+[Points] = Connaissance des référentiels mondialement reconnus (COSO, ISO, etc.)`,
+              },
+            ],
           },
           {
             id: 'objectif-c2',
-            label: 'Objectif 2 - Reconnaître l\'impact de la culture',
-            icon: <Users className="w-4 h-4" />,
+            label: "Objectif 2 - Reconnaître l'impact de la culture",
+            icon: <Users className='w-4 h-4' />,
             tests: [
               {
                 id: 'objc2-point-a',
@@ -3827,7 +3792,7 @@ Contenu de [Contexte de base]
 [Partie] = partie 1
 [Section] = Section C - Gouvernance, gestion des risques et contrôle
 [Objectifs] = Définir la culture organisationnelle et l'environnement de contrôle
-[Points] = Compréhension de la promotion d'une culture de l'éthique`
+[Points] = Compréhension de la promotion d'une culture de l'éthique`,
               },
               {
                 id: 'objc2-point-b',
@@ -3838,25 +3803,25 @@ Contenu de [Contexte de base]
 [Partie] = partie 1
 [Section] = Section C - Gouvernance, gestion des risques et contrôle
 [Objectifs] = Définir les risques et les contrôles liés aux missions
-[Points] = Identification des critères utilisés par la direction`
+[Points] = Identification des critères utilisés par la direction`,
               },
               {
                 id: 'objc2-point-c',
                 reference: 'C2.c',
-                label: 'Reconnaître l\'impact des processus',
+                label: "Reconnaître l'impact des processus",
                 processus: 'Section C',
                 command: `[Command] = cours
 [Partie] = partie 1
 [Section] = Section C - Gouvernance, gestion des risques et contrôle
 [Objectifs] = Reconnaître l'impact des processus de prise de décision sur la GRC
-[Points] = Analyse de la manière dont les décisions stratégiques influencent`
-              }
-            ]
+[Points] = Analyse de la manière dont les décisions stratégiques influencent`,
+              },
+            ],
           },
           {
             id: 'objectif-c4',
             label: 'Objectif 4 - Interpréter les concepts de types de risques',
-            icon: <AlertTriangle className="w-4 h-4" />,
+            icon: <AlertTriangle className='w-4 h-4' />,
             tests: [
               {
                 id: 'objc4-point-a',
@@ -3867,7 +3832,7 @@ Contenu de [Contexte de base]
 [Partie] = partie 1
 [Section] = Section C - Gouvernance, gestion des risques et contrôle
 [Objectifs] = Différencier les types de risques : stratégiques, opérationnels, financiers
-[Points] = Gestion des risques environnementaux, sociaux et de responsabilité`
+[Points] = Gestion des risques environnementaux, sociaux et de responsabilité`,
               },
               {
                 id: 'objc4-point-b',
@@ -3878,14 +3843,14 @@ Contenu de [Contexte de base]
 [Partie] = partie 1
 [Section] = Section C - Gouvernance, gestion des risques et contrôle
 [Objectifs] = Comparer et opposer les risques inhérents et résiduels
-[Points] = Définition du risque inhérent comme l'absence totale d'action`
-              }
-            ]
+[Points] = Définition du risque inhérent comme l'absence totale d'action`,
+              },
+            ],
           },
           {
             id: 'objectif-c5',
             label: 'Objectif 5 - Interpréter les concepts de gestion des risques',
-            icon: <BarChart3 className="w-4 h-4" />,
+            icon: <BarChart3 className='w-4 h-4' />,
             tests: [
               {
                 id: 'objc5-point-a',
@@ -3896,25 +3861,25 @@ Contenu de [Contexte de base]
 [Partie] = partie 1
 [Section] = Section C - Gouvernance, gestion des risques et contrôle
 [Objectifs] = Définir la gestion des risques
-[Points] = Processus d'identification, d'évaluation et de maîtrise des événements`
+[Points] = Processus d'identification, d'évaluation et de maîtrise des événements`,
               },
               {
                 id: 'objc5-point-b',
                 reference: 'C5.b',
-                label: 'Reconnaître l\'appétence pour le risque',
+                label: "Reconnaître l'appétence pour le risque",
                 processus: 'Section C',
                 command: `[Command] = cours
 [Partie] = partie 1
 [Section] = Section C - Gouvernance, gestion des risques et contrôle
 [Objectifs] = Reconnaître l'appétence pour le risque et la tolérance au risque
-[Points] = L'appétence est le niveau de risque qu'une organisation est prête à accepter`
-              }
-            ]
+[Points] = L'appétence est le niveau de risque qu'une organisation est prête à accepter`,
+              },
+            ],
           },
           {
             id: 'objectif-c7',
             label: 'Objectif 7 - Interpréter les concepts de contrôle interne',
-            icon: <Shield className="w-4 h-4" />,
+            icon: <Shield className='w-4 h-4' />,
             tests: [
               {
                 id: 'objc7-point-b',
@@ -3925,7 +3890,7 @@ Contenu de [Contexte de base]
 [Partie] = partie 1
 [Section] = Section C - Gouvernance, gestion des risques et contrôle
 [Objectifs] = Décrire et évaluer les types de contrôles internes
-[Points] = Application des contrôles pour ramener les risques sous le seuil`
+[Points] = Application des contrôles pour ramener les risques sous le seuil`,
               },
               {
                 id: 'objc7-point-c',
@@ -3936,11 +3901,11 @@ Contenu de [Contexte de base]
 [Partie] = partie 1
 [Section] = Section C - Gouvernance, gestion des risques et contrôle
 [Objectifs] = Recommander des contrôles appropriés pour atténuer les risques
-[Points] = Détermination des mesures pour ramener le risque à un niveau acceptable`
-              }
-            ]
-          }
-        ]
+[Points] = Détermination des mesures pour ramener le risque à un niveau acceptable`,
+              },
+            ],
+          },
+        ],
       },
       {
         id: 'section-d',
@@ -3949,7 +3914,7 @@ Contenu de [Contexte de base]
           {
             id: 'objectif-d1',
             label: 'Objectif 1 - Décrire les concepts de risques de fraude',
-            icon: <AlertTriangle className="w-4 h-4" />,
+            icon: <AlertTriangle className='w-4 h-4' />,
             tests: [
               {
                 id: 'objd1-point-a',
@@ -3960,7 +3925,7 @@ Contenu de [Contexte de base]
 [Partie] = partie 1
 [Section] = Section D - Risques de fraude
 [Objectifs] = Décrire les concepts du triangle de la fraude
-[Points] = Définition de l'acte intentionnel caractérisé par la tromperie`
+[Points] = Définition de l'acte intentionnel caractérisé par la tromperie`,
               },
               {
                 id: 'objd1-point-c',
@@ -3971,25 +3936,25 @@ Contenu de [Contexte de base]
 [Partie] = partie 1
 [Section] = Section D - Risques de fraude
 [Objectifs] = Identifier les schémas de fraude courants
-[Points] = Développement des connaissances sur le détournement d'actifs`
-              }
-            ]
+[Points] = Développement des connaissances sur le détournement d'actifs`,
+              },
+            ],
           },
           {
             id: 'objectif-d3',
             label: 'Objectif 3 - Évaluer le potentiel de fraude',
-            icon: <FileSearch className="w-4 h-4" />,
+            icon: <FileSearch className='w-4 h-4' />,
             tests: [
               {
                 id: 'objd3-point-b',
                 reference: 'D3.b',
-                label: 'Détecter les signaux d\'alerte',
+                label: "Détecter les signaux d'alerte",
                 processus: 'Section D',
                 command: `[Command] = cours
 [Partie] = partie 1
 [Section] = Section D - Risques de fraude
 [Objectifs] = Détecter et évaluer les signaux d'alerte (red flags)
-[Points] = Évaluation de la probabilité de fraude lors de la planification`
+[Points] = Évaluation de la probabilité de fraude lors de la planification`,
               },
               {
                 id: 'objd3-point-c',
@@ -4000,25 +3965,25 @@ Contenu de [Contexte de base]
 [Partie] = partie 1
 [Section] = Section D - Risques de fraude
 [Objectifs] = Reconnaître le rôle de l'auditeur interne dans le signalement
-[Points] = Obligation de signaler les incidents aux entités ayant l'autorité`
-              }
-            ]
+[Points] = Obligation de signaler les incidents aux entités ayant l'autorité`,
+              },
+            ],
           },
           {
             id: 'objectif-d4',
             label: 'Objectif 4 - Décrire les contrôles pour prévenir la fraude',
-            icon: <Shield className="w-4 h-4" />,
+            icon: <Shield className='w-4 h-4' />,
             tests: [
               {
                 id: 'objd4-point-a',
                 reference: 'D4.a',
-                label: 'Reconnaître l\'impact du tone at the top',
+                label: "Reconnaître l'impact du tone at the top",
                 processus: 'Section D',
                 command: `[Command] = cours
 [Partie] = partie 1
 [Section] = Section D - Risques de fraude
 [Objectifs] = Reconnaître l'impact du ton donné au sommet sur la probabilité de fraude
-[Points] = Promotion d'une culture fondée sur l'éthique par le Conseil`
+[Points] = Promotion d'une culture fondée sur l'éthique par le Conseil`,
               },
               {
                 id: 'objd4-point-b',
@@ -4029,14 +3994,14 @@ Contenu de [Contexte de base]
 [Partie] = partie 1
 [Section] = Section D - Risques de fraude
 [Objectifs] = Reconnaître l'application appropriée de la séparation des tâches
-[Points] = Évaluation de la structure opérationnelle pour limiter les opportunités`
-              }
-            ]
+[Points] = Évaluation de la structure opérationnelle pour limiter les opportunités`,
+              },
+            ],
           },
           {
             id: 'objectif-d5',
-            label: 'Objectif 5 - Reconnaître les techniques d\'enquête',
-            icon: <FileSearch className="w-4 h-4" />,
+            label: "Objectif 5 - Reconnaître les techniques d'enquête",
+            icon: <FileSearch className='w-4 h-4' />,
             tests: [
               {
                 id: 'objd5-point-a',
@@ -4047,7 +4012,7 @@ Contenu de [Contexte de base]
 [Partie] = partie 1
 [Section] = Section D - Risques de fraude
 [Objectifs] = Définir le rôle de la fonction d'audit interne en matière d'enquêtes
-[Points] = Réalisation d'investigations comme service de conseil spécifique`
+[Points] = Réalisation d'investigations comme service de conseil spécifique`,
               },
               {
                 id: 'objd5-point-e',
@@ -4058,18 +4023,18 @@ Contenu de [Contexte de base]
 [Partie] = partie 1
 [Section] = Section D - Risques de fraude
 [Objectifs] = Reconnaître les opportunités de coordination avec les enquêteurs
-[Points] = Examen des évaluations de risques réalisées par les enquêteurs`
-              }
-            ]
-          }
-        ]
-      }
-    ]
+[Points] = Examen des évaluations de risques réalisées par les enquêteurs`,
+              },
+            ],
+          },
+        ],
+      },
+    ],
   },
   {
     id: 'bibliotheque',
     label: 'Bibliothèque',
-    icon: <BookOpen className="w-4 h-4" />,
+    icon: <BookOpen className='w-4 h-4' />,
     phases: [
       {
         id: 'guides',
@@ -4078,18 +4043,18 @@ Contenu de [Contexte de base]
           {
             id: 'guide-methodologique',
             label: 'Guide méthodologique',
-            icon: <BookOpen className="w-4 h-4" />,
+            icon: <BookOpen className='w-4 h-4' />,
             command: `[Command] = Guide méthodologique
-[Thème] = `
+[Thème] = `,
           },
           {
             id: 'bonnes-pratiques',
             label: 'Bonnes pratiques',
-            icon: <CheckSquare className="w-4 h-4" />,
+            icon: <CheckSquare className='w-4 h-4' />,
             command: `[Command] = Bonnes pratiques
-[Domaine] = `
-          }
-        ]
+[Domaine] = `,
+          },
+        ],
       },
       {
         id: 'commandes-complementaires',
@@ -4098,14 +4063,14 @@ Contenu de [Contexte de base]
           {
             id: 'aide-contextuelle',
             label: 'Aide contextuelle',
-            icon: <HelpCircle className="w-4 h-4" />,
+            icon: <HelpCircle className='w-4 h-4' />,
             command: `[Command] = Aide
-[Sujet] = `
-          }
-        ]
-      }
-    ]
-  }
+[Sujet] = `,
+          },
+        ],
+      },
+    ],
+  },
 ];
 
 // ============================================================
@@ -4114,13 +4079,20 @@ Contenu de [Contexte de base]
 
 const getModeIcon = (modeId: string) => {
   switch (modeId) {
-    case 'normal': return <User className="w-4 h-4" />;
-    case 'demo': return <Play className="w-4 h-4" />;
-    case 'avance': return <Zap className="w-4 h-4" />;
-    case 'database': return <Zap className="w-4 h-4" />;
-    case 'document': return <Zap className="w-4 h-4" />;
-    case 'manuel': return <Settings className="w-4 h-4" />;
-    default: return null;
+    case 'normal':
+      return <User className='w-4 h-4' />;
+    case 'demo':
+      return <Play className='w-4 h-4' />;
+    case 'avance':
+      return <Zap className='w-4 h-4' />;
+    case 'database':
+      return <Zap className='w-4 h-4' />;
+    case 'document':
+      return <Zap className='w-4 h-4' />;
+    case 'manuel':
+      return <Settings className='w-4 h-4' />;
+    default:
+      return null;
   }
 };
 
@@ -4160,27 +4132,16 @@ const SubMenuPortal: React.FC<SubMenuPortalProps> = ({ etape, anchorRect, onMode
   }
 
   return ReactDOM.createPortal(
-    <div
-      ref={menuRef}
-      data-submenu-portal
-      style={style}
-      className="min-w-[220px] max-w-[320px] bg-white dark:bg-gray-800 rounded-lg shadow-2xl border border-gray-200 dark:border-gray-700 py-1 animate-in fade-in-0 zoom-in-95 duration-150"
-    >
-      <div className="px-3 py-2 border-b border-gray-100 dark:border-gray-700">
-        <div className="text-xs font-semibold text-[#6b1102] dark:text-[#ff6b5b]">
-          {etape.label}
-        </div>
-        {etape.norme && (
-          <div className="text-[10px] text-gray-500 dark:text-gray-400 mt-1 leading-tight">
-            Norme {etape.norme}
-          </div>
-        )}
+    <div ref={menuRef} data-submenu-portal style={style} className='min-w-[220px] max-w-[320px] bg-white dark:bg-gray-800 rounded-lg shadow-2xl border border-gray-200 dark:border-gray-700 py-1 animate-in fade-in-0 zoom-in-95 duration-150'>
+      <div className='px-3 py-2 border-b border-gray-100 dark:border-gray-700'>
+        <div className='text-xs font-semibold text-[#6b1102] dark:text-[#ff6b5b]'>{etape.label}</div>
+        {etape.norme && <div className='text-[10px] text-gray-500 dark:text-gray-400 mt-1 leading-tight'>Norme {etape.norme}</div>}
       </div>
-      {(etape.modes || MODES).map(mode => (
+      {(etape.modes || MODES).map((mode) => (
         <button
           key={mode.id}
-          type="button"
-          className="w-full flex items-center gap-3 px-4 py-2.5 text-left text-sm text-gray-700 dark:text-gray-200 hover:bg-[#6b1102]/10 dark:hover:bg-[#6b1102]/20 hover:text-[#6b1102] dark:hover:text-[#ff6b5b] transition-colors"
+          type='button'
+          className='w-full flex items-center gap-3 px-4 py-2.5 text-left text-sm text-gray-700 dark:text-gray-200 hover:bg-[#6b1102]/10 dark:hover:bg-[#6b1102]/20 hover:text-[#6b1102] dark:hover:text-[#ff6b5b] transition-colors'
           onMouseDown={(e) => {
             e.stopPropagation();
           }}
@@ -4190,9 +4151,7 @@ const SubMenuPortal: React.FC<SubMenuPortalProps> = ({ etape, anchorRect, onMode
             onModeClick(mode);
           }}
         >
-          <span className="text-gray-400 dark:text-gray-500">
-            {getModeIcon(mode.id)}
-          </span>
+          <span className='text-gray-400 dark:text-gray-500'>{getModeIcon(mode.id)}</span>
           <span>{mode.label}</span>
         </button>
       ))}
@@ -4216,8 +4175,7 @@ const DemarrerMenu: React.FC<DemarrerMenuProps> = ({ onInsertCommand, disabled =
   const buttonRef = useRef<HTMLButtonElement>(null);
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (menuRef.current && !menuRef.current.contains(event.target as Node) &&
-        buttonRef.current && !buttonRef.current.contains(event.target as Node)) {
+      if (menuRef.current && !menuRef.current.contains(event.target as Node) && buttonRef.current && !buttonRef.current.contains(event.target as Node)) {
         const target = event.target as HTMLElement;
         if (!target.closest('[data-submenu-portal]')) {
           closeMenu();
@@ -4287,7 +4245,7 @@ const DemarrerMenu: React.FC<DemarrerMenuProps> = ({ onInsertCommand, disabled =
     const lines = command.split('\n');
 
     // Ajouter un tiret devant chaque ligne non vide qui commence par '['
-    const formattedLines = lines.map(line => {
+    const formattedLines = lines.map((line) => {
       const trimmedLine = line.trim();
       // Si la ligne commence par '[' et n'a pas déjà un tiret, ajouter le tiret
       if (trimmedLine.startsWith('[') && !trimmedLine.startsWith('- [')) {
@@ -4342,8 +4300,8 @@ const DemarrerMenu: React.FC<DemarrerMenuProps> = ({ onInsertCommand, disabled =
       const etapeFromTest: EtapeItem = {
         id: test.id,
         label: `${test.reference} - ${test.label}`,
-        icon: <FileText className="w-4 h-4" />,
-        command: test.command
+        icon: <FileText className='w-4 h-4' />,
+        command: test.command,
       };
       setActiveTest(test);
       setActiveEtape(etapeFromTest);
@@ -4352,52 +4310,38 @@ const DemarrerMenu: React.FC<DemarrerMenuProps> = ({ onInsertCommand, disabled =
   };
 
   return (
-    <div className="relative">
+    <div className='relative'>
       <button
         ref={buttonRef}
         onClick={toggleMenu}
         disabled={disabled}
         className={`flex items-center gap-2 px-3 py-2 rounded-full text-sm font-medium transition-all
-          ${isOpen
-            ? 'bg-[#6b1102] text-white shadow-lg shadow-[#6b1102]/30'
-            : 'bg-gray-100/80 dark:bg-gray-800/80 text-gray-700 dark:text-gray-300 hover:bg-[#6b1102]/10 dark:hover:bg-[#6b1102]/20 hover:text-[#6b1102] dark:hover:text-[#ff6b5b]'
-          }
+          ${isOpen ? 'bg-[#6b1102] text-white shadow-lg shadow-[#6b1102]/30' : 'bg-gray-100/80 dark:bg-gray-800/80 text-gray-700 dark:text-gray-300 hover:bg-[#6b1102]/10 dark:hover:bg-[#6b1102]/20 hover:text-[#6b1102] dark:hover:text-[#ff6b5b]'}
           ${disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}
         `}
-        title="Menu Démarrer E-audit"
+        title='Menu Démarrer E-audit'
       >
         <Play className={`w-4 h-4 ${isOpen ? 'fill-white' : ''}`} />
         <span>Démarrer</span>
       </button>
 
       {isOpen && (
-        <div
-          ref={menuRef}
-          data-demarrer-menu
-          className="absolute bottom-full mb-2 left-0 min-w-[280px] bg-white dark:bg-gray-800 rounded-xl shadow-2xl border border-gray-200 dark:border-gray-700 overflow-hidden z-50"
-          style={{ maxHeight: '70vh' }}
-        >
-          <div className="flex items-center justify-between px-4 py-3 border-b border-gray-200 dark:border-gray-700 bg-gradient-to-r from-[#6b1102] to-[#8b2112]">
-            <div className="flex items-center gap-2 text-white">
-              <Play className="w-5 h-5 fill-white" />
-              <span className="font-semibold">Menu Démarrer</span>
+        <div ref={menuRef} data-demarrer-menu className='absolute bottom-full mb-2 left-0 min-w-[280px] bg-white dark:bg-gray-800 rounded-xl shadow-2xl border border-gray-200 dark:border-gray-700 overflow-hidden z-50' style={{ maxHeight: '70vh' }}>
+          <div className='flex items-center justify-between px-4 py-3 border-b border-gray-200 dark:border-gray-700 bg-gradient-to-r from-[#6b1102] to-[#8b2112]'>
+            <div className='flex items-center gap-2 text-white'>
+              <Play className='w-5 h-5 fill-white' />
+              <span className='font-semibold'>Menu Démarrer</span>
             </div>
-            <button
-              onClick={closeMenu}
-              className="p-1 rounded-full hover:bg-white/20 transition-colors text-white"
-            >
-              <X className="w-4 h-4" />
+            <button onClick={closeMenu} className='p-1 rounded-full hover:bg-white/20 transition-colors text-white'>
+              <X className='w-4 h-4' />
             </button>
           </div>
-          <div className="py-1 max-h-[60vh] overflow-y-auto">
-            {MENU_DATA.map(logiciel => (
+          <div className='py-1 max-h-[60vh] overflow-y-auto'>
+            {MENU_DATA.map((logiciel) => (
               <div key={logiciel.id}>
                 <button
                   className={`w-full flex items-center gap-3 px-4 py-3 text-left text-sm font-medium transition-colors border-b border-gray-100 dark:border-gray-700/50
-                    ${activeLogiciel === logiciel.id
-                      ? 'bg-[#6b1102]/10 dark:bg-[#6b1102]/20 text-[#6b1102] dark:text-[#ff6b5b]'
-                      : 'text-gray-800 dark:text-gray-100 hover:bg-gray-50 dark:hover:bg-gray-700/50'
-                    }`}
+                    ${activeLogiciel === logiciel.id ? 'bg-[#6b1102]/10 dark:bg-[#6b1102]/20 text-[#6b1102] dark:text-[#ff6b5b]' : 'text-gray-800 dark:text-gray-100 hover:bg-gray-50 dark:hover:bg-gray-700/50'}`}
                   onClick={() => {
                     setActiveLogiciel(activeLogiciel === logiciel.id ? null : logiciel.id);
                     setActiveEtape(null);
@@ -4406,78 +4350,61 @@ const DemarrerMenu: React.FC<DemarrerMenuProps> = ({ onInsertCommand, disabled =
                     setEtapeAnchorRect(null);
                   }}
                 >
-                  <span className={`flex-shrink-0 ${activeLogiciel === logiciel.id ? 'text-[#6b1102] dark:text-[#ff6b5b]' : 'text-gray-500 dark:text-gray-400'}`}>
-                    {logiciel.icon}
-                  </span>
-                  <span className="flex-1">{logiciel.label}</span>
+                  <span className={`flex-shrink-0 ${activeLogiciel === logiciel.id ? 'text-[#6b1102] dark:text-[#ff6b5b]' : 'text-gray-500 dark:text-gray-400'}`}>{logiciel.icon}</span>
+                  <span className='flex-1'>{logiciel.label}</span>
                   <ChevronRight className={`w-4 h-4 flex-shrink-0 transition-transform duration-200 ${activeLogiciel === logiciel.id ? 'rotate-90 text-[#6b1102] dark:text-[#ff6b5b]' : 'text-gray-400'}`} />
                 </button>
 
                 {activeLogiciel === logiciel.id && (
-                  <div className="bg-gray-50 dark:bg-gray-900/50">
-                    {logiciel.phases.map(phase => (
+                  <div className='bg-gray-50 dark:bg-gray-900/50'>
+                    {logiciel.phases.map((phase) => (
                       <div key={phase.id}>
-                        <div className="px-4 py-2 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider bg-gray-100 dark:bg-gray-800/50">
-                          {phase.label}
-                        </div>
+                        <div className='px-4 py-2 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider bg-gray-100 dark:bg-gray-800/50'>{phase.label}</div>
 
-                        {phase.etapes && phase.etapes.map(etape => (
-                          <button
-                            key={etape.id}
-                            className={`w-full flex items-center gap-3 px-4 py-2.5 pl-6 text-left text-sm transition-colors
-                              ${activeEtape?.id === etape.id
-                                ? 'bg-[#6b1102]/10 dark:bg-[#6b1102]/20 text-[#6b1102] dark:text-[#ff6b5b]'
-                                : 'text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700'
-                              }`}
-                            onClick={(e) => handleEtapeClick(etape, e)}
-                          >
-                            <span className={`flex-shrink-0 ${activeEtape?.id === etape.id ? 'text-[#6b1102] dark:text-[#ff6b5b]' : 'text-gray-400 dark:text-gray-500'}`}>
-                              {etape.icon}
-                            </span>
-                            <span className="flex-1">{etape.label}</span>
-                            <ChevronRight className={`w-4 h-4 flex-shrink-0 text-gray-400 ${activeEtape?.id === etape.id ? 'text-[#6b1102] dark:text-[#ff6b5b]' : ''}`} />
-                          </button>
-                        ))}
-                        {phase.cycles && phase.cycles.map(cycle => (
-                          <div key={cycle.id}>
+                        {phase.etapes &&
+                          phase.etapes.map((etape) => (
                             <button
+                              key={etape.id}
                               className={`w-full flex items-center gap-3 px-4 py-2.5 pl-6 text-left text-sm transition-colors
-                                ${activeCycle?.id === cycle.id
-                                  ? 'bg-[#6b1102]/10 dark:bg-[#6b1102]/20 text-[#6b1102] dark:text-[#ff6b5b]'
-                                  : 'text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700'
-                                }`}
-                              onClick={() => handleCycleClick(cycle)}
+                              ${activeEtape?.id === etape.id ? 'bg-[#6b1102]/10 dark:bg-[#6b1102]/20 text-[#6b1102] dark:text-[#ff6b5b]' : 'text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700'}`}
+                              onClick={(e) => handleEtapeClick(etape, e)}
                             >
-                              <span className={`flex-shrink-0 ${activeCycle?.id === cycle.id ? 'text-[#6b1102] dark:text-[#ff6b5b]' : 'text-gray-400 dark:text-gray-500'}`}>
-                                {cycle.icon}
-                              </span>
-                              <span className="flex-1">{cycle.label}</span>
-                              <ChevronRight className={`w-4 h-4 flex-shrink-0 transition-transform duration-200 ${activeCycle?.id === cycle.id ? 'rotate-90 text-[#6b1102] dark:text-[#ff6b5b]' : 'text-gray-400'}`} />
+                              <span className={`flex-shrink-0 ${activeEtape?.id === etape.id ? 'text-[#6b1102] dark:text-[#ff6b5b]' : 'text-gray-400 dark:text-gray-500'}`}>{etape.icon}</span>
+                              <span className='flex-1'>{etape.label}</span>
+                              <ChevronRight className={`w-4 h-4 flex-shrink-0 text-gray-400 ${activeEtape?.id === etape.id ? 'text-[#6b1102] dark:text-[#ff6b5b]' : ''}`} />
                             </button>
+                          ))}
+                        {phase.cycles &&
+                          phase.cycles.map((cycle) => (
+                            <div key={cycle.id}>
+                              <button
+                                className={`w-full flex items-center gap-3 px-4 py-2.5 pl-6 text-left text-sm transition-colors
+                                ${activeCycle?.id === cycle.id ? 'bg-[#6b1102]/10 dark:bg-[#6b1102]/20 text-[#6b1102] dark:text-[#ff6b5b]' : 'text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700'}`}
+                                onClick={() => handleCycleClick(cycle)}
+                              >
+                                <span className={`flex-shrink-0 ${activeCycle?.id === cycle.id ? 'text-[#6b1102] dark:text-[#ff6b5b]' : 'text-gray-400 dark:text-gray-500'}`}>{cycle.icon}</span>
+                                <span className='flex-1'>{cycle.label}</span>
+                                <ChevronRight className={`w-4 h-4 flex-shrink-0 transition-transform duration-200 ${activeCycle?.id === cycle.id ? 'rotate-90 text-[#6b1102] dark:text-[#ff6b5b]' : 'text-gray-400'}`} />
+                              </button>
 
-                            {activeCycle?.id === cycle.id && (
-                              <div className="bg-gray-100 dark:bg-gray-800/30">
-                                {cycle.tests.map(test => (
-                                  <button
-                                    key={test.id}
-                                    className={`w-full flex items-center gap-3 px-4 py-2 pl-12 text-left text-sm transition-colors
-                                      ${activeTest?.id === test.id
-                                        ? 'bg-[#6b1102]/10 dark:bg-[#6b1102]/20 text-[#6b1102] dark:text-[#ff6b5b]'
-                                        : 'text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700'
-                                      }`}
-                                    onClick={(e) => handleTestClick(test, e)}
-                                  >
-                                    <span className="text-xs font-mono text-gray-500 dark:text-gray-400 min-w-[3rem]">
-                                      {test.reference}
-                                    </span>
-                                    <span className="flex-1">{test.label}</span>
-                                    <ChevronRight className={`w-4 h-4 flex-shrink-0 text-gray-400 ${activeTest?.id === test.id ? 'text-[#6b1102] dark:text-[#ff6b5b]' : ''}`} />
-                                  </button>
-                                ))}
-                              </div>
-                            )}
-                          </div>
-                        ))}
+                              {activeCycle?.id === cycle.id && (
+                                <div className='bg-gray-100 dark:bg-gray-800/30'>
+                                  {cycle.tests.map((test) => (
+                                    <button
+                                      key={test.id}
+                                      className={`w-full flex items-center gap-3 px-4 py-2 pl-12 text-left text-sm transition-colors
+                                      ${activeTest?.id === test.id ? 'bg-[#6b1102]/10 dark:bg-[#6b1102]/20 text-[#6b1102] dark:text-[#ff6b5b]' : 'text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700'}`}
+                                      onClick={(e) => handleTestClick(test, e)}
+                                    >
+                                      <span className='text-xs font-mono text-gray-500 dark:text-gray-400 min-w-[3rem]'>{test.reference}</span>
+                                      <span className='flex-1'>{test.label}</span>
+                                      <ChevronRight className={`w-4 h-4 flex-shrink-0 text-gray-400 ${activeTest?.id === test.id ? 'text-[#6b1102] dark:text-[#ff6b5b]' : ''}`} />
+                                    </button>
+                                  ))}
+                                </div>
+                              )}
+                            </div>
+                          ))}
                       </div>
                     ))}
                   </div>

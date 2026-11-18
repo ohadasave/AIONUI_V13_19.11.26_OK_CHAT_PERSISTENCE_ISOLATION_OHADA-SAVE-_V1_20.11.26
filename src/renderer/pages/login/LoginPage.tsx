@@ -31,7 +31,7 @@ const LoginPage: React.FC = () => {
 
     try {
       const result = await login({ username, password });
-      
+
       if (result.success) {
         Message.success('Connexion réussie');
         navigate('/guid');
@@ -88,11 +88,7 @@ const LoginPage: React.FC = () => {
       <div className='w-full max-w-md p-8'>
         {/* Logo and Title */}
         <div className='flex flex-col items-center mb-8'>
-          <img 
-            src='/logo_projet/android-chrome-512x512.png' 
-            alt='E-audit' 
-            className='w-24 h-24 mb-4 object-contain' 
-          />
+          <img src='/logo_projet/android-chrome-512x512.png' alt='E-audit' className='w-24 h-24 mb-4 object-contain' />
           <h1 className='text-3xl font-bold text-text-1 text-center mb-2'>E-audit</h1>
           <p className='text-base text-text-2 text-center'>Automatisez vos activités, d'audit, risque et contrôle</p>
         </div>
@@ -103,34 +99,14 @@ const LoginPage: React.FC = () => {
             <TabPane key='signin' title='Se connecter'>
               <div className='mt-4'>
                 <div className='mb-4'>
-                  <Input
-                    size='large'
-                    placeholder="Nom d'utilisateur"
-                    prefix={<IconUser />}
-                    value={username}
-                    onChange={setUsername}
-                    onKeyPress={handleKeyPress}
-                  />
+                  <Input size='large' placeholder="Nom d'utilisateur" prefix={<IconUser />} value={username} onChange={setUsername} onKeyPress={handleKeyPress} />
                 </div>
 
                 <div className='mb-6'>
-                  <Input.Password
-                    size='large'
-                    placeholder='Mot de passe'
-                    prefix={<IconLock />}
-                    value={password}
-                    onChange={setPassword}
-                    onKeyPress={handleKeyPress}
-                  />
+                  <Input.Password size='large' placeholder='Mot de passe' prefix={<IconLock />} value={password} onChange={setPassword} onKeyPress={handleKeyPress} />
                 </div>
 
-                <Button 
-                  type='primary' 
-                  size='large' 
-                  long 
-                  loading={loading} 
-                  onClick={handleSignIn}
-                >
+                <Button type='primary' size='large' long loading={loading} onClick={handleSignIn}>
                   Se connecter
                 </Button>
               </div>
@@ -139,45 +115,18 @@ const LoginPage: React.FC = () => {
             <TabPane key='signup' title="S'inscrire">
               <div className='mt-4'>
                 <div className='mb-4'>
-                  <Input
-                    size='large'
-                    placeholder="Nom d'utilisateur"
-                    prefix={<IconUser />}
-                    value={username}
-                    onChange={setUsername}
-                    onKeyPress={handleKeyPress}
-                  />
+                  <Input size='large' placeholder="Nom d'utilisateur" prefix={<IconUser />} value={username} onChange={setUsername} onKeyPress={handleKeyPress} />
                 </div>
 
                 <div className='mb-4'>
-                  <Input.Password
-                    size='large'
-                    placeholder='Mot de passe'
-                    prefix={<IconLock />}
-                    value={password}
-                    onChange={setPassword}
-                    onKeyPress={handleKeyPress}
-                  />
+                  <Input.Password size='large' placeholder='Mot de passe' prefix={<IconLock />} value={password} onChange={setPassword} onKeyPress={handleKeyPress} />
                 </div>
 
                 <div className='mb-6'>
-                  <Input.Password
-                    size='large'
-                    placeholder='Confirmer le mot de passe'
-                    prefix={<IconLock />}
-                    value={confirmPassword}
-                    onChange={setConfirmPassword}
-                    onKeyPress={handleKeyPress}
-                  />
+                  <Input.Password size='large' placeholder='Confirmer le mot de passe' prefix={<IconLock />} value={confirmPassword} onChange={setConfirmPassword} onKeyPress={handleKeyPress} />
                 </div>
 
-                <Button 
-                  type='primary' 
-                  size='large' 
-                  long 
-                  loading={loading} 
-                  onClick={handleSignUp}
-                >
+                <Button type='primary' size='large' long loading={loading} onClick={handleSignUp}>
                   Créer un compte
                 </Button>
               </div>

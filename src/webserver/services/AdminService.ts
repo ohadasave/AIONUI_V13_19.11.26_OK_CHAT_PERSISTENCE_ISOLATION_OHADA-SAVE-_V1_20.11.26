@@ -28,12 +28,7 @@ export class AdminService {
   /**
    * Block a user
    */
-  static blockUser(
-    adminId: string,
-    targetUserId: string,
-    reason: string,
-    ipAddress?: string
-  ): { success: boolean; error?: string } {
+  static blockUser(adminId: string, targetUserId: string, reason: string, ipAddress?: string): { success: boolean; error?: string } {
     try {
       // Verify admin role (defense-in-depth)
       const admin = UserRepository.findById(adminId);
@@ -112,11 +107,7 @@ export class AdminService {
   /**
    * Unblock a user
    */
-  static unblockUser(
-    adminId: string,
-    targetUserId: string,
-    ipAddress?: string
-  ): { success: boolean; error?: string } {
+  static unblockUser(adminId: string, targetUserId: string, ipAddress?: string): { success: boolean; error?: string } {
     try {
       // Verify admin role (defense-in-depth)
       const admin = UserRepository.findById(adminId);

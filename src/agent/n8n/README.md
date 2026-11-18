@@ -55,11 +55,13 @@ curl -X POST http://localhost:3458/api/n8n/execute \
 ## 📦 Dépendances
 
 ### Backend
+
 - `express` - Serveur HTTP
 - `cors` - Gestion CORS
 - `ts-node` - Exécution TypeScript
 
 ### Frontend
+
 - `react` - Interface utilisateur
 - `react-markdown` - Affichage markdown
 - `@arco-design/web-react` - Composants UI
@@ -69,28 +71,34 @@ Toutes les dépendances sont déjà présentes dans le projet AionUi.
 ## 🔧 Configuration
 
 ### Port
+
 Par défaut: `3458`
 
 Pour changer:
+
 1. Modifier `PORT` dans `n8n-server.ts`
 2. Modifier `BACKEND_URL` dans `N8nSendBox.tsx`
 
 ### Timeout
+
 Par défaut: `10 minutes`
 
 Pour changer:
+
 ```typescript
 // Dans n8n-server.ts
 const N8N_TIMEOUT = 20 * 60 * 1000; // 20 minutes
 ```
 
 ### Endpoint n8n
+
 ```typescript
 // Dans n8n-server.ts
 const N8N_ENDPOINT = 'http://localhost:5678/webhook/template';
 ```
 
 Pour utiliser une instance cloud n8n:
+
 ```typescript
 const N8N_ENDPOINT = 'https://votre-instance.app.n8n.cloud/webhook/votre-webhook';
 ```
@@ -98,9 +106,11 @@ const N8N_ENDPOINT = 'https://votre-instance.app.n8n.cloud/webhook/votre-webhook
 ## 📡 API Backend
 
 ### GET /health
+
 Vérification de l'état du serveur
 
 **Réponse:**
+
 ```json
 {
   "status": "ok",
@@ -111,17 +121,20 @@ Vérification de l'état du serveur
 ```
 
 ### POST /api/n8n/execute
+
 Exécution d'un workflow n8n
 
 **Body:**
+
 ```json
 {
   "userMessage": "Votre requête",
-  "attachments": []  // Optionnel
+  "attachments": [] // Optionnel
 }
 ```
 
 **Réponse:**
+
 ```json
 {
   "success": true,
@@ -166,21 +179,25 @@ Dans `src/common/presets/assistantPresets.ts`:
 Le parser supporte 4 formats de réponse n8n:
 
 ### FORMAT 1: Array avec output
+
 ```json
 [{ "output": "texte", "stats": {...} }]
 ```
 
 ### FORMAT 2: Object avec tables
+
 ```json
 { "tables": [...], "status": "ok" }
 ```
 
 ### FORMAT 3: Direct output
+
 ```json
 { "output": "texte" }
 ```
 
 ### FORMAT 4: Programme de travail
+
 ```json
 [{ "data": {...} }]
 ```
@@ -190,11 +207,13 @@ Le parser supporte 4 formats de réponse n8n:
 ### Backend ne démarre pas
 
 **Vérifier Node.js:**
+
 ```bash
 node --version  # Doit être 22+
 ```
 
 **Vérifier le port:**
+
 ```bash
 netstat -ano | findstr :3458  # Windows
 lsof -i :3458                 # Linux/Mac
@@ -234,10 +253,12 @@ Le backend affiche des logs détaillés:
 Configurer CORS dans `n8n-server.ts`:
 
 ```typescript
-app.use(cors({
-  origin: ['http://localhost:3000', 'https://votre-domaine.com'],
-  credentials: true
-}));
+app.use(
+  cors({
+    origin: ['http://localhost:3000', 'https://votre-domaine.com'],
+    credentials: true,
+  })
+);
 ```
 
 ### Variables d'environnement
@@ -283,6 +304,7 @@ Pour plus de détails, consultez le dossier `Migration micro service n8n/`:
 Le microservice n8n est maintenant intégré dans AionUi.
 
 Pour démarrer:
+
 1. `.\scripts\start-n8n-agent.ps1`
 2. Lancer l'application AionUi
 3. Sélectionner "n8n Workflow" dans le menu

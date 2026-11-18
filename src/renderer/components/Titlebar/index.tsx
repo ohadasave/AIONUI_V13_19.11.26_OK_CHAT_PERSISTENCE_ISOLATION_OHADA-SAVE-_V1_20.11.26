@@ -15,9 +15,7 @@ interface TitlebarProps {
   workspaceAvailable: boolean;
 }
 
-const EauditLogoMark: React.FC = () => (
-  <img src='/logo.png' alt='E-audit' className='app-titlebar__brand-logo' style={{ width: '24px', height: '24px', objectFit: 'contain' }} />
-);
+const EauditLogoMark: React.FC = () => <img src='/logo.png' alt='E-audit' className='app-titlebar__brand-logo' style={{ width: '24px', height: '24px', objectFit: 'contain' }} />;
 
 const Titlebar: React.FC<TitlebarProps> = ({ workspaceAvailable }) => {
   const { t } = useTranslation();

@@ -584,8 +584,8 @@ body,
   filter: grayscale(100%) brightness(0.5) !important;
 }
 
-[arco-theme="dark"] .chat-history__item > span:first-child,
-[arco-theme="dark"] .chat-history__item > .chat-icon-wrapper {
+[arco-theme='dark'] .chat-history__item > span:first-child,
+[arco-theme='dark'] .chat-history__item > .chat-icon-wrapper {
   filter: grayscale(100%) brightness(1.2) !important;
 }
 
@@ -611,12 +611,12 @@ body,
 }
 
 /* Light theme: darker gray */
-[arco-theme="light"] .chat-icon-wrapper svg {
+[arco-theme='light'] .chat-icon-wrapper svg {
   filter: grayscale(100%) brightness(0.4) !important;
 }
 
 /* Dark theme: lighter gray */
-[arco-theme="dark"] .chat-icon-wrapper svg {
+[arco-theme='dark'] .chat-icon-wrapper svg {
   filter: grayscale(100%) brightness(0.9) !important;
 }
 

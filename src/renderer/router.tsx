@@ -2,6 +2,7 @@ import React, { Suspense } from 'react';
 import { HashRouter, Navigate, Route, Routes } from 'react-router-dom';
 import AppLoader from './components/AppLoader';
 import { useAuth } from './context/AuthContext';
+import { STORAGE_KEYS } from '@/common/storageKeys';
 
 const Conversation = React.lazy(() => import('./pages/conversation'));
 const Guid = React.lazy(() => import('./pages/guid'));
@@ -50,12 +51,39 @@ const PanelRoute: React.FC<{ layout: React.ReactElement }> = ({ layout }) => {
     return lastConversation && lastConversation.startsWith('/conversation/') ? lastConversation : '/guid';
   };
 
+  // Get last active conversation from tabs (skip welcome page)
+  // Récupère la dernière conversation active (désactive la page d'accueil)
+  const getDefaultRoute = () => {
+    try {
+      const tabsData = localStorage.getItem(STORAGE_KEYS.CONVERSATION_TABS);
+      if (tabsData) {
+        const parsed = JSON.parse(tabsData);
+        // If there's an active tab, redirect to it
+        // S'il y a un tab actif, rediriger vers celui-ci
+        if (parsed.activeTabId && typeof parsed.activeTabId === 'string') {
+          return `/conversation/${parsed.activeTabId}`;
+        }
+        // Otherwise if there are open tabs, redirect to the first one
+        // Sinon s'il y a des tabs ouverts, rediriger vers le premier
+        if (Array.isArray(parsed.openTabs) && parsed.openTabs.length > 0) {
+          return `/conversation/${parsed.openTabs[0].id}`;
+        }
+      }
+    } catch {
+      // Ignore parsing errors, fallback to /guid
+      // Ignorer les erreurs de parsing, revenir à /guid
+    }
+    // Fallback to welcome page if no conversation found
+    // Retour à la page d'accueil si aucune conversation trouvée
+    return '/guid';
+  };
+
   return (
     <HashRouter>
       <Routes>
         <Route path='/login' element={status === 'authenticated' ? <Navigate to={getPostLoginRedirect()} replace /> : withRouteFallback(LoginPage)} />
         <Route element={<ProtectedLayout layout={layout} />}>
-          <Route index element={<Navigate to='/guid' replace />} />
+          <Route index element={<Navigate to={getDefaultRoute()} replace />} />
           <Route path='/guid' element={withRouteFallback(Guid)} />
           <Route path='/conversation/:id' element={withRouteFallback(Conversation)} />
           <Route path='/n8n-workflow' element={withRouteFallback(N8nWorkflowPage)} />

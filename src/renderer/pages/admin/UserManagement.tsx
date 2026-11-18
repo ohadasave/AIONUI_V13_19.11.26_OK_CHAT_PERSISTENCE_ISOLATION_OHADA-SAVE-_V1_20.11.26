@@ -209,9 +209,7 @@ export function UserManagement() {
       title: 'Role',
       dataIndex: 'role',
       width: 100,
-      render: (role: string) => (
-        <Tag color={role === 'admin' ? 'red' : 'blue'}>{role.toUpperCase()}</Tag>
-      ),
+      render: (role: string) => <Tag color={role === 'admin' ? 'red' : 'blue'}>{role.toUpperCase()}</Tag>,
     },
     {
       title: 'Status',
@@ -245,20 +243,11 @@ export function UserManagement() {
       render: (_: any, user: IUser) => (
         <Space>
           {user.status === 'active' ? (
-            <Button
-              type="primary"
-              status="danger"
-              size="small"
-              onClick={() => openBlockModal(user)}
-            >
+            <Button type='primary' status='danger' size='small' onClick={() => openBlockModal(user)}>
               Block
             </Button>
           ) : (
-            <Button
-              type="primary"
-              size="small"
-              onClick={() => handleUnblock(user)}
-            >
+            <Button type='primary' size='small' onClick={() => handleUnblock(user)}>
               Unblock
             </Button>
           )}
@@ -268,14 +257,14 @@ export function UserManagement() {
   ];
 
   return (
-    <div className="p-6">
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold mb-4">User Management</h1>
+    <div className='p-6'>
+      <div className='mb-6'>
+        <h1 className='text-2xl font-bold mb-4'>User Management</h1>
 
         {/* Filters */}
-        <div className="flex gap-4 mb-4">
+        <div className='flex gap-4 mb-4'>
           <Select
-            placeholder="Filter by Status"
+            placeholder='Filter by Status'
             value={statusFilter}
             onChange={(value) => {
               setStatusFilter(value);
@@ -283,14 +272,14 @@ export function UserManagement() {
             }}
             style={{ width: 200 }}
           >
-            <Select.Option value="all">All Status</Select.Option>
-            <Select.Option value="active">Active</Select.Option>
-            <Select.Option value="blocked">Blocked</Select.Option>
-            <Select.Option value="suspended">Suspended</Select.Option>
+            <Select.Option value='all'>All Status</Select.Option>
+            <Select.Option value='active'>Active</Select.Option>
+            <Select.Option value='blocked'>Blocked</Select.Option>
+            <Select.Option value='suspended'>Suspended</Select.Option>
           </Select>
 
           <Select
-            placeholder="Filter by Role"
+            placeholder='Filter by Role'
             value={roleFilter}
             onChange={(value) => {
               setRoleFilter(value);
@@ -298,18 +287,12 @@ export function UserManagement() {
             }}
             style={{ width: 200 }}
           >
-            <Select.Option value="all">All Roles</Select.Option>
-            <Select.Option value="admin">Admin</Select.Option>
-            <Select.Option value="user">User</Select.Option>
+            <Select.Option value='all'>All Roles</Select.Option>
+            <Select.Option value='admin'>Admin</Select.Option>
+            <Select.Option value='user'>User</Select.Option>
           </Select>
 
-          <Input.Search
-            placeholder="Search by username or email"
-            value={searchQuery}
-            onChange={setSearchQuery}
-            onSearch={() => setPagination({ ...pagination, page: 1 })}
-            style={{ width: 300 }}
-          />
+          <Input.Search placeholder='Search by username or email' value={searchQuery} onChange={setSearchQuery} onSearch={() => setPagination({ ...pagination, page: 1 })} style={{ width: 300 }} />
 
           <Button onClick={loadUsers}>Refresh</Button>
         </div>
@@ -329,48 +312,30 @@ export function UserManagement() {
             setPagination({ ...pagination, page });
           },
         }}
-        rowKey="id"
+        rowKey='id'
         scroll={{ x: 1200 }}
       />
 
       {/* Block Modal */}
-      <Modal
-        title={`Block User: ${selectedUser?.username}`}
-        visible={blockModalVisible}
-        onCancel={closeBlockModal}
-        onOk={handleBlock}
-        confirmLoading={blocking}
-        okButtonProps={{ status: 'danger' }}
-        okText="Block User"
-      >
-        <div className="mb-4">
-          <p className="mb-2">
+      <Modal title={`Block User: ${selectedUser?.username}`} visible={blockModalVisible} onCancel={closeBlockModal} onOk={handleBlock} confirmLoading={blocking} okButtonProps={{ status: 'danger' }} okText='Block User'>
+        <div className='mb-4'>
+          <p className='mb-2'>
             Are you sure you want to block <strong>{selectedUser?.username}</strong>?
           </p>
-          <p className="text-gray-600 text-sm mb-4">
-            This user will be immediately logged out and unable to access the system.
-          </p>
+          <p className='text-gray-600 text-sm mb-4'>This user will be immediately logged out and unable to access the system.</p>
         </div>
 
         <div>
-          <label className="block mb-2 font-medium">
-            Reason for blocking <span className="text-red-500">*</span>
+          <label className='block mb-2 font-medium'>
+            Reason for blocking <span className='text-red-500'>*</span>
           </label>
-          <Input.TextArea
-            placeholder="Enter the reason for blocking this user (required)"
-            value={blockReason}
-            onChange={setBlockReason}
-            rows={4}
-            maxLength={500}
-            showWordLimit
-          />
+          <Input.TextArea placeholder='Enter the reason for blocking this user (required)' value={blockReason} onChange={setBlockReason} rows={4} maxLength={500} showWordLimit />
         </div>
 
         {selectedUser?.role === 'admin' && (
-          <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded">
-            <p className="text-red-700 text-sm">
-              ⚠️ <strong>Warning:</strong> You are about to block an admin user. Make sure there
-              are other admin accounts with access to the system.
+          <div className='mt-4 p-3 bg-red-50 border border-red-200 rounded'>
+            <p className='text-red-700 text-sm'>
+              ⚠️ <strong>Warning:</strong> You are about to block an admin user. Make sure there are other admin accounts with access to the system.
             </p>
           </div>
         )}
