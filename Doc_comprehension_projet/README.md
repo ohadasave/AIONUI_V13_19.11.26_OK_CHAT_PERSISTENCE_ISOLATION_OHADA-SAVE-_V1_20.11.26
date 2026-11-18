@@ -100,6 +100,52 @@ Ce dossier contient une documentation complète répondant aux questions fondame
 
 ---
 
+### [05 - Flux Complet d'un Message](./05_FLUX_COMPLET_MESSAGE.md)
+
+**Contenu** :
+- Cycle de vie complet d'un message (de la saisie à l'affichage)
+- Architecture du flux de données
+- Étape par étape détaillée :
+  - Saisie dans SendBox
+  - Routage dans WorkerManage
+  - Traitement par l'Agent (Gemini/N8N/ACP)
+  - Sauvegarde dans ConversationManageWithDB
+  - Persistance SQLite
+  - Notification du Renderer
+  - Mise à jour de l'UI
+- Optimisations (Optimistic Update, Batch, Streaming, Cache)
+- Gestion des erreurs
+
+**Questions répondues** :
+- ✅ Comment un message circule dans l'application ?
+- ✅ Quel est le rôle de chaque composant ?
+- ✅ Comment fonctionne le système de queue ?
+- ✅ Comment les messages sont-ils affichés en temps réel ?
+
+---
+
+### [06 - Architecture Multi-Processus](./06_ARCHITECTURE_MULTI_PROCESSUS.md)
+
+**Contenu** :
+- Format du champ `content` (JSON sérialisé)
+- Types de contenu supportés :
+  - Texte simple
+  - Tableaux Markdown
+  - Fichiers/Pièces jointes
+  - Images (URL ou base64)
+  - Messages système
+  - Données N8N
+- Sérialisation/Désérialisation
+- Gestion des tableaux modifiés
+- Exemples réels de stockage
+
+**Questions répondues** :
+- ✅ Quelle est la structure des messages dans la database SQLite ?
+- ✅ Les tableaux d'un message sont-ils sauvegardés en JSON dans la même cellule ?
+- ✅ Comment le contenu complexe (tableaux, fichiers) est-il stocké ?
+
+---
+
 ## 🎯 Réponses aux Questions Principales
 
 ### Question 1 : Tables de la Database SQLite

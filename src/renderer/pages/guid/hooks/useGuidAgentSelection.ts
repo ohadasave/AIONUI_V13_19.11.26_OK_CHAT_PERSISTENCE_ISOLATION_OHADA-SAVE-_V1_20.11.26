@@ -192,7 +192,9 @@ export const useGuidAgentSelection = ({ modelList, isGoogleAuth, localeKey }: Us
 
   // Load last selected agent
   useEffect(() => {
-    if (!availableAgents || availableAgents.length === 0) return;
+    // ✅ CORRECTION: Distinguish "loading" vs "empty list"
+    if (availableAgents === undefined) return; // Wait for IPC to resolve
+    if (availableAgents.length === 0) return;   // No agents available
 
     let cancelled = false;
 

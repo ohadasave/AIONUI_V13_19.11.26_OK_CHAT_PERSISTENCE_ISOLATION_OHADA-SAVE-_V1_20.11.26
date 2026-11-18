@@ -993,7 +993,28 @@ Solution recommended by Claude Opus + Gemini Flash consultation"
 
 ---
 
+## ⚠️ RÉGRESSION DÉTECTÉE (Post-validation)
+
+**Date** : 2026-11-18 (quelques minutes après validation)  
+**Symptôme** : Le problème Admin réapparaît au redémarrage  
+**Description** : Il faut à nouveau cliquer sur "Admin" avant d'accéder à la page d'accueil
+
+### Analyse préliminaire
+
+**Hypothèse** : Le correctif fonctionne mais seulement **après un premier chargement**.
+
+Scénarios possibles :
+1. **`availableAgents` non initialisé au mount** : Liste vide au premier render
+2. **Race condition** : `useEffect` de migration s'exécute avant que `availableAgents` soit peuplé
+3. **Ordre de chargement** : Admin déclenche un appel IPC qui initialise quelque chose de manquant
+
+**Prochaine étape** : Investigation approfondie de l'ordre d'initialisation et des dépendances.
+
+→ Voir `Doc_probleme_admin_button/` pour la suite de l'investigation.
+
+---
+
 **Document rédigé par** : Kiro AI (Claude Sonnet 4.5)  
 **Date** : 2026-11-18  
-**Validation** : Tests utilisateur confirmés  
-**Statut** : 🟢 COMPLET ET ARCHIVÉ
+**Validation initiale** : Tests utilisateur confirmés  
+**Statut** : � RÉGRESSION DÉTECTÉE - Investigation en cours

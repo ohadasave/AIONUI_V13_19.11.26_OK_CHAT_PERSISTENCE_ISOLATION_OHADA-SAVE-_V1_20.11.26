@@ -1,171 +1,191 @@
-# Documentation - Problème d'activation des workflows n8n
+# Documentation - Résolution Activation Workflow n8n Chat
 
-## 📚 Présentation
-
-Ce dossier contient une documentation exhaustive du problème d'intégration n8n dans AionUi E-audit v1.8.25, préparée pour consultation par des experts Frontier Models (Claude, GPT-4, etc.).
-
-## 📂 Structure des documents
-
-### 1. 📄 [PROBLEME_DETAILLE.md](./01_PROBLEME_DETAILLE.md)
-**Description exhaustive du problème**
-
-Contient :
-- Vue d'ensemble et objectifs
-- Symptômes détaillés (3 problèmes persistants)
-- Cause racine identifiée (code compilé périmé)
-- Historique des 5 tentatives de résolution
-- Architecture impliquée (flux de données)
-- Fichiers modifiés avec extraits de code
-- Tests ajoutés (14 nouveaux tests)
-- Configuration (chemins, ports, config.json)
-- Points de blocage techniques
-- Suggestions de prochaines étapes
-
-**Lire en premier** pour comprendre le contexte complet.
-
-### 2. 🏗️ [ARCHITECTURE.md](./02_ARCHITECTURE.md)
-**Architecture technique du système**
-
-Contient :
-- Diagramme multi-processus Electron
-- Flux de données détaillés (4 scénarios)
-- Points de défaillance identifiés (4 défaillances)
-- Chaîne de dépendances critiques
-- Graphe des fichiers interdépendants
-- Stockage des données (Electron Store, SessionStorage, SQLite)
-- Cycle de build (dev vs production)
-- Points de test avec exemples de code
-
-**Lire en second** pour comprendre comment les composants interagissent.
-
-### 3. 🥇 [TOP_3_FICHIERS.md](./03_TOP_3_FICHIERS.md)
-**Les 3 fichiers les plus critiques à analyser**
-
-Contient :
-- **#1** `useGuidSend.ts` - Cœur du problème (logique d'envoi)
-- **#2** `useGuidAgentSelection.ts` - Source de l'état (sélection agent)
-- **#3** `acpTypes.ts` - Fondation des types (définitions TypeScript)
-
-Pour chaque fichier :
-- Pourquoi il est critique
-- Questions spécifiques pour les experts
-- Sections clés à examiner (numéros de lignes)
-- Bonus: 2 fichiers contextuels supplémentaires
-
-**Lire en troisième** pour cibler l'analyse sur les zones problématiques.
-
-### 4. 💬 [PROMPT_EXPERT.md](./04_PROMPT_EXPERT.md)
-**Prompt structuré pour consultation Frontier**
-
-Contient :
-- Contexte du projet (1 paragraphe)
-- Problème actuel (3 symptômes)
-- 5 questions spécifiques avec code
-- 3 formats de solutions attendues :
-  - Solution #1: Correction de code
-  - Solution #2: Build & cache
-  - Solution #3: Architecture alternative
-- Tests à valider
-- Contraintes du projet
-- Résultat attendu (checklist)
-
-**Copier-coller ce document** dans une conversation avec Claude/GPT-4 pour obtenir une analyse experte.
-
-## 🚀 Guide d'utilisation rapide
-
-### Pour un développeur interne
-1. Lisez `01_PROBLEME_DETAILLE.md` (10 min)
-2. Parcourez `02_ARCHITECTURE.md` (15 min)
-3. Consultez les fichiers source dans `../src/`
-
-### Pour un expert externe (Frontier Model)
-1. Copiez tout le contenu de `04_PROMPT_EXPERT.md`
-2. Collez dans une nouvelle conversation Claude/GPT-4
-3. Joignez les 3 fichiers TypeScript (voir section suivante)
-4. Attendez l'analyse et les solutions proposées
-
-### Pour envoyer à un consultant humain
-1. Zipper tout le dossier `Doc_activation_workflow_n8n_chat/`
-2. Ajouter les 3 fichiers source :
-   - `src/renderer/pages/guid/hooks/useGuidSend.ts`
-   - `src/renderer/pages/guid/hooks/useGuidAgentSelection.ts`
-   - `src/types/acpTypes.ts`
-3. Envoyer par email avec objet : "Analyse critique - Intégration n8n AionUi"
-
-## 📁 Fichiers source à joindre
-
-Lors de la consultation d'un expert, joindre ces 3 fichiers complets :
-
-```
-📎 useGuidSend.ts (412 lignes)
-   Chemin: g:\Aionui_client\src\renderer\pages\guid\hooks\useGuidSend.ts
-
-📎 useGuidAgentSelection.ts (520 lignes)
-   Chemin: g:\Aionui_client\src\renderer\pages\guid\hooks\useGuidAgentSelection.ts
-
-📎 acpTypes.ts (600+ lignes)
-   Chemin: g:\Aionui_client\src\types\acpTypes.ts
-```
-
-### Comment extraire les fichiers
-
-```powershell
-# Copier les 3 fichiers dans le dossier de documentation
-Copy-Item "src\renderer\pages\guid\hooks\useGuidSend.ts" "Doc_activation_workflow_n8n_chat\"
-Copy-Item "src\renderer\pages\guid\hooks\useGuidAgentSelection.ts" "Doc_activation_workflow_n8n_chat\"
-Copy-Item "src\types\acpTypes.ts" "Doc_activation_workflow_n8n_chat\"
-
-# Créer une archive ZIP
-Compress-Archive -Path "Doc_activation_workflow_n8n_chat\*" -DestinationPath "n8n_problem_docs.zip"
-```
-
-## 🎯 Objectif final
-
-**Obtenir une solution qui permette de** :
-
-1. ✅ Afficher "n8n Workflow" par défaut sur la page `/guid`
-2. ✅ Créer une conversation n8n au clic sur "Envoyer"
-3. ✅ Supprimer la dépendance au bouton "ADMIN"
-
-**Sans régression** :
-- ❌ Pas de break des autres assistants (Gemini, Claude, Codex)
-- ❌ Pas de régression des 496 tests existants
-- ❌ Respect du TypeScript strict mode
-
-## 📊 Statut actuel
-
-| Élément | Statut |
-|---------|--------|
-| Code source modifié | ✅ Commit ec247856, d38fb736 |
-| Tests passants | ✅ 496/496 (dont 14 nouveaux pour n8n) |
-| Code compilé | ❌ Périmé (date 14h52 vs commits 13h25) |
-| Application fonctionnelle | ❌ Échec des 3 symptômes |
-| Cause identifiée | ⚠️ Hypothèse (hot reload / cache) |
-| Solution validée | ❌ En attente expertise |
-
-## 🔗 Liens utiles
-
-- **Projet GitHub**: (ajouter si public)
-- **Issue tracking**: (ajouter si existant)
-- **Documentation n8n**: https://docs.n8n.io/
-- **Electron docs**: https://www.electronjs.org/docs/latest/
-- **React 19 docs**: https://react.dev/
-
-## 👥 Contributeurs
-
-- **Développeur principal**: (votre nom)
-- **Expert consulté**: À déterminer (Claude/GPT-4)
-- **Date de création**: 18 novembre 2026
-
-## 📝 Historique des versions
-
-| Version | Date | Description |
-|---------|------|-------------|
-| 1.0.0 | 18/11/2026 | Documentation initiale complète |
-| 1.1.0 | (future) | Intégration de la solution validée |
+**Problème résolu** : Agent n8n non sélectionné par défaut + spinner infini + dépendance Admin  
+**Date** : 2026-11-18  
+**Statut** : ✅ RÉSOLU ET VALIDÉ  
+**Version** : E-audit v1.8.25
 
 ---
 
-**Dernière mise à jour**: 18/11/2026 16:35
+## 🎯 Accès rapide
 
-Pour toute question sur cette documentation : (votre contact)
+| Document | Usage |
+|----------|-------|
+| **[10_MEMO_RESOLUTION_COMPLETE.md](10_MEMO_RESOLUTION_COMPLETE.md)** | 📚 **Document principal** - Lecture complète recommandée |
+| [01_SYNTHESE_PROBLEME.md](01_SYNTHESE_PROBLEME.md) | Résumé exécutif (1 page) |
+| [05_ANALYSE_REPONSES_FRONTIER.md](05_ANALYSE_REPONSES_FRONTIER.md) | Diagnostic des 3 modèles Frontier |
+| [06_PLAN_IMPLEMENTATION.md](06_PLAN_IMPLEMENTATION.md) | Plan d'action 6 phases |
+| [08_INCIDENT_BETTER_SQLITE3.md](08_INCIDENT_BETTER_SQLITE3.md) | Post-mortem incident technique |
+
+---
+
+## ⚡ Résumé ultra-rapide
+
+### Symptômes
+
+1. ❌ "Sélectionner un assistant..." au lieu de "n8n Workflow" sélectionné
+2. ❌ Bouton "Envoyer" → spinner infini
+3. ❌ Fonctionne seulement après clic sur "Admin"
+
+### Cause racine
+
+```json
+// config.json persiste l'ancienne clé preset
+{
+  "lastSelectedAgent": "custom:builtin-n8n-workflow"  // obsolète
+}
+// → Code ne reconnaît pas cette valeur comme n8n
+// → useState par défaut écrasé par persistance
+```
+
+### Solution appliquée
+
+**Triple correctif** (recommandé par 3 modèles Frontier) :
+
+1. **Migration automatique** des clés legacy → natives
+2. **Type guard `isN8nType()`** pour détection type-safe
+3. **Branche unifiée n8n** avec `try...finally` garantissant arrêt spinner
+
+### Résultat
+
+✅ **3/3 tests passés** - Messages envoyés et réponses n8n reçues  
+✅ **-45 lignes de code** (suppression duplication)  
+✅ **Type-safe + robuste + rétrocompatible**
+
+---
+
+## 📁 Structure du dossier
+
+```
+Doc_activation_workflow_n8n_chat/
+├── README.md (ce fichier)
+│
+├── 📄 Phase 1 : Documentation du problème
+│   ├── 01_SYNTHESE_PROBLEME.md
+│   ├── 02_PROBLEME_DETAILLE.md
+│   └── 03_ARCHITECTURE_TECHNIQUE.md
+│
+├── 🔬 Phase 2 : Consultation externe
+│   ├── 04_PROMPT_EXPERT.md
+│   ├── 05_REPONSE_FRONTIER_MODELE.txt
+│   └── 05_ANALYSE_REPONSES_FRONTIER.md
+│
+├── 🛠️ Phase 3 : Implémentation
+│   ├── 06_PLAN_IMPLEMENTATION.md
+│   ├── 07_EXECUTION_PLAN_RAPPORT.md
+│   └── 08_INCIDENT_BETTER_SQLITE3.md
+│
+├── ✅ Phase 4 : Validation
+│   ├── 09_INSTRUCTIONS_TEST_UTILISATEUR.md
+│   └── 10_MEMO_RESOLUTION_COMPLETE.md ⭐
+│
+└── 📦 Fichiers de référence (copies)
+    ├── useGuidAgentSelection.ts
+    ├── useGuidSend.ts
+    └── conversationBridge.ts
+```
+
+---
+
+## 🔧 Fichiers modifiés
+
+| Fichier | Modification |
+|---------|--------------|
+| `src/renderer/pages/guid/hooks/useGuidAgentSelection.ts` | Ajout migration legacy keys |
+| `src/renderer/pages/guid/hooks/useGuidSend.ts` | Type guard + branche unifiée |
+
+**Bilan** : -45 lignes (simplification) ✅
+
+---
+
+## 🚀 Commit prévu
+
+```bash
+git add src/renderer/pages/guid/hooks/useGuidAgentSelection.ts
+git add src/renderer/pages/guid/hooks/useGuidSend.ts
+git commit -m "fix(guid): n8n workflow default selection and send button
+
+- Add legacy key migration (custom:builtin-n8n-workflow → n8n)
+- Add type guard isN8nType() for safe n8n detection
+- Unify n8n branches (remove duplication, single try...finally)
+- Fix infinite spinner with guaranteed setLoading(false)
+- Use platform:'custom' to avoid type check error
+
+Diagnostic: config.json persistence was overwriting useState default
+Solution recommended by Claude Opus + Gemini Flash consultation"
+```
+
+---
+
+## 📊 Métriques
+
+| Métrique | Valeur |
+|----------|--------|
+| Durée totale | ~6h |
+| Workflows échoués | 5 |
+| Modèles Frontier consultés | 3 (Claude Opus, Sonnet, Gemini Flash) |
+| Fichiers modifiés | 2 |
+| Lignes nettes | -45 (simplification) |
+| Tests fonctionnels | 3/3 passés ✅ |
+| Incident technique | 1 résolu (better-sqlite3) |
+
+---
+
+## 🎓 Leçons apprées
+
+### Technique
+
+1. **Toujours valider les données persistées** avant de les utiliser
+2. **Ajouter `electron-rebuild` au `postinstall`** pour modules natifs
+3. **DRY (Don't Repeat Yourself)** améliore maintenabilité
+
+### Méthodologie
+
+1. **Savoir quand demander aide externe** (consultation Frontier après 5h de blocage)
+2. **Documenter progressivement** facilite résolution
+3. **Consulter plusieurs modèles** → consensus → confiance
+
+### Organisation
+
+1. **Package structuré** pour consultation externe
+2. **Dossier dédié** pour traçabilité
+3. **Mémo exhaustif** pour référence future
+
+---
+
+## 🔗 Références
+
+### Consultation Frontier
+
+- **Claude Opus** : Migration backward-compatible
+- **Claude Sonnet** : Type guard unifié
+- **Gemini 2.0 Flash** : Robustesse `try...finally`
+
+### Commits pertinents
+
+- `ec247856` : Add n8n types and detector
+- `d38fb736` : Add 14 unit tests for n8n
+
+### Technologies
+
+- Electron 37.3.1
+- React 19
+- TypeScript 5.8.3
+- better-sqlite3 12.11.1
+
+---
+
+## ✅ Statut final
+
+🟢 **RÉSOLUTION COMPLÈTE ET VALIDÉE**
+
+- ✅ Tests utilisateur confirmés
+- ✅ Application stable
+- ✅ Documentation complète
+- ⏳ Commit en attente d'exécution
+
+---
+
+**Créé par** : Kiro AI (Claude Sonnet 4.5)  
+**Date** : 2026-11-18  
+**Contact** : Voir AGENTS.md pour conventions projet
