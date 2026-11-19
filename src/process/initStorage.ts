@@ -583,29 +583,27 @@ const getDefaultMcpServers = (): IMcpServer[] => {
 /**
  * 启动时清理异常遗留的健康检测临时会话
  * Cleanup orphaned health-check temporary conversations on startup
+ *
+ * NOTE: This function uses a direct SQL query to scan all users' conversations
+ * because health-check cleanup is a system maintenance operation that needs
+ * to work across all users. This is an exception to the normal per-user isolation.
  */
 const cleanupOrphanedHealthCheckConversations = () => {
   try {
     const db = getDatabase();
-    const pageSize = 1000;
-    const idsToDelete: string[] = [];
-    let page = 0;
-    let hasMore = true;
 
-    while (hasMore) {
-      const result = db.getUserConversations(undefined, page, pageSize);
-      result.data.forEach((conversation) => {
-        const extra = conversation.extra as { isHealthCheck?: boolean } | undefined;
-        if (extra?.isHealthCheck === true) {
-          idsToDelete.push(conversation.id);
-        }
-      });
-      hasMore = result.hasMore;
-      page += 1;
-    }
+    // Direct SQL query to find health-check conversations across all users
+    const healthCheckConvs = db.db
+      .prepare(
+        `
+        SELECT id FROM conversations 
+        WHERE json_extract(extra, '$.isHealthCheck') = 1
+      `
+      )
+      .all() as Array<{ id: string }>;
 
     let deletedCount = 0;
-    idsToDelete.forEach((id) => {
+    healthCheckConvs.forEach(({ id }) => {
       const deleted = db.deleteConversation(id);
       if (deleted.success && deleted.data) {
         deletedCount += 1;

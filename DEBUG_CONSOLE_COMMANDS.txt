@@ -1,0 +1,21 @@
+# Commandes à exécuter dans DevTools Console (F12)
+
+# 1. Vérifier les agents disponibles
+console.log('availableAgents:', window.__availableAgents);
+
+# 2. Vérifier l'agent sélectionné
+console.log('selectedAgent:', window.__selectedAgent);
+
+# 3. Vérifier le userId
+console.log('currentUserId:', window.__currentUserId);
+
+# 4. Vérifier la config sauvegardée
+window.electron.ipcRenderer.invoke('config.get', 'guid.lastSelectedAgent').then(key => console.log('Config lastSelectedAgent:', key));
+
+# 5. Vérifier si le hook a été exécuté (chercher dans les logs existants)
+# Cherchez dans la console les messages commençant par:
+# [useGuidAgentSelection]
+
+# 6. Tester manuellement la sélection n8n
+# Si rien ne s'affiche, essayez de sélectionner manuellement "n8n Workflow" 
+# dans le dropdown et réessayez d'envoyer

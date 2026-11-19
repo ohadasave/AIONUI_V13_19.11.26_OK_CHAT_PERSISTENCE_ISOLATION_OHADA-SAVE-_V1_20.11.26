@@ -19,6 +19,7 @@ import React, { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useLayoutContext } from '@/renderer/context/LayoutContext';
+import { useAuth } from '@renderer/context/AuthContext';
 
 const useTimeline = () => {
   const { t } = useTranslation();
@@ -71,6 +72,8 @@ const ChatHistory: React.FC<{ onSessionClick?: () => void; collapsed?: boolean }
   const navigate = useNavigate();
   const { getJobStatus, markAsRead } = useCronJobsMap();
   const siderTooltipProps = getSiderTooltipProps(collapsed && !isMobile);
+  const { user } = useAuth(); // ← Utiliser React Context
+  const userId = user?.id;
 
   useScrollIntoView(id);
 
@@ -99,15 +102,23 @@ const ChatHistory: React.FC<{ onSessionClick?: () => void; collapsed?: boolean }
   const isConversation = !!id;
 
   useEffect(() => {
+    // Purge immédiate au changement d'utilisateur
+    setChatHistory([]);
+
+    if (!userId) {
+      console.log('[ChatHistory] No authenticated user - conversations not loaded');
+      return;
+    }
+
+    let cancelled = false;
+
     const refresh = () => {
-      // ISOLATION FIX: Get userId from auth context
-      const userId = (window as any).__currentUserId;
       console.log('[ChatHistory] Fetching conversations for userId:', userId);
-      
-      // Get conversations from database instead of file storage
+
       ipcBridge.database.getUserConversations
         .invoke({ userId, page: 0, pageSize: 10000 })
         .then((history) => {
+          if (cancelled) return; // Ignorer réponses d'un ancien utilisateur
           if (history && Array.isArray(history) && history.length > 0) {
             const sortedHistory = history.sort((a, b) => getActivityTime(b) - getActivityTime(a));
             setChatHistory(sortedHistory);
@@ -116,13 +127,21 @@ const ChatHistory: React.FC<{ onSessionClick?: () => void; collapsed?: boolean }
           }
         })
         .catch((error) => {
-          console.error('[ChatHistory] Failed to load conversations from database:', error);
-          setChatHistory([]);
+          if (!cancelled) {
+            console.error('[ChatHistory] Failed to load conversations from database:', error);
+            setChatHistory([]);
+          }
         });
     };
+
     refresh();
-    return addEventListener('chat.history.refresh', refresh);
-  }, [isConversation]);
+    const removeListener = addEventListener('chat.history.refresh', refresh);
+
+    return () => {
+      cancelled = true;
+      removeListener();
+    };
+  }, [userId]); // ← Dépendance sur userId
 
   const handleRemoveConversation = (id: string) => {
     void ipcBridge.conversation.remove

@@ -97,7 +97,7 @@ const AgentSetupCard: React.FC<AgentSetupCardProps> = ({ conversationId, current
 
         // ISOLATION FIX: Get current user ID for multi-user data isolation
         const userId = getCurrentUserId();
-        
+
         // Create new conversation with the selected agent
         const newConversation = await ipcBridge.conversation.create.invoke({
           type: conversationType,

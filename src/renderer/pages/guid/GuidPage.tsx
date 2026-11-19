@@ -8,6 +8,7 @@ import { resolveLocaleKey } from '@/common/utils';
 import { useInputFocusRing } from '@/renderer/hooks/useInputFocusRing';
 import { openExternalUrl } from '@/renderer/utils/platform';
 import { useConversationTabs } from '@/renderer/pages/conversation/context/ConversationTabsContext';
+import { useAuth } from '@/renderer/context/AuthContext';
 import AgentPillBar from './components/AgentPillBar';
 import AssistantSelectionArea from './components/AssistantSelectionArea';
 import { AgentPillBarSkeleton, AssistantsSkeleton } from './components/GuidSkeleton';
@@ -38,6 +39,7 @@ const GuidPage: React.FC = () => {
   const { closeAllTabs, openTab } = useConversationTabs();
   const { activeBorderColor, inactiveBorderColor, activeShadow } = useInputFocusRing();
   const localeKey = resolveLocaleKey(i18n.language);
+  const { user } = useAuth();
 
   // Open external link
   const openLink = useCallback(async (url: string) => {
@@ -71,6 +73,9 @@ const GuidPage: React.FC = () => {
   });
 
   const send = useGuidSend({
+    // User ID for multi-user isolation
+    userId: user?.id,
+
     // Input state
     input: guidInput.input,
     setInput: guidInput.setInput,

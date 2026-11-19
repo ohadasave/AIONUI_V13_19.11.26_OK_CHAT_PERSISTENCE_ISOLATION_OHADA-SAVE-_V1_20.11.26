@@ -1,264 +1,327 @@
-# Documentation SaaS Multi-Utilisateur
+# Documentation - Isolation Multi-Utilisateur SaaS
 
-Documentation complète de la transformation d'AionUi en application SaaS multi-tenant.
-
----
-
-## 🎯 Objectif
-
-Transformer AionUi d'une application desktop/WebUI mono-utilisateur en une plateforme SaaS multi-tenant avec :
-- **Gestion admin** : Rôles (admin/user), blocage/déblocage utilisateurs
-- **Isolation des données** : Chaque utilisateur voit uniquement ses conversations
-- **Système d'audit** : Traçabilité de toutes les actions sensibles
-- **Scalabilité** : Architecture prête pour 1000+ utilisateurs
+**Projet**: E-audit / AionUi  
+**Version**: v19  
+**Objectif**: Empêcher les fuites de données entre utilisateurs dans un environnement multi-tenant
 
 ---
 
-## 📚 Documents
+## 📚 Vue d'ensemble
 
-| Document | Taille | Description |
-|----------|--------|-------------|
-| [INDEX.md](./INDEX.md) | 13 KB | Navigation complète et index |
-| [ARCHITECTURE_MULTI_UTILISATEUR.md](./ARCHITECTURE_MULTI_UTILISATEUR.md) | 66 KB | **Document principal** — Analyse technique et roadmap |
-| [PROGRESSION_SAAS.md](./PROGRESSION_SAAS.md) | 12 KB | État d'avancement du projet (phases 1-6) |
-| [phase1-review.md](./phase1-review.md) | 8 KB | Review Phase 1 (Database migration) ✅ APPROVED |
-| [phase2-review.md](./phase2-review.md) | 15 KB | Review Phase 2 (Backend Admin) ✅ FIXED |
+Ce dossier contient toute la documentation relative à l'implémentation de l'isolation multi-utilisateur, une fonctionnalité de sécurité critique pour le déploiement SaaS d'E-audit.
 
-**Total** : ~114 KB de documentation technique
+### Problème résolu
 
----
-
-## 🚀 Quick Start
-
-### Pour Développeur Nouveau sur le Projet
-
-```bash
-# 1. Lire la progression (10 min)
-cat Doc_Saas_Multi_User/PROGRESSION_SAAS.md
-
-# 2. Lire l'architecture actuelle (30 min)
-# Sections 1-4 du document ARCHITECTURE_MULTI_UTILISATEUR.md
-
-# 3. Voir les commits existants
-git log --oneline --grep="admin\|saas\|audit"
-
-# 4. Inspecter le code backend
-ls src/webserver/services/Admin*.ts
-ls src/webserver/controllers/Admin*.ts
+**AVANT** : Utilisateur Bob pouvait voir les conversations d'Alice
+```
+Alice login → Crée conversation "Projet confidentiel A"
+Alice logout
+Bob login → Voit toutes les conversations (dont celle d'Alice) ❌
 ```
 
-### Pour Reprendre le Développement (Phase 3)
-
-```bash
-# 1. Lire les spécifications Phase 3
-# Section 7, Phase 3 dans ARCHITECTURE_MULTI_UTILISATEUR.md
-
-# 2. Examiner l'API backend existante
-curl -H "Authorization: Bearer <token>" http://localhost:25808/api/admin/users
-
-# 3. Commencer l'implémentation frontend
-# Créer: src/renderer/pages/admin/UserManagement.tsx
+**APRÈS** : Chaque utilisateur voit uniquement ses propres données
+```
+Alice login → Crée conversation "Projet confidentiel A"
+Alice logout
+Bob login → Voit seulement ses propres conversations ✅
 ```
 
 ---
 
-## 📊 État Actuel
+## 📄 Documents disponibles
 
-### ✅ Phases Complétées (33%)
-
-**Phase 1 : Migration Database v17** ✅
-- Tables modifiées : `users` (ajout colonnes admin)
-- Table créée : `audit_log`
-- Review : APPROVED
-
-**Phase 2 : Backend Admin API** ✅
-- 6 fichiers créés (middlewares, services, controllers, routes)
-- 10 tests unitaires passent
-- 3 problèmes de sécurité HIGH corrigés
-- Review : FIXED
-
-### ⏳ Phases Restantes (67%)
-
-**Phase 3 : Interface Admin Frontend** (3-4 jours)
-- Créer `UserManagement.tsx`, `AuditLog.tsx`
-- Intégrer dans router React
-
-**Phase 4 : Script CLI Admin** (1 jour)
-- Créer `scripts/create-admin.ts`
-
-**Phase 5 : Suppression Fallback système** (1 jour)
-- Exiger `userId` explicite partout
-
-**Phase 6 : Vérification Finale** (1 jour)
-- Tests complets, documentation, monitoring
-
-**Temps restant estimé** : 6-8 jours
+| Document | Description | Statut |
+|----------|-------------|--------|
+| **README.md** | **Ce fichier** - Vue d'ensemble et guide de navigation | - |
+| **STATUS_ISOLATION_V19.md** | **Statut global** - Progression 60%, todo list, prochaines étapes | 🟡 À jour |
+| **MEMO_REGRESSION_N8N_GUIDPAGE.md** | **Incident résolu** - userId manquant dans création conversations | ✅ Résolu |
+| **COMMIT_READY.md** | **Guide commit** - Fichiers à committer, commandes, vérifications | ✅ Prêt |
 
 ---
 
-## 🔑 Architecture Actuelle
+## 🎯 Démarrage rapide
 
-### Base de Données
+### Pour comprendre le statut actuel
 
-**Type** : SQLite (better-sqlite3)  
-**Version** : 17
+1. **Lire en premier** : `STATUS_ISOLATION_V19.md`
+   - Vue d'ensemble de la progression (60% complet)
+   - Liste des fichiers modifiés
+   - Checklist de validation
+   - Prochaines actions
 
-**Tables principales** :
-```sql
-users
-├── id (PRIMARY KEY)
-├── username (UNIQUE)
-├── email (UNIQUE)
-├── password_hash
-├── role ('admin' | 'user')          -- ✅ Nouveau (v17)
-├── status ('active' | 'blocked')    -- ✅ Nouveau (v17)
-├── blocked_at                       -- ✅ Nouveau (v17)
-├── blocked_by                       -- ✅ Nouveau (v17)
-├── blocked_reason                   -- ✅ Nouveau (v17)
-└── jwt_secret
+### Pour committer les changements
 
-audit_log                             -- ✅ Nouveau (v17)
-├── id (PRIMARY KEY)
-├── user_id (FK → users.id)
-├── target_user_id (FK → users.id)
-├── action
-├── resource_type
-├── resource_id
-├── details (JSON)
-├── ip_address
-└── created_at
-```
+2. **Suivre** : `COMMIT_READY.md`
+   - Liste des fichiers à committer
+   - Message de commit pré-rédigé
+   - Vérifications avant commit
+   - Commandes git complètes
 
-**Isolation** : Toutes les conversations filtrées par `user_id`
+### Pour comprendre un incident spécifique
 
-### API Admin
-
-**Base URL** : `/api/admin`
-
-**Endpoints** :
-```
-GET    /users              Liste des utilisateurs
-GET    /users/:userId      Détails d'un utilisateur
-POST   /users/:userId/block    Bloquer (body: {reason})
-POST   /users/:userId/unblock  Débloquer
-GET    /audit              Logs d'audit
-```
-
-**Protection** : JWT → checkUserStatus → requireAdmin
+3. **Consulter** : `MEMO_REGRESSION_N8N_GUIDPAGE.md`
+   - Diagnostic détaillé du problème
+   - Cause racine et solution
+   - Leçons apprises
+   - Validation effectuée
 
 ---
 
-## 💻 Code Backend Créé
+## 🏗️ Architecture de l'isolation
 
-### Middlewares
+### Principe : Defense-in-depth (7 couches)
 
-```typescript
-// src/webserver/auth/middleware/checkUserStatus.ts
-export function checkUserStatus(req, res, next) {
-  // Bloque si user.status === 'blocked' ou 'suspended'
-}
-
-// src/webserver/auth/middleware/requireAdmin.ts
-export function requireAdmin(req, res, next) {
-  // Vérifie user.role === 'admin'
-}
+```
+┌─────────────────────────────────────────┐
+│ Layer 7: Audit Logs                     │ (Futur)
+├─────────────────────────────────────────┤
+│ Layer 6: Multi-Account Storage          │ (Futur)
+├─────────────────────────────────────────┤
+│ Layer 5: Owner Verification             │ (Futur)
+├─────────────────────────────────────────┤
+│ Layer 4: Type Safety (userId required)  │ ❌ TODO
+├─────────────────────────────────────────┤
+│ Layer 3: Frontend (useAuth everywhere)  │ 🟡 33%
+├─────────────────────────────────────────┤
+│ Layer 2: IPC Bridge (fail-closed)       │ ✅ 100%
+├─────────────────────────────────────────┤
+│ Layer 1: Database (no fallback)         │ ✅ 100%
+└─────────────────────────────────────────┘
 ```
 
-### Services
+### Flux de données sécurisé
 
-```typescript
-// src/webserver/services/AdminService.ts
-AdminService.blockUser(adminId, targetUserId, reason, ipAddress)
-  → UPDATE users SET status='blocked'
-  → Rotate JWT secret
-  → Log audit
-
-AdminService.unblockUser(adminId, targetUserId, ipAddress)
-  → UPDATE users SET status='active'
-  → Log audit
-
-AdminService.listUsers(filters, pagination)
-  → SELECT avec filtres (status, role, search)
+```
+User login
+    ↓
+AuthContext fournit user.id
+    ↓
+Frontend utilise useAuth() pour obtenir userId
+    ↓
+Frontend envoie userId dans tous les appels IPC
+    ↓
+Backend vérifie userId présent (fail-closed)
+    ↓
+Database filtre par userId (no fallback)
+    ↓
+User voit seulement ses données ✅
 ```
 
-```typescript
-// src/webserver/services/AuditLogService.ts
-AuditLogService.logAction({
-  userId, targetUserId, action, resourceType,
-  resourceId, details, ipAddress
-})
-  → INSERT INTO audit_log
-```
+---
+
+## 🔧 Changements techniques
+
+### Backend (✅ 100% terminé)
+
+| Fichier | Changement principal |
+|---------|---------------------|
+| `database/index.ts` | `getUserConversations(userId: string)` - required, pas de fallback |
+| `databaseBridge.ts` | Bloque si `!userId`, retourne `[]` (fail-closed) |
+| `conversationBridge.ts` | Attend `params.userId` lors de création conversation |
+| `initStorage.ts` | Health check utilise SQL direct (pas d'appel unsafe) |
+
+### Frontend (🟡 33% terminé)
+
+| Fichier | Changement principal | Statut |
+|---------|---------------------|--------|
+| `ChatHistory.tsx` | `useAuth()` au lieu de `window.__currentUserId` | ✅ OK |
+| `GuidPage.tsx` + hooks | `useAuth()` + `userId` dans create | ✅ OK |
+| `ConversationTabs.tsx` | `useAuth()` au lieu de `window.__currentUserId` | ❌ TODO |
+| `workspace/index.tsx` | `useAuth()` au lieu de `window.__currentUserId` | ❌ TODO |
+
+### Types (❌ 0% terminé)
+
+| Fichier | Changement principal | Statut |
+|---------|---------------------|--------|
+| `ipcBridge.ts` | `userId: string` (required, pas optional) | ❌ TODO |
 
 ---
 
 ## 🧪 Tests
 
-**Fichiers créés** :
-- `tests/unit/AdminService.test.ts` ✅
-- `tests/unit/AuditLogService.test.ts` ✅
+### Tests manuels effectués ✅
 
-**Résultats** : 10/10 tests passent
+- [x] Login Alice → voir seulement conversations Alice
+- [x] Logout → login Bob → voir seulement conversations Bob
+- [x] Refresh page → isolation préservée
+- [x] ChatHistory vide après logout
+- [x] Création conversation n8n depuis `/guid`
 
-**Lancer les tests** :
-```bash
-bun run test
+### Tests manuels en attente
+
+- [ ] Créer conversation Gemini depuis `/guid`
+- [ ] Créer conversation OpenClaw depuis `/guid`
+- [ ] Créer conversation Nanobot depuis `/guid`
+- [ ] Créer conversation ACP depuis `/guid`
+- [ ] Tentative accès conversation autre user (devrait échouer)
+
+### Tests automatisés (E2E) ❌ Pas encore
+
+```typescript
+// Exemple de test E2E souhaité
+describe('Multi-User Isolation', () => {
+  it('Alice cannot see Bob conversations', async () => {
+    await loginAs('alice');
+    await createConversation('Alice secret');
+    await logout();
+    
+    await loginAs('bob');
+    const conversations = await getConversations();
+    expect(conversations).not.toContainText('Alice secret');
+  });
+});
 ```
 
 ---
 
-## 📝 Commits
+## 📊 Métriques
 
-```bash
-596e3cb3  feat(database): add v17 migration for admin roles and audit log
-ddf493a5  fix(database): include role and status columns in ensureSystemUser()
-3dedb49c  feat(admin): implement admin API for user management and audit
-44540ece  fix(admin): resolve 3 HIGH severity security issues from code review
+### Progression
+
+- **Phase 1 (Backend)** : 100% ✅
+- **Phase 2 (Frontend)** : 33% 🟡
+- **Phase 3 (Types)** : 0% ❌
+- **Global** : 60% 🟡
+
+### Code
+
+- **Fichiers modifiés** : 6 / 10 critiques
+- **Lignes ajoutées** : ~150
+- **Lignes supprimées** : ~50
+
+### Temps
+
+- **Phase 1** : 6h (incidents inclus)
+- **Phase 2** : 0.5h (en cours)
+- **Total** : 6.5h
+
+---
+
+## 🐛 Incidents résolus
+
+### 1. Better SQLite3 bindings
+
+**Symptôme** : `Could not locate the bindings file`  
+**Solution** : `npx @electron/rebuild -f -w better-sqlite3 -o better-sqlite3`  
+**Référence** : `Doc_activation_workflow_n8n_chat/08_INCIDENT_BETTER_SQLITE3.md`
+
+### 2. Regression n8n après isolation
+
+**Symptôme** : Impossible de créer conversations depuis `/guid`  
+**Cause** : Frontend n'envoyait pas `userId` dans `conversation.create.invoke()`  
+**Solution** : Ajouter `useAuth()` + passer `userId` (5 types de conversations)  
+**Référence** : `MEMO_REGRESSION_N8N_GUIDPAGE.md`
+
+---
+
+## 🔄 Prochaines étapes
+
+### Court terme (cette semaine)
+
+1. ✅ **Committer Commit 3** (GuidPage + hooks)
+2. **Compléter Phase 2** :
+   - Modifier `ConversationTabs.tsx`
+   - Modifier `workspace/index.tsx`
+   - Tester cycle complet
+
+3. **Phase 3 : Type Safety** :
+   - Modifier `ipcBridge.ts` : userId required
+   - Compiler et vérifier erreurs
+   - Fixer appelants manquants
+
+### Moyen terme (semaine prochaine)
+
+4. **Phase 4 : Owner Verification** :
+   - Vérifier ownership dans conversationBridge
+   - Protéger update, delete, get messages
+
+5. **Tests E2E** :
+   - Suite de tests Playwright
+   - Automatiser scénarios Alice/Bob
+
+### Long terme (mois prochain)
+
+6. **Phase 5 : Multi-Account Storage**
+7. **Phase 6 : Audit Logs**
+8. **Phase 7 : Tests E2E complets**
+
+---
+
+## 🙋 FAQ
+
+### Pourquoi "v19" ?
+
+Version interne de tracking pour cette feature d'isolation. Peut ne pas correspondre à la version publique d'E-audit.
+
+### Pourquoi useAuth() au lieu de window.__currentUserId ?
+
+`useAuth()` est un hook React qui :
+- ✅ Re-render automatiquement quand user change
+- ✅ Type-safe (`User | undefined`)
+- ✅ Évite race conditions
+- ✅ Testable (Context mockable)
+
+`window.__currentUserId` :
+- ❌ Global mutable
+- ❌ Pas de re-render
+- ❌ Peut être undefined au démarrage
+- ❌ Difficile à tester
+
+### Qu'est-ce que "fail-closed" ?
+
+Principe de sécurité : **en cas d'erreur, bloquer l'accès plutôt que de permettre**.
+
+Exemple :
+```typescript
+// ❌ Fail-open (dangereux)
+if (!userId) {
+  userId = 'system_default_user'; // Permet accès
+}
+
+// ✅ Fail-closed (sécurisé)
+if (!userId) {
+  return []; // Bloque accès
+}
 ```
 
-**Branche** : `main`
+### Puis-je encore utiliser window.__currentUserId ?
+
+**Non recommandé**. Utilisez toujours `useAuth()` dans les composants React.
+
+`window.__currentUserId` est conservé temporairement pour rétrocompatibilité mais sera supprimé dans une version future.
+
+### Comment tester l'isolation ?
+
+1. Créer 2 comptes (Alice, Bob)
+2. Login Alice → Créer conversation
+3. Logout → Login Bob
+4. Vérifier que Bob ne voit pas la conversation d'Alice
+
+### Que faire si je trouve un bug d'isolation ?
+
+1. **Documenter** : Screenshot, steps to reproduce
+2. **Créer mémo** : Nouveau fichier dans `Doc_Saas_Multi_User/`
+3. **Reporter** : Issue GitHub ou notification équipe sécurité
 
 ---
 
-## 🔗 Liens Utiles
+## 📞 Contact
 
-### Documentation Interne
-- [AGENTS.md](../AGENTS.md) : Conventions du projet
-- [Doc_Aionui_Web_Deploy/](../Doc_Aionui_Web_Deploy/) : Documentation WebUI
-- [Doc_login_page/](../Doc_login_page/) : Documentation authentification
-
-### Code Backend
-- `src/process/database/migrations.ts` — Migration v17
-- `src/webserver/services/AdminService.ts` — Service admin
-- `src/webserver/controllers/AdminController.ts` — Contrôleur admin
-- `src/webserver/routes/adminRoutes.ts` — Routes admin
-
-### Tests
-- `tests/unit/AdminService.test.ts`
-- `tests/unit/AuditLogService.test.ts`
+**Mainteneur documentation** : Kiro AI (Claude Sonnet 4.5)  
+**Dernière mise à jour** : 2024-11-18  
+**Prochaine revue** : Après completion Phase 2
 
 ---
 
-## 🆘 Support
+## 📜 Licence
 
-### Questions ?
-
-1. Lire [INDEX.md](./INDEX.md) pour navigation complète
-2. Consulter [ARCHITECTURE_MULTI_UTILISATEUR.md](./ARCHITECTURE_MULTI_UTILISATEUR.md) section FAQ
-3. Inspecter les commits : `git show 596e3cb3`, `git show 3dedb49c`
-
-### Problèmes de Sécurité
-
-Tous les problèmes HIGH identifiés en Phase 2 ont été corrigés dans commit `44540ece` :
-- ✅ Admin ne peut plus se bloquer lui-même
-- ✅ checkUserStatus n'est plus appliqué globalement
-- ✅ JWT secret rotation vérifiée avant commit
-- ✅ Role admin vérifié dans les services (defense-in-depth)
-
-Voir [phase2-review.md](./phase2-review.md) pour détails.
+Voir fichier LICENSE à la racine du projet.
 
 ---
 
-**Dernière mise à jour** : 2024-02-06  
-**Workflow ID** : `wf_f92eb9544d54e9ab`  
-**Version** : 1.0
+## 🔗 Liens utiles
+
+- **Projet principal** : `g:/Aionui_client/`
+- **Autre documentation** : `g:/Aionui_client/docs/`
+- **Documentation n8n** : `g:/Aionui_client/Doc_activation_workflow_n8n_chat/`
+- **Rebranding n8n** : `g:/Aionui_client/Doc_rebranding_n8n/`

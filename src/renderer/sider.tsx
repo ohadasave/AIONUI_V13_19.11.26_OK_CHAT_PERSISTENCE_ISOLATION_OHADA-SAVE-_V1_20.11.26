@@ -186,10 +186,7 @@ const Sider: React.FC<SiderProps> = ({ onSessionClick, collapsed = false }) => {
           )}
           {user && (
             <Tooltip {...siderTooltipProps} content={t('auth.logout')} position='right'>
-              <div
-                onClick={handleLogout}
-                className={classNames('flex items-center justify-start gap-10px px-12px py-8px rd-0.5rem cursor-pointer transition-colors hover:bg-hover hover:shadow-sm active:bg-fill-2', isMobile && 'sider-footer-btn-mobile')}
-              >
+              <div onClick={handleLogout} className={classNames('flex items-center justify-start gap-10px px-12px py-8px rd-0.5rem cursor-pointer transition-colors hover:bg-hover hover:shadow-sm active:bg-fill-2', isMobile && 'sider-footer-btn-mobile')}>
                 <Logout className='flex' theme='outline' size='24' fill={iconColors.primary} />
                 <span className='collapsed-hidden text-t-primary'>{t('auth.logout')}</span>
               </div>

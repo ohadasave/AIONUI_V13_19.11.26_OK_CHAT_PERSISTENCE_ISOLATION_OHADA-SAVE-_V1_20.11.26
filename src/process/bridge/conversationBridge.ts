@@ -75,7 +75,7 @@ export function initConversationBridge(): void {
     // ISOLATION FIX: Extract userId from params
     const userId = params.userId;
     console.log('[conversationBridge] Creating conversation with userId:', userId);
-    
+
     // 使用 ConversationService 创建会话 / Use ConversationService to create conversation
     const result = await ConversationService.createConversation({
       ...params,

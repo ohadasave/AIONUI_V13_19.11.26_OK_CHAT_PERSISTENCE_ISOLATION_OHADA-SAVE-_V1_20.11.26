@@ -443,7 +443,7 @@ export class AionUIDatabase {
    *
    * For ACP conversations, `backend` distinguishes between claude, iflow, codebuddy, etc.
    * (stored in `extra.backend` JSON field).
-   * 
+   *
    * ISOLATION FIX: userId is required, no default fallback
    */
   findChannelConversation(source: ConversationSource, channelChatId: string, type: string, backend?: string, userId?: string): IQueryResult<TChatConversation | null> {
@@ -498,7 +498,7 @@ export class AionUIDatabase {
   /**
    * Batch-update the model field on channel conversations matching source + type.
    * Used when channel settings change to propagate new model to existing conversations.
-   * 
+   *
    * ISOLATION FIX: userId is required, no default fallback
    */
   updateChannelConversationModel(source: 'telegram' | 'lark' | 'dingtalk', type: string, model: TProviderWithModel, userId?: string): IQueryResult<number> {
@@ -525,14 +525,16 @@ export class AionUIDatabase {
     }
   }
 
-  getUserConversations(userId?: string, page = 0, pageSize = 50): IPaginatedResult<TChatConversation> {
+  getUserConversations(userId: string, page = 0, pageSize = 50): IPaginatedResult<TChatConversation> {
     try {
-      // ISOLATION FIX: When userId is not provided, use defaultUserId for backwards compatibility
-      // This is mainly for admin/system queries where user context is not available
-      const finalUserId = userId || this.defaultUserId;
-      console.log(`[Database] getUserConversations called with userId=${userId}, using finalUserId=${finalUserId}`);
+      if (!userId) {
+        console.error('[Database] CRITICAL: userId is required for getUserConversations');
+        throw new Error('userId is required for getUserConversations');
+      }
 
-      const countResult = this.db.prepare('SELECT COUNT(*) as count FROM conversations WHERE user_id = ?').get(finalUserId) as {
+      console.log(`[Database] getUserConversations userId=${userId}`);
+
+      const countResult = this.db.prepare('SELECT COUNT(*) as count FROM conversations WHERE user_id = ?').get(userId) as {
         count: number;
       };
 
@@ -546,7 +548,7 @@ export class AionUIDatabase {
             OFFSET ?
           `
         )
-        .all(finalUserId, pageSize, page * pageSize) as IConversationRow[];
+        .all(userId, pageSize, page * pageSize) as IConversationRow[];
 
       return {
         data: rows.map(rowToConversation),

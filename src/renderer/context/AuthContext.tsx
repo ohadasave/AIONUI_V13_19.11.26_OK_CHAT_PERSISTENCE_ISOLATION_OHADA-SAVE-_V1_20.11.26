@@ -102,10 +102,10 @@ export const AuthProvider: React.FC<React.PropsWithChildren> = ({ children }) =>
           // Valid session exists
           const username = localStorage.getItem('eaudit_username') || 'desktop-user';
           const userId = localStorage.getItem('eaudit_user_id') || 'desktop-user';
-          
+
           // ISOLATION FIX: Expose userId globally for IPC calls
           (window as any).__currentUserId = userId;
-          
+
           console.log('[AuthContext] Desktop mode - valid session found for user:', userId);
           setUser({ id: userId, username, role: 'admin' });
           setStatus('authenticated');
@@ -164,37 +164,38 @@ export const AuthProvider: React.FC<React.PropsWithChildren> = ({ children }) =>
           };
         }
 
-        // Check if credentials already exist
-        const storedCredentials = localStorage.getItem('eaudit_credentials');
-        let userId: string;
+        // Multi-user credentials map: { [username]: { password, userId } }
+        // This allows multiple users to maintain stable userId across sessions.
+        const CREDENTIALS_MAP_KEY = 'eaudit_credentials_map';
+        let credentialsMap: Record<string, { password: string; userId: string }> = {};
 
-        if (storedCredentials) {
-          try {
-            const { username: storedUsername, password: storedPassword, userId: storedUserId } = JSON.parse(storedCredentials);
-
-            // Check if this is the same user reconnecting
-            if (username === storedUsername && password === storedPassword) {
-              // Same user reconnecting - use existing userId
-              userId = storedUserId;
-              console.log('[AuthContext] User reconnecting with existing credentials:', userId);
-            } else {
-              // Different credentials - create new account with new userId
-              userId = `user_${Date.now()}`;
-              localStorage.setItem('eaudit_credentials', JSON.stringify({ username, password, userId }));
-              console.log('[AuthContext] New account created with userId:', userId);
-            }
-          } catch (error) {
-            console.error('[AuthContext] Failed to parse stored credentials:', error);
-            // Clear invalid credentials and create new account
-            localStorage.removeItem('eaudit_credentials');
-            userId = `user_${Date.now()}`;
-            localStorage.setItem('eaudit_credentials', JSON.stringify({ username, password, userId }));
+        try {
+          const raw = localStorage.getItem(CREDENTIALS_MAP_KEY);
+          if (raw) {
+            credentialsMap = JSON.parse(raw) as Record<string, { password: string; userId: string }>;
           }
+        } catch {
+          // Corrupt map - reset it
+          credentialsMap = {};
+        }
+
+        let userId: string;
+        const existingEntry = credentialsMap[username];
+
+        if (existingEntry && existingEntry.password === password) {
+          // Known user reconnecting - reuse stable userId
+          userId = existingEntry.userId;
+          console.log('[AuthContext] Known user reconnecting, reusing userId:', userId);
         } else {
-          // First login: create new userId and store credentials
-          userId = `user_${Date.now()}`;
-          localStorage.setItem('eaudit_credentials', JSON.stringify({ username, password, userId }));
-          console.log('[AuthContext] First account created with userId:', userId);
+          // New user or password changed - create a stable userId
+          userId = existingEntry?.userId || `user_${Date.now()}`;
+          credentialsMap[username] = { password, userId };
+          try {
+            localStorage.setItem(CREDENTIALS_MAP_KEY, JSON.stringify(credentialsMap));
+          } catch {
+            console.error('[AuthContext] Failed to save credentials map');
+          }
+          console.log('[AuthContext] Account registered/updated with userId:', userId);
         }
 
         // Store login state with username and userId
@@ -270,12 +271,14 @@ export const AuthProvider: React.FC<React.PropsWithChildren> = ({ children }) =>
     if (isDesktopRuntime) {
       // ISOLATION FIX: Clear global userId
       delete (window as any).__currentUserId;
-      
+
       localStorage.removeItem('eaudit_logged_in');
       localStorage.removeItem('eaudit_login_time');
       localStorage.removeItem('eaudit_username');
       localStorage.removeItem('eaudit_user_id');
-      // Note: on ne supprime PAS eaudit_credentials pour permettre la reconnexion
+      // Note: on ne supprime PAS eaudit_credentials_map pour permettre la reconnexion de tous les users
+      // On supprime l'ancien format mono-user s'il existe encore
+      localStorage.removeItem('eaudit_credentials');
       setUser(null);
       setStatus('unauthenticated');
       setReady(true);

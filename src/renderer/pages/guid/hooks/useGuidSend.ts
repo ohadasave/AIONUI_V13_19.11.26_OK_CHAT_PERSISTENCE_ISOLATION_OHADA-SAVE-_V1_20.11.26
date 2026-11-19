@@ -11,7 +11,7 @@ import { buildDisplayMessage } from '@/renderer/utils/messageFiles';
 import { updateWorkspaceTime } from '@/renderer/utils/workspaceHistory';
 import { isAcpRoutedPresetType, type PresetAgentType } from '@/types/acpTypes';
 import { Message } from '@arco-design/web-react';
-import { useCallback } from 'react';
+import React, { useCallback } from 'react';
 import { type TFunction } from 'i18next';
 import type { NavigateFunction } from 'react-router-dom';
 import type { AcpBackend, AvailableAgent, EffectiveAgentInfo } from '../types';
@@ -24,6 +24,9 @@ const isN8nType = (value: string | undefined): value is N8nType => {
 };
 
 export type GuidSendDeps = {
+  // User ID for multi-user isolation
+  userId?: string;
+
   // Input state
   input: string;
   setInput: React.Dispatch<React.SetStateAction<string>>;
@@ -75,9 +78,16 @@ export type GuidSendResult = {
  * Hook that manages the send logic for all conversation types (gemini/openclaw/nanobot/acp).
  */
 export const useGuidSend = (deps: GuidSendDeps): GuidSendResult => {
-  const { input, setInput, files, setFiles, dir, setDir, setLoading, selectedAgent, selectedAgentKey, selectedAgentInfo, isPresetAgent, selectedMode, selectedAcpModel, currentModel, findAgentByKey, getEffectiveAgentType, resolvePresetRulesAndSkills, resolveEnabledSkills, isMainAgentAvailable, getAvailableFallbackAgent, currentEffectiveAgentInfo, isGoogleAuth, setMentionOpen, setMentionQuery, setMentionSelectorOpen, setMentionActiveIndex, navigate, closeAllTabs, openTab, t } = deps;
+  const { userId, input, setInput, files, setFiles, dir, setDir, setLoading, selectedAgent, selectedAgentKey, selectedAgentInfo, isPresetAgent, selectedMode, selectedAcpModel, currentModel, findAgentByKey, getEffectiveAgentType, resolvePresetRulesAndSkills, resolveEnabledSkills, isMainAgentAvailable, getAvailableFallbackAgent, currentEffectiveAgentInfo, isGoogleAuth, setMentionOpen, setMentionQuery, setMentionSelectorOpen, setMentionActiveIndex, navigate, closeAllTabs, openTab, t } = deps;
 
   const handleSend = useCallback(async () => {
+    // CRITICAL: Block if no userId - user must be authenticated
+    if (!userId) {
+      console.error('[useGuidSend] BLOCKED: No userId available - user not authenticated');
+      Message.error('Erreur: Utilisateur non authentifié. Veuillez vous reconnecter.');
+      return;
+    }
+
     const isCustomWorkspace = !!dir;
     const finalWorkspace = dir || '';
 
@@ -118,6 +128,7 @@ export const useGuidSend = (deps: GuidSendDeps): GuidSendResult => {
         const presetAssistantIdToPass = isPreset ? agentInfo?.customAgentId : undefined;
 
         const conversation = await ipcBridge.conversation.create.invoke({
+          userId,
           type: 'gemini',
           name: input,
           model: placeholderModel,
@@ -167,6 +178,7 @@ export const useGuidSend = (deps: GuidSendDeps): GuidSendResult => {
 
       try {
         const conversation = await ipcBridge.conversation.create.invoke({
+          userId,
           type: 'openclaw-gateway',
           name: input,
           model: currentModel!,
@@ -224,6 +236,7 @@ export const useGuidSend = (deps: GuidSendDeps): GuidSendResult => {
 
       try {
         const conversation = await ipcBridge.conversation.create.invoke({
+          userId,
           type: 'nanobot',
           name: input,
           model: currentModel!,
@@ -265,13 +278,7 @@ export const useGuidSend = (deps: GuidSendDeps): GuidSendResult => {
     }
 
     // n8n path (unifié pour n8n et n8n-multi-workflow)
-    const n8nType: N8nType | undefined = isN8nType(selectedAgent)
-      ? selectedAgent
-      : isN8nType(selectedAgentKey)
-        ? selectedAgentKey
-        : isPreset && isN8nType(finalEffectiveAgentType)
-          ? finalEffectiveAgentType
-          : undefined;
+    const n8nType: N8nType | undefined = isN8nType(selectedAgent) ? selectedAgent : isN8nType(selectedAgentKey) ? selectedAgentKey : isPreset && isN8nType(finalEffectiveAgentType) ? finalEffectiveAgentType : undefined;
 
     if (n8nType) {
       try {
@@ -288,6 +295,7 @@ export const useGuidSend = (deps: GuidSendDeps): GuidSendResult => {
         };
 
         const conversation = await ipcBridge.conversation.create.invoke({
+          userId,
           type: n8nType,
           name: input,
           model: placeholderModel,
@@ -352,6 +360,7 @@ export const useGuidSend = (deps: GuidSendDeps): GuidSendResult => {
 
       try {
         const conversation = await ipcBridge.conversation.create.invoke({
+          userId,
           type: 'acp',
           name: input,
           model: currentModel!,
@@ -396,7 +405,7 @@ export const useGuidSend = (deps: GuidSendDeps): GuidSendResult => {
         throw error;
       }
     }
-  }, [input, files, dir, selectedAgent, selectedAgentKey, selectedAgentInfo, isPresetAgent, selectedMode, selectedAcpModel, currentModel, findAgentByKey, getEffectiveAgentType, resolvePresetRulesAndSkills, resolveEnabledSkills, isMainAgentAvailable, getAvailableFallbackAgent, navigate, closeAllTabs, openTab, t]);
+  }, [userId, input, files, dir, selectedAgent, selectedAgentKey, selectedAgentInfo, isPresetAgent, selectedMode, selectedAcpModel, currentModel, findAgentByKey, getEffectiveAgentType, resolvePresetRulesAndSkills, resolveEnabledSkills, isMainAgentAvailable, getAvailableFallbackAgent, navigate, closeAllTabs, openTab, t]);
 
   const sendMessageHandler = useCallback(() => {
     setLoading(true);

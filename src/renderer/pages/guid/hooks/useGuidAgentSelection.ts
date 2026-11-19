@@ -194,7 +194,7 @@ export const useGuidAgentSelection = ({ modelList, isGoogleAuth, localeKey }: Us
   useEffect(() => {
     // ✅ CORRECTION: Distinguish "loading" vs "empty list"
     if (availableAgents === undefined) return; // Wait for IPC to resolve
-    if (availableAgents.length === 0) return;   // No agents available
+    if (availableAgents.length === 0) return; // No agents available
 
     let cancelled = false;
 
@@ -207,7 +207,25 @@ export const useGuidAgentSelection = ({ modelList, isGoogleAuth, localeKey }: Us
         };
 
         const rawKey = await ConfigStorage.get('guid.lastSelectedAgent');
-        if (cancelled || !rawKey) return;
+
+        // ✅ FIX: Si aucun agent sauvegardé, sélectionner n8n par défaut
+        if (!rawKey) {
+          const n8nAgent = availableAgents.find((agent) => {
+            const key = agent.backend === 'custom' && agent.customAgentId ? `custom:${agent.customAgentId}` : agent.backend;
+            return key === 'n8n' || key === 'n8n-multi-workflow';
+          });
+
+          if (n8nAgent && !cancelled) {
+            const defaultKey = n8nAgent.backend === 'custom' && n8nAgent.customAgentId ? `custom:${n8nAgent.customAgentId}` : n8nAgent.backend;
+
+            console.log('[useGuidAgentSelection] No saved agent, defaulting to:', defaultKey);
+            _setSelectedAgentKey(defaultKey);
+            await ConfigStorage.set('guid.lastSelectedAgent', defaultKey);
+          }
+          return;
+        }
+
+        if (cancelled) return;
 
         // Appliquer la migration si nécessaire
         const savedAgentKey = LEGACY_AGENT_KEYS[rawKey] ?? rawKey;
@@ -222,6 +240,7 @@ export const useGuidAgentSelection = ({ modelList, isGoogleAuth, localeKey }: Us
 
           // Persister la nouvelle clé si migration appliquée
           if (savedAgentKey !== rawKey) {
+            console.log(`[useGuidAgentSelection] Migration legacy key: ${rawKey} → ${savedAgentKey}`);
             void ConfigStorage.set('guid.lastSelectedAgent', savedAgentKey);
           }
         }
