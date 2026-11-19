@@ -6,6 +6,7 @@
 
 import { ipcBridge } from '@/common';
 import type { TChatConversation } from '@/common/storage';
+import { useAuth } from '@renderer/context/AuthContext';
 import { addEventListener } from '@/renderer/utils/emitter';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -32,11 +33,17 @@ export const useConversations = () => {
   });
   const { id } = useParams();
   const { t } = useTranslation();
+  const { user } = useAuth();
+  const userId = user?.id;
 
   useEffect(() => {
     const refresh = () => {
+      if (!userId) {
+        setConversations([]);
+        return;
+      }
       ipcBridge.database.getUserConversations
-        .invoke({ page: 0, pageSize: 10000 })
+        .invoke({ userId, page: 0, pageSize: 10000 })
         .then((data) => {
           if (data && Array.isArray(data)) {
             // 只过滤显式标记的健康检测临时会话，避免误伤用户自定义同名前缀会话
@@ -54,7 +61,7 @@ export const useConversations = () => {
 
     refresh();
     return addEventListener('chat.history.refresh', refresh);
-  }, []);
+  }, [userId]);
 
   // Scroll active conversation into view
   useEffect(() => {

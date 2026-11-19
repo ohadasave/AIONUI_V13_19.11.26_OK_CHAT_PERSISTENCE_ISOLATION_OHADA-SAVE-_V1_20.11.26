@@ -8,6 +8,7 @@ import { ipcBridge } from '@/common';
 import type { IDirOrFile } from '@/common/ipcBridge';
 import { STORAGE_KEYS } from '@/common/storageKeys';
 import FlexFullContainer from '@/renderer/components/FlexFullContainer';
+import { useAuth } from '@/renderer/context/AuthContext';
 import { useLayoutContext } from '@/renderer/context/LayoutContext';
 import useDebounce from '@/renderer/hooks/useDebounce';
 import { usePreviewContext } from '@/renderer/pages/conversation/preview';
@@ -56,6 +57,7 @@ const ChatWorkspace: React.FC<WorkspaceProps> = ({ conversation_id, workspace, e
   const isMobile = layout?.isMobile ?? false;
   const { openPreview } = usePreviewContext();
   const navigate = useNavigate();
+  const { user } = useAuth();
 
   // Message API setup
   const [internalMessageApi, messageContext] = Message.useMessage();
@@ -267,8 +269,8 @@ const ChatWorkspace: React.FC<WorkspaceProps> = ({ conversation_id, workspace, e
     setMigrationLoading(true);
 
     try {
-      // ISOLATION FIX: Get userId from auth context
-      const userId = (window as any).__currentUserId;
+      // Get userId from auth context
+      const userId = user?.id;
       console.log('[Workspace] Migrating workspace for userId:', userId);
 
       // Get current conversation data
@@ -334,6 +336,7 @@ const ChatWorkspace: React.FC<WorkspaceProps> = ({ conversation_id, workspace, e
       await ipcBridge.conversation.createWithConversation.invoke({
         conversation: newConversation,
         sourceConversationId: conversation_id, // Pass source ID to migrate chat history / 传递源会话 ID 以迁移聊天记录
+        userId: user?.id,
       });
 
       // Close modal and reset state / 关闭弹窗并重置状态

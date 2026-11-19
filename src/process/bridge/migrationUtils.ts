@@ -25,7 +25,9 @@ export async function migrateConversationToDatabase(conversation: TChatConversat
     }
 
     // Create conversation in database
-    const result = db.createConversation(conversation);
+    // Use the conversation's userId if available, otherwise fallback to system_default_user
+    // (legacy conversations from file storage may not have an explicit userId)
+    const result = db.createConversation(conversation, (conversation as { userId?: string }).userId || 'system_default_user');
     if (!result.success) {
       console.error('[Migration] Failed to migrate conversation:', result.error);
       return;

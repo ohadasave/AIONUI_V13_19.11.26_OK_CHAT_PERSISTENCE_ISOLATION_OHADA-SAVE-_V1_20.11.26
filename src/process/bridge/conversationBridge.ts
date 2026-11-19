@@ -151,7 +151,7 @@ export function initConversationBridge(): void {
     }
   });
 
-  ipcBridge.conversation.createWithConversation.provider(({ conversation, sourceConversationId }) => {
+  ipcBridge.conversation.createWithConversation.provider(({ conversation, sourceConversationId, userId }) => {
     try {
       conversation.createTime = Date.now();
       conversation.modifyTime = Date.now();
@@ -159,7 +159,9 @@ export function initConversationBridge(): void {
 
       // Save to database only
       const db = getDatabase();
-      const result = db.createConversation(conversation);
+      // Determine the userId to use: passed explicitly, or fallback to system_default_user
+      const effectiveUserId = userId || 'system_default_user';
+      const result = db.createConversation(conversation, effectiveUserId);
       if (!result.success) {
         console.error('[conversationBridge] Failed to create conversation in database:', result.error);
       }

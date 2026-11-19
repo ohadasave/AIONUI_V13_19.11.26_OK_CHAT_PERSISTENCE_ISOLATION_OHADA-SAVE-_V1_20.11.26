@@ -104,8 +104,9 @@ async function ensureConversationExists(db: ReturnType<typeof getDatabase>, conv
     return;
   }
 
-  // Create conversation in database
-  const result = db.createConversation(conversation);
+  // Create conversation in database with system_default_user as fallback
+  // (legacy path: conversation migrated from file storage, no explicit userId available)
+  const result = db.createConversation(conversation, conversation.userId || 'system_default_user');
   if (!result.success) {
     console.error(`[Message] Failed to create conversation in database:`, result.error);
   }

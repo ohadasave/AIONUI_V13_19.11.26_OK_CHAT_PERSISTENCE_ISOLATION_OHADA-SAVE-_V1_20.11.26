@@ -108,6 +108,7 @@ const Sider: React.FC<SiderProps> = ({ onSessionClick, collapsed = false }) => {
 
       await ipcBridge.conversation.createWithConversation.invoke({
         conversation: newConversation,
+        userId: user?.id,
       });
 
       // Navigation forcée avec window.location.hash au lieu de navigate()
