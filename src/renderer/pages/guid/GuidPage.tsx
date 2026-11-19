@@ -246,11 +246,7 @@ const GuidPage: React.FC = () => {
       onClosePresetTag={() => agentSelection.setSelectedAgentKey('gemini')}
       loading={guidInput.loading}
       isButtonDisabled={send.isButtonDisabled}
-      onSend={() => {
-        send.handleSend().catch((error) => {
-          console.error('Failed to send message:', error);
-        });
-      }}
+      onSend={send.sendMessageHandler}
     />
   );
 

@@ -393,6 +393,15 @@ export class AionUIDatabase {
         };
       }
 
+      // Ensure user exists in users table to satisfy FOREIGN KEY constraint
+      const now = Date.now();
+      this.db
+        .prepare(
+          `INSERT OR IGNORE INTO users (id, username, email, password_hash, avatar_path, created_at, updated_at, last_login, jwt_secret, role, status)
+           VALUES (?, ?, NULL, ?, NULL, ?, ?, NULL, NULL, 'user', 'active')`
+        )
+        .run(userId, userId, this.systemPasswordPlaceholder, now, now);
+
       const row = conversationToRow(conversation, userId);
 
       const stmt = this.db.prepare(`
@@ -407,6 +416,7 @@ export class AionUIDatabase {
         data: conversation,
       };
     } catch (error: any) {
+      console.error('[Database] createConversation error:', error);
       return {
         success: false,
         error: error.message,
