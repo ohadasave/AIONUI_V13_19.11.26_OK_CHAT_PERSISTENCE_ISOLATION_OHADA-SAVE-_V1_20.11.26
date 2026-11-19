@@ -14,8 +14,6 @@ import { useThemeContext } from './context/ThemeContext';
 import { useLastConversation } from './hooks/useLastConversation';
 import { useAuth } from './context/AuthContext';
 import { ipcBridge } from '@/common';
-import type { TChatConversation } from '@/common/storage';
-import { v4 as uuid } from 'uuid';
 import { emitter } from './utils/emitter';
 
 const WorkspaceGroupedHistory = React.lazy(() => import('./pages/conversation/WorkspaceGroupedHistory'));
@@ -95,38 +93,44 @@ const Sider: React.FC<SiderProps> = ({ onSessionClick, collapsed = false }) => {
     setIsBatchMode(false);
 
     try {
-      const newId = uuid();
-
-      const newConversation: TChatConversation = {
-        id: newId,
-        name: t('conversation.welcome.newConversation'),
-        type: 'n8n',
-        createTime: Date.now(),
-        modifyTime: Date.now(),
-        extra: {},
+      // Placeholder model required by ICreateConversationParams
+      const placeholderModel = {
+        name: 'n8n Workflow',
+        useModel: 'n8n',
+        platform: 'custom' as const,
+        baseUrl: 'http://localhost:3458',
+        apiKey: '',
       };
 
-      await ipcBridge.conversation.createWithConversation.invoke({
-        conversation: newConversation,
+      // Use conversation.create (via ConversationService) so the conversation
+      // is properly persisted in DB BEFORE we navigate to it.
+      const conversation = await ipcBridge.conversation.create.invoke({
+        type: 'n8n',
+        name: t('conversation.welcome.newConversation'),
+        model: placeholderModel,
         userId: user?.id,
+        extra: {},
       });
 
-      // Navigation forcée avec window.location.hash au lieu de navigate()
-      window.location.hash = `#/conversation/${newId}`;
+      if (!conversation || !conversation.id) {
+        console.error('[New Chat] Failed to create n8n conversation - no id returned');
+        void navigate('/guid');
+        return;
+      }
 
-      // Rafraîchir l'historique
       emitter.emit('chat.history.refresh');
 
-      // Cacher la sidebar sur mobile
+      // Navigate using React Router (conversation is already in DB)
+      void navigate(`/conversation/${conversation.id}`);
+
       if (onSessionClick) {
         onSessionClick();
       }
     } catch (error) {
       console.error('[NEW CHAT] Failed to create n8n conversation:', error);
-      // Fallback vers /guid en cas d'erreur
-      window.location.hash = '#/guid';
+      void navigate('/guid');
     }
-  }, [closePreview, onSessionClick, t]);
+  }, [closePreview, onSessionClick, t, user?.id, navigate]);
   const workspaceHistoryProps = {
     collapsed,
     tooltipEnabled: collapsed && !isMobile,
