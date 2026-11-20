@@ -15,5 +15,5 @@
       "@/*": ["src/*"]
     }
   },
-  "include": ["server.ts", "vite.config.ts", "src/client/**/*.ts", "src/client/**/*.tsx"]
+  "include": ["server.ts", "vite.config.ts", "netlify/functions/**/*.ts", "src/client/**/*.ts", "src/client/**/*.tsx"]
 }

@@ -56,6 +56,8 @@ export const ChatPage: React.FC<ChatPageProps> = ({ onConversationUpdated, isDar
 
   const messagesContainerRef = useRef<HTMLDivElement | null>(null);
   const prevMsgCountRef = useRef<number>(0);
+  const activeConvIdRef = useRef<string | undefined>(id);
+  activeConvIdRef.current = id;
   const onConversationUpdatedRef = useRef(onConversationUpdated);
   onConversationUpdatedRef.current = onConversationUpdated;
 
@@ -170,28 +172,73 @@ export const ChatPage: React.FC<ChatPageProps> = ({ onConversationUpdated, isDar
       });
       const data = (await res.json()) as {
         success: boolean;
+        pending?: boolean;
+        jobId?: string;
         message?: string;
         userMessage?: ChatMessage;
         assistantMessage?: ChatMessage;
         conversation?: Conversation;
       };
 
-      if (!res.ok || !data.success || !data.userMessage || !data.assistantMessage) {
+      if (!res.ok || !data.success || !data.userMessage) {
         throw new Error(data.message || "Erreur lors de l'exécution du workflow n8n");
       }
 
       const newUserMsg = data.userMessage;
-      const newAssistantMsg = data.assistantMessage;
-      setMessages((prev) => mergeMessagesById(prev, [newUserMsg, newAssistantMsg]));
-      if (data.conversation) {
-        setConversation(data.conversation);
+      let finalAssistantMsg = data.assistantMessage;
+      let finalConversation = data.conversation;
+
+      if (data.pending && data.jobId) {
+        if (activeConvIdRef.current !== convId) return;
+        setMessages((prev) => mergeMessagesById(prev, [newUserMsg]));
+        setPendingUserText(null);
+        if (data.conversation) {
+          setConversation(data.conversation);
+        }
+        void onConversationUpdatedRef.current();
+
+        const deadline = Date.now() + 5 * 60 * 1000 + 20_000;
+        while (!finalAssistantMsg && Date.now() < deadline) {
+          await new Promise((resolve) => setTimeout(resolve, 1500));
+          if (activeConvIdRef.current !== convId) return;
+          const jobRes = await authFetch(`/api/conversations/${convId}/jobs/${data.jobId}`);
+          if (!jobRes.ok) {
+            throw new Error("Impossible de suivre l'avancement du workflow n8n");
+          }
+          const jobData = (await jobRes.json()) as {
+            success: boolean;
+            status: 'pending' | 'completed';
+            assistantMessage?: ChatMessage;
+            conversation?: Conversation;
+          };
+          if (jobData.status === 'completed' && jobData.assistantMessage) {
+            finalAssistantMsg = jobData.assistantMessage;
+            finalConversation = jobData.conversation || finalConversation;
+            break;
+          }
+        }
+      }
+
+      if (activeConvIdRef.current !== convId) return;
+
+      if (!finalAssistantMsg) {
+        throw new Error('Délai maximal de 5 minutes dépassé lors du traitement n8n');
+      }
+
+      setMessages((prev) => mergeMessagesById(prev, [newUserMsg, finalAssistantMsg]));
+      if (finalConversation) {
+        setConversation(finalConversation);
       }
       void onConversationUpdatedRef.current();
     } catch (err) {
-      Message.error(err instanceof Error ? err.message : "Erreur lors de l'envoi");
+      if (activeConvIdRef.current === convId) {
+        Message.error(err instanceof Error ? err.message : "Erreur lors de l'envoi");
+      }
     } finally {
-      setPendingUserText(null);
-      setSending(false);
+      if (activeConvIdRef.current === convId) {
+        setPendingUserText(null);
+        setSending(false);
+      }
     }
   }, []);
 
@@ -234,6 +281,7 @@ export const ChatPage: React.FC<ChatPageProps> = ({ onConversationUpdated, isDar
       setConversation(null);
       setMessages([]);
       setPendingUserText(null);
+      setSending(false);
     }
 
     const load = async () => {
@@ -340,20 +388,21 @@ export const ChatPage: React.FC<ChatPageProps> = ({ onConversationUpdated, isDar
               ))}
 
               {sending && pendingUserText && (
-                <>
-                  <div className='flex justify-end mb-4'>
-                    <div className='max-w-[82%] rounded-2xl rounded-tr-sm px-4 py-3 bg-[#6b1102] text-white shadow-sm text-sm whitespace-pre-wrap break-words'>{pendingUserText}</div>
+                <div className='flex justify-end mb-4'>
+                  <div className='max-w-[82%] rounded-2xl rounded-tr-sm px-4 py-3 bg-[#6b1102] text-white shadow-sm text-sm whitespace-pre-wrap break-words'>{pendingUserText}</div>
+                </div>
+              )}
+
+              {sending && (
+                <div className='flex items-start gap-3 mb-5'>
+                  <div className='w-8 h-8 rounded-lg bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 flex items-center justify-center shrink-0 overflow-hidden shadow-xs'>
+                    <img src='/logo.png' alt='E-audit' className='w-6 h-6 object-contain' />
                   </div>
-                  <div className='flex items-start gap-3 mb-5'>
-                    <div className='w-8 h-8 rounded-lg bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 flex items-center justify-center shrink-0 overflow-hidden shadow-xs'>
-                      <img src='/logo.png' alt='E-audit' className='w-6 h-6 object-contain' />
-                    </div>
-                    <div className='bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-2xl rounded-tl-sm px-4 py-3 shadow-xs flex items-center gap-2.5 text-sm text-gray-600 dark:text-gray-300'>
-                      <Loader2 className='w-4 h-4 animate-spin text-[#6b1102]' />
-                      <span>Exécution du workflow n8n en cours...</span>
-                    </div>
+                  <div className='bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-2xl rounded-tl-sm px-4 py-3 shadow-xs flex items-center gap-2.5 text-sm text-gray-600 dark:text-gray-300'>
+                    <Loader2 className='w-4 h-4 animate-spin text-[#6b1102]' />
+                    <span>Exécution du workflow n8n en cours...</span>
                   </div>
-                </>
+                </div>
               )}
             </>
           )}

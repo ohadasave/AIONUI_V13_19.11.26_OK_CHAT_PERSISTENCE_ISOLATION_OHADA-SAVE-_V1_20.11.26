@@ -8,8 +8,10 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+import { getStore } from '@netlify/blobs';
+
+const CURRENT_FILENAME = typeof __filename !== 'undefined' ? __filename : import.meta.url ? fileURLToPath(import.meta.url) : path.join(process.cwd(), 'server.ts');
+const CURRENT_DIRNAME = path.dirname(CURRENT_FILENAME);
 
 function normalizeN8nBaseUrl(rawUrl?: string): string {
   const trimmed = (rawUrl || '').trim().replace(/\/+$/, '');
@@ -23,11 +25,12 @@ const HOST = '0.0.0.0';
 const JWT_SECRET = (runtimeEnv['JWT_SECRET'] || '').trim() || 'e-audit-secret-production-2026';
 const N8N_BASE_URL = normalizeN8nBaseUrl(runtimeEnv['N8N_BASE_URL'] || 'https://2dl3ntnj.rpcld.co/webhook');
 const N8N_MULTI_ENDPOINT = (runtimeEnv['N8N_MULTI_WORKFLOW_ENDPOINT'] || '').trim() || 'https://providerbridge.netlify.app/api/providers/n8n/processor';
-const N8N_TIMEOUT_MS = 10 * 60 * 1000;
-const DATA_FILE = path.join(__dirname, '.eaudit-store.json');
+const N8N_TIMEOUT_MS = 5 * 60 * 1000; // 5 minutes (300 000 ms)
+const IS_SERVERLESS_RUNTIME = Boolean(runtimeEnv.AWS_LAMBDA_FUNCTION_NAME || (globalThis as Record<string, unknown>).__EAUDIT_SERVERLESS__);
+const DATA_FILE = IS_SERVERLESS_RUNTIME ? '/tmp/.eaudit-store.json' : path.join(CURRENT_DIRNAME, '.eaudit-store.json');
 
 // ---------------------------------------------------------------------------
-// Types & In-Memory Store (replaces better-sqlite3 for container runtime)
+// Types & Persistent Store (Local JSON / Netlify Blobs in serverless)
 // ---------------------------------------------------------------------------
 
 export interface StoredUser {
@@ -79,7 +82,25 @@ const store: StoreData = {
   messages: [],
 };
 
-function loadStore(): void {
+let storeLoadedOnce = false;
+
+function ensureDefaultAdmin(): boolean {
+  const defaultUsername = 'ohada.save@gmail.com';
+  if (!store.users.some((u) => u.username.toLowerCase() === defaultUsername)) {
+    const hash = bcrypt.hashSync('LEADER00', 10);
+    store.users.push({
+      id: 'user_default_admin',
+      username: defaultUsername,
+      passwordHash: hash,
+      role: 'admin',
+      createdAt: Date.now(),
+    });
+    return true;
+  }
+  return false;
+}
+
+function loadStoreFromFile(): void {
   try {
     if (fs.existsSync(DATA_FILE)) {
       const raw = fs.readFileSync(DATA_FILE, 'utf-8');
@@ -92,22 +113,12 @@ function loadStore(): void {
     console.warn('[Store] Failed to load persisted JSON store, starting fresh:', err);
   }
 
-  // Ensure default pre-seeded account from public/enable-login.html exists
-  const defaultUsername = 'ohada.save@gmail.com';
-  if (!store.users.some((u) => u.username.toLowerCase() === defaultUsername)) {
-    const hash = bcrypt.hashSync('LEADER00', 10);
-    store.users.push({
-      id: 'user_default_admin',
-      username: defaultUsername,
-      passwordHash: hash,
-      role: 'admin',
-      createdAt: Date.now(),
-    });
-    saveStore();
+  if (ensureDefaultAdmin()) {
+    saveStoreToFile();
   }
 }
 
-function saveStore(): void {
+function saveStoreToFile(): void {
   try {
     fs.writeFileSync(DATA_FILE, JSON.stringify(store, null, 2), 'utf-8');
   } catch (err) {
@@ -115,7 +126,56 @@ function saveStore(): void {
   }
 }
 
-loadStore();
+function hasNetlifyBlobsContext(): boolean {
+  return Boolean((globalThis as Record<string, unknown>).netlifyBlobsContext);
+}
+
+export async function ensureStoreLoaded(forceRefresh = false): Promise<void> {
+  if (hasNetlifyBlobsContext()) {
+    if (!storeLoadedOnce || forceRefresh) {
+      try {
+        const blobStore = getStore({ name: 'eaudit-data', consistency: 'strong' });
+        const parsed = (await blobStore.get('store.json', { type: 'json' })) as Partial<StoreData> | null;
+        if (parsed && typeof parsed === 'object') {
+          store.users = Array.isArray(parsed.users) ? parsed.users : [];
+          store.conversations = Array.isArray(parsed.conversations) ? parsed.conversations : [];
+          store.messages = Array.isArray(parsed.messages) ? parsed.messages : [];
+        }
+        if (ensureDefaultAdmin()) {
+          await blobStore.setJSON('store.json', store);
+        }
+        storeLoadedOnce = true;
+        return;
+      } catch (err) {
+        console.warn('[Store] Netlify Blobs read failed, falling back to local JSON:', err);
+      }
+    } else {
+      return;
+    }
+  }
+
+  if (!storeLoadedOnce) {
+    loadStoreFromFile();
+    storeLoadedOnce = true;
+  }
+}
+
+async function saveStoreAsync(): Promise<void> {
+  saveStoreToFile();
+  if (hasNetlifyBlobsContext()) {
+    try {
+      const blobStore = getStore({ name: 'eaudit-data', consistency: 'strong' });
+      await blobStore.setJSON('store.json', store);
+    } catch (err) {
+      console.warn('[Store] Netlify Blobs write failed:', err);
+    }
+  }
+}
+
+if (!IS_SERVERLESS_RUNTIME) {
+  loadStoreFromFile();
+  storeLoadedOnce = true;
+}
 
 // ---------------------------------------------------------------------------
 // n8n Switch-Case Router & Response Normalizer (from claraApiService.ts)
@@ -423,7 +483,7 @@ async function executeWorkflow(userMessage: string, workflowType: WorkflowType, 
       const response = await fetch(N8N_MULTI_ENDPOINT, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Accept: '*/*' },
-        body: JSON.stringify({ message: userMessage, options: { timeout: 660000 } }),
+        body: JSON.stringify({ message: userMessage, options: { timeout: N8N_TIMEOUT_MS } }),
         signal: controller.signal,
       });
 
@@ -437,10 +497,11 @@ async function executeWorkflow(userMessage: string, workflowType: WorkflowType, 
       return normalizeN8nResponse(json, N8N_MULTI_ENDPOINT);
     } catch (error) {
       clearTimeout(timer);
-      const errMsg = error instanceof Error ? error.message : String(error);
+      const err = error instanceof Error ? error : new Error(String(error));
+      const isTimeout = err.name === 'AbortError';
       return {
-        content: `⚠️ **Erreur Provider-Bridge Multi-Workflow**\n\nImpossible de joindre l'endpoint \`${N8N_MULTI_ENDPOINT}\`.\n\n- **Détail**: \`${errMsg}\``,
-        metadata: { format: 'error', error: errMsg },
+        content: isTimeout ? `⏱️ **Timeout Multi-Workflow (5 min)**\n\nL'endpoint \`${N8N_MULTI_ENDPOINT}\` n'a pas répondu dans le délai maximal de 5 minutes.` : `⚠️ **Erreur Provider-Bridge Multi-Workflow**\n\nImpossible de joindre l'endpoint \`${N8N_MULTI_ENDPOINT}\`.\n\n- **Détail**: \`${err.message}\``,
+        metadata: { format: 'error', error: err.message },
       };
     }
   }
@@ -478,6 +539,12 @@ async function executeWorkflow(userMessage: string, workflowType: WorkflowType, 
     clearTimeout(timer);
     if (!response.ok) {
       const errorText = await response.text();
+      if (response.status === 524) {
+        return {
+          content: `⏱️ **Timeout proxy distant (HTTP 524 — limite Cloudflare de 120 s)**\n\nEndpoint ciblé : \`${endpoint}\`\n\n**Analyse :** Le serveur E-audit autorise désormais jusqu'à **5 minutes (300 s)** d'exécution, mais le proxy Cloudflare de l'hébergeur n8n (\`rpcld.co\`) interrompt toute requête HTTP synchrone dépassant **120 secondes**.\n\n**Détail :** \`HTTP 524${errorText ? ` - ${errorText.slice(0, 260)}` : ''}\`\n\n*Solutions : réduisez le temps d'exécution du workflow n8n sous 120 s (ou renvoyez la réponse plus tôt via un nœud **Respond to Webhook**), ou utilisez une URL n8n directe sans limite Cloudflare 120 s.*`,
+          metadata: { format: 'error', endpoint, error: 'HTTP 524 Cloudflare 120s Proxy Read Timeout' },
+        };
+      }
       throw new Error(`HTTP ${response.status} ${response.statusText}${errorText ? ` - ${errorText.slice(0, 300)}` : ''}`);
     }
 
@@ -500,7 +567,7 @@ async function executeWorkflow(userMessage: string, workflowType: WorkflowType, 
     const err = error instanceof Error ? error : new Error(String(error));
     const isTimeout = err.name === 'AbortError';
     return {
-      content: isTimeout ? `⏱️ **Timeout n8n**: Le workflow (\`${endpoint}\`) n'a pas répondu dans le délai imparti.` : `🌐 **Erreur de connexion n8n**\n\nEndpoint ciblé : \`${endpoint}\`\n\n**Détail :** \`${err.message}\`\n\n*Astuce : vérifiez que le webhook n8n est actif et accessible depuis ce serveur, ou utilisez le menu **Démarrer** pour envoyer une commande structurée.*`,
+      content: isTimeout ? `⏱️ **Timeout n8n (5 min)**: Le workflow (\`${endpoint}\`) n'a pas répondu dans le délai imparti de 5 minutes.` : `🌐 **Erreur de connexion n8n**\n\nEndpoint ciblé : \`${endpoint}\`\n\n**Détail :** \`${err.message}\`\n\n*Astuce : vérifiez que le webhook n8n est actif et accessible depuis ce serveur, ou utilisez le menu **Démarrer** pour envoyer une commande structurée.*`,
       metadata: { format: 'error', endpoint, error: err.message },
     };
   }
@@ -566,9 +633,16 @@ function setAuthCookie(req: Request, res: Response, user: StoredUser, remember?:
 // Express App Setup
 // ---------------------------------------------------------------------------
 
-async function createServer(): Promise<void> {
+export function createApiApp(): express.Express {
   const app = express();
   app.set('trust proxy', 1);
+  app.use((req: Request, _res: Response, next: NextFunction) => {
+    if (req.url.startsWith('/.netlify/functions/api')) {
+      const stripped = req.url.slice('/.netlify/functions/api'.length) || '/';
+      req.url = stripped.startsWith('/api') ? stripped : `/api${stripped.startsWith('/') ? stripped : `/${stripped}`}`;
+    }
+    next();
+  });
   app.use(cors({ origin: true, credentials: true }));
   app.use(express.json({ limit: '10mb' }));
   app.use(cookieParser());
@@ -578,11 +652,13 @@ async function createServer(): Promise<void> {
     max: 30,
     standardHeaders: true,
     legacyHeaders: false,
+    validate: { ip: false, xForwardedForHeader: false },
+    keyGenerator: (req: Request) => req.ip || (typeof req.headers['x-nf-client-connection-ip'] === 'string' ? req.headers['x-nf-client-connection-ip'] : '') || (typeof req.headers['x-forwarded-for'] === 'string' ? req.headers['x-forwarded-for'].split(',')[0].trim() : '') || 'unknown',
   });
 
   // Health Check
   app.get('/api/health', (_req: Request, res: Response) => {
-    res.json({ status: 'ok', service: 'e-audit-web', port: PORT });
+    res.json({ status: 'ok', service: 'e-audit-web', port: PORT, serverless: IS_SERVERLESS_RUNTIME });
   });
 
   // ── Auth Routes ────────────────────────────────────────────────────────────
@@ -605,7 +681,7 @@ async function createServer(): Promise<void> {
     }
   });
 
-  app.post('/api/auth/register', authLimiter, (req: Request, res: Response) => {
+  app.post('/api/auth/register', authLimiter, async (req: Request, res: Response) => {
     const { username, password } = req.body as { username?: string; password?: string };
     const cleanUser = (username || '').trim();
     if (!cleanUser || cleanUser.length < 3) {
@@ -629,7 +705,7 @@ async function createServer(): Promise<void> {
       createdAt: Date.now(),
     };
     store.users.push(newUser);
-    saveStore();
+    await saveStoreAsync();
     const token = setAuthCookie(req, res, newUser, true);
 
     res.status(201).json({
@@ -678,7 +754,7 @@ async function createServer(): Promise<void> {
     res.json({ success: true, conversations: list });
   });
 
-  app.post('/api/conversations', authenticateMiddleware, (req: AuthRequest, res: Response) => {
+  app.post('/api/conversations', authenticateMiddleware, async (req: AuthRequest, res: Response) => {
     const userId = req.user!.id;
     const { name, type } = req.body as { name?: string; type?: WorkflowType };
     const now = Date.now();
@@ -691,7 +767,7 @@ async function createServer(): Promise<void> {
       updatedAt: now,
     };
     store.conversations.push(conv);
-    saveStore();
+    await saveStoreAsync();
     res.status(201).json({ success: true, conversation: conv });
   });
 
@@ -706,7 +782,7 @@ async function createServer(): Promise<void> {
     res.json({ success: true, conversation: conv, messages });
   });
 
-  app.delete('/api/conversations/:id', authenticateMiddleware, (req: AuthRequest, res: Response) => {
+  app.delete('/api/conversations/:id', authenticateMiddleware, async (req: AuthRequest, res: Response) => {
     const userId = req.user!.id;
     const idx = store.conversations.findIndex((c) => c.id === req.params.id && c.userId === userId);
     if (idx === -1) {
@@ -715,11 +791,11 @@ async function createServer(): Promise<void> {
     }
     store.conversations.splice(idx, 1);
     store.messages = store.messages.filter((m) => !(m.conversationId === req.params.id && m.userId === userId));
-    saveStore();
+    await saveStoreAsync();
     res.json({ success: true });
   });
 
-  app.patch('/api/conversations/:id/messages/:messageId', authenticateMiddleware, (req: AuthRequest, res: Response) => {
+  app.patch('/api/conversations/:id/messages/:messageId', authenticateMiddleware, async (req: AuthRequest, res: Response) => {
     const userId = req.user!.id;
     const { content, metadataPatch } = req.body as { content?: string; metadataPatch?: Record<string, unknown> };
     const msg = store.messages.find((m) => m.id === req.params.messageId && m.conversationId === req.params.id && m.userId === userId);
@@ -747,14 +823,56 @@ async function createServer(): Promise<void> {
       changed = true;
     }
     if (changed) {
-      saveStore();
+      await saveStoreAsync();
     }
     res.json({ success: true, message: msg });
   });
 
+  interface WorkflowJob {
+    id: string;
+    userId: string;
+    conversationId: string;
+    status: 'pending' | 'completed';
+    userMessage: StoredMessage;
+    assistantMessage?: StoredMessage;
+    conversation: StoredConversation;
+    createdAt: number;
+    finishedAt?: number;
+  }
+
+  const workflowJobs = new Map<string, WorkflowJob>();
+
+  function pruneOldWorkflowJobs(): void {
+    const cutoff = Date.now() - 15 * 60 * 1000;
+    for (const [jobId, job] of workflowJobs.entries()) {
+      if (job.finishedAt && job.finishedAt < cutoff) {
+        workflowJobs.delete(jobId);
+      }
+    }
+  }
+
+  app.get('/api/conversations/:id/jobs/:jobId', authenticateMiddleware, (req: AuthRequest, res: Response) => {
+    const userId = req.user!.id;
+    const convId = String(req.params.id);
+    const jobIdParam = String(req.params.jobId);
+    const job = workflowJobs.get(jobIdParam);
+    if (!job || job.userId !== userId || job.conversationId !== convId) {
+      res.status(404).json({ success: false, message: 'Tâche introuvable' });
+      return;
+    }
+    res.json({
+      success: true,
+      status: job.status,
+      userMessage: job.userMessage,
+      assistantMessage: job.assistantMessage,
+      conversation: job.conversation,
+    });
+  });
+
   app.post('/api/conversations/:id/send', authenticateMiddleware, async (req: AuthRequest, res: Response) => {
     const userId = req.user!.id;
-    const conv = store.conversations.find((c) => c.id === req.params.id && c.userId === userId);
+    const convId = String(req.params.id);
+    const conv = store.conversations.find((c) => c.id === convId && c.userId === userId);
     if (!conv) {
       res.status(404).json({ success: false, message: 'Conversation introuvable' });
       return;
@@ -783,50 +901,122 @@ async function createServer(): Promise<void> {
       conv.name = firstLine || conv.name;
     }
     conv.updatedAt = Date.now();
-    saveStore();
+    await saveStoreAsync();
 
-    const result = await executeWorkflow(trimmed, conv.type, attachments);
+    if (IS_SERVERLESS_RUNTIME) {
+      const result = await executeWorkflow(trimmed, conv.type, attachments);
+      const assistantMsg: StoredMessage = {
+        id: `msg_${Date.now()}_a_${Math.random().toString(36).slice(2, 6)}`,
+        conversationId: conv.id,
+        userId,
+        role: 'assistant',
+        content: result.content,
+        metadata: result.metadata,
+        createdAt: Date.now(),
+      };
+      store.messages.push(assistantMsg);
+      conv.updatedAt = Date.now();
+      await saveStoreAsync();
+      res.json({
+        success: true,
+        pending: false,
+        userMessage: userMsg,
+        assistantMessage: assistantMsg,
+        conversation: conv,
+      });
+      return;
+    }
 
-    const assistantMsg: StoredMessage = {
-      id: `msg_${Date.now()}_a_${Math.random().toString(36).slice(2, 6)}`,
-      conversationId: conv.id,
+    pruneOldWorkflowJobs();
+    const jobId = `job_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+    const job: WorkflowJob = {
+      id: jobId,
       userId,
-      role: 'assistant',
-      content: result.content,
-      metadata: result.metadata,
+      conversationId: conv.id,
+      status: 'pending',
+      userMessage: userMsg,
+      conversation: conv,
       createdAt: Date.now(),
     };
-    store.messages.push(assistantMsg);
-    conv.updatedAt = Date.now();
-    saveStore();
+    workflowJobs.set(jobId, job);
 
-    res.json({
+    const executionPromise = executeWorkflow(trimmed, conv.type, attachments).then(async (result) => {
+      const assistantMsg: StoredMessage = {
+        id: `msg_${Date.now()}_a_${Math.random().toString(36).slice(2, 6)}`,
+        conversationId: conv.id,
+        userId,
+        role: 'assistant',
+        content: result.content,
+        metadata: result.metadata,
+        createdAt: Date.now(),
+      };
+      store.messages.push(assistantMsg);
+      conv.updatedAt = Date.now();
+      await saveStoreAsync();
+
+      job.status = 'completed';
+      job.assistantMessage = assistantMsg;
+      job.conversation = conv;
+      job.finishedAt = Date.now();
+      return assistantMsg;
+    });
+
+    const raceOutcome = await Promise.race([executionPromise.then((assistantMsg) => ({ done: true as const, assistantMsg })), new Promise<{ done: false }>((resolve) => setTimeout(() => resolve({ done: false }), 2000))]);
+
+    if (raceOutcome.done) {
+      res.json({
+        success: true,
+        pending: false,
+        jobId,
+        userMessage: userMsg,
+        assistantMessage: raceOutcome.assistantMsg,
+        conversation: conv,
+      });
+      return;
+    }
+
+    res.status(202).json({
       success: true,
+      pending: true,
+      jobId,
       userMessage: userMsg,
-      assistantMessage: assistantMsg,
       conversation: conv,
     });
   });
 
+  return app;
+}
+
+async function createServer(): Promise<void> {
+  await ensureStoreLoaded();
+  const app = createApiApp();
+
   // Vite / Static Frontend Serving
   if (process.env.NODE_ENV !== 'production') {
-    const { createServer: createViteServer } = await import('vite');
+    const vitePkg = 'vite';
+    const { createServer: createViteServer } = (await import(/* @vite-ignore */ vitePkg)) as typeof import('vite');
     const vite = await createViteServer({
       server: { middlewareMode: true },
       appType: 'spa',
     });
     app.use(vite.middlewares);
   } else {
-    const distDir = path.join(__dirname, 'dist');
+    const distDir = path.join(CURRENT_DIRNAME, 'dist');
     app.use(express.static(distDir));
     app.use((_req: Request, res: Response) => {
       res.sendFile(path.join(distDir, 'index.html'));
     });
   }
 
-  app.listen(PORT, HOST, () => {
-    console.log(`🚀 E-audit Web Server running on http://${HOST}:${PORT}`);
+  const httpServer = app.listen(PORT, HOST, () => {
+    console.log(`🚀 E-audit Web Server running on http://${HOST}:${PORT} (timeout n8n: ${N8N_TIMEOUT_MS / 1000}s)`);
   });
+  httpServer.timeout = N8N_TIMEOUT_MS + 15_000;
+  httpServer.requestTimeout = N8N_TIMEOUT_MS + 15_000;
+  httpServer.headersTimeout = N8N_TIMEOUT_MS + 20_000;
+  httpServer.keepAliveTimeout = 65_000;
 }
 
-void createServer();
+if (!IS_SERVERLESS_RUNTIME) {
+  void createServer();
+}

@@ -11,7 +11,7 @@
     "dev": "tsx server.ts",
     "build": "vite build",
     "start": "NODE_ENV=production tsx server.ts",
-    "lint": "eslint --quiet --ext .ts,.tsx server.ts src/client"
+    "lint": "eslint --quiet --ext .ts,.tsx server.ts netlify/functions src/client"
   },
   "keywords": [
     "audit",
@@ -23,6 +23,7 @@
   "license": "Apache-2.0",
   "dependencies": {
     "@arco-design/web-react": "^2.66.1",
+    "@netlify/blobs": "^11.1.9",
     "bcryptjs": "^2.4.3",
     "classnames": "^2.5.1",
     "cookie-parser": "^1.4.7",
@@ -38,6 +39,7 @@
     "rehype-raw": "^7.0.0",
     "remark-breaks": "^4.0.0",
     "remark-gfm": "^4.0.1",
+    "serverless-http": "^4.0.0",
     "xlsx-republish": "^0.20.3",
     "zod": "^3.25.76"
   },
@@ -64,4 +66,3 @@
     "vite": "^6.4.1"
   }
 }
-
