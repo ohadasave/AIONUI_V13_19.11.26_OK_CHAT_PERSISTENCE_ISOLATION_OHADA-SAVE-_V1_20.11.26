@@ -17,7 +17,7 @@ export const InteractiveTable: React.FC<InteractiveTableProps> = ({ children, on
   const [copied, setCopied] = useState(false);
 
   const getTable = (): HTMLTableElement | null => {
-    return containerRef.current?.querySelector('table') ?? null;
+    return containerRef.current?.querySelector('table:not(.claraverse-conso-table)') ?? null;
   };
 
   useEffect(() => {

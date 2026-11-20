@@ -17,11 +17,12 @@ function normalizeN8nBaseUrl(rawUrl?: string): string {
   return trimmed.endsWith('/webhook') ? trimmed : `${trimmed}/webhook`;
 }
 
-const PORT = Number(process.env.PORT || 3000);
+const runtimeEnv: Record<string, string | undefined> = process.env;
+const PORT = Number(runtimeEnv.PORT || 3000);
 const HOST = '0.0.0.0';
-const JWT_SECRET = (process.env.JWT_SECRET || '').trim() || 'e-audit-dev-secret-change-in-production';
-const N8N_BASE_URL = normalizeN8nBaseUrl(process.env.N8N_BASE_URL);
-const N8N_MULTI_ENDPOINT = (process.env.N8N_MULTI_WORKFLOW_ENDPOINT || '').trim() || 'https://providerbridge.netlify.app/api/providers/n8n/processor';
+const JWT_SECRET = (runtimeEnv['JWT_SECRET'] || '').trim() || 'e-audit-secret-production-2026';
+const N8N_BASE_URL = normalizeN8nBaseUrl(runtimeEnv['N8N_BASE_URL'] || 'https://2dl3ntnj.rpcld.co/webhook');
+const N8N_MULTI_ENDPOINT = (runtimeEnv['N8N_MULTI_WORKFLOW_ENDPOINT'] || '').trim() || 'https://providerbridge.netlify.app/api/providers/n8n/processor';
 const N8N_TIMEOUT_MS = 10 * 60 * 1000;
 const DATA_FILE = path.join(__dirname, '.eaudit-store.json');
 
@@ -720,14 +721,32 @@ async function createServer(): Promise<void> {
 
   app.patch('/api/conversations/:id/messages/:messageId', authenticateMiddleware, (req: AuthRequest, res: Response) => {
     const userId = req.user!.id;
-    const { content } = req.body as { content?: string };
+    const { content, metadataPatch } = req.body as { content?: string; metadataPatch?: Record<string, unknown> };
     const msg = store.messages.find((m) => m.id === req.params.messageId && m.conversationId === req.params.id && m.userId === userId);
     if (!msg) {
       res.status(404).json({ success: false, message: 'Message introuvable' });
       return;
     }
+    let changed = false;
     if (typeof content === 'string') {
       msg.content = content;
+      changed = true;
+    }
+    if (metadataPatch && typeof metadataPatch === 'object' && !Array.isArray(metadataPatch)) {
+      const existingMeta = msg.metadata && typeof msg.metadata === 'object' ? msg.metadata : {};
+      const nextMeta: Record<string, unknown> = { ...existingMeta };
+      for (const [key, val] of Object.entries(metadataPatch)) {
+        if (key === 'consoData' && val && typeof val === 'object' && !Array.isArray(val)) {
+          const prevConso = existingMeta.consoData && typeof existingMeta.consoData === 'object' ? (existingMeta.consoData as Record<string, unknown>) : {};
+          nextMeta.consoData = { ...prevConso, ...(val as Record<string, unknown>) };
+        } else {
+          nextMeta[key] = val;
+        }
+      }
+      msg.metadata = nextMeta;
+      changed = true;
+    }
+    if (changed) {
       saveStore();
     }
     res.json({ success: true, message: msg });

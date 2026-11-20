@@ -58,20 +58,25 @@
     }
 
     getCurrentSessionId() {
-      // 1. Via sessionStorage (session stable)
+      // 1. Via API bridge (conversation ID serveur en priorité)
+      if (window.claraverseSyncAPI?.getCurrentSessionId) {
+        return window.claraverseSyncAPI.getCurrentSessionId();
+      }
+      // 2. Via pathname (/conversation/:id)
+      const pathMatch = window.location.pathname.match(/\/conversation\/([^/?#]+)/);
+      if (pathMatch && pathMatch[1]) {
+        return pathMatch[1];
+      }
+      // 3. Via URL query
+      const params = new URLSearchParams(window.location.search);
+      const fromUrl = params.get('session') || params.get('sessionId') || params.get('chatId');
+      if (fromUrl) return fromUrl;
+      // 4. Via sessionStorage (fallback hors conversation)
       try {
         const stored = sessionStorage.getItem('claraverse_stable_session');
         if (stored) return stored;
       } catch (e) {}
-      // 2. Via URL
-      const params = new URLSearchParams(window.location.search);
-      const fromUrl = params.get('session') || params.get('sessionId') || params.get('chatId');
-      if (fromUrl) return fromUrl;
-      // 3. Via API bridge
-      if (window.claraverseSyncAPI?.getCurrentSessionId) {
-        return window.claraverseSyncAPI.getCurrentSessionId();
-      }
-      // 4. Générer et stocker
+      // 5. Générer et stocker
       const newId = `conso_session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
       try {
         sessionStorage.setItem('claraverse_stable_session', newId);
@@ -228,9 +233,25 @@
       const tables = this.findAllTables();
 
       tables.forEach((table, index) => {
-        if (!this.processedTables.has(table) && !table.classList.contains("claraverse-conso-table")) {
+        if (
+          table.classList.contains("claraverse-conso-table") ||
+          table.closest(".sample-results-container, .analysis-results-container")
+        ) {
+          return;
+        }
+
+        if (!this.processedTables.has(table)) {
           debug.log(`Traitement de la table ${index + 1}`);
           this.processTable(table);
+        } else if (table.dataset.consoModelized === "true") {
+          const unboundCell = table.querySelector("tbody td:not([data-conso-interactive])");
+          if (unboundCell) {
+            const headers = this.getTableHeaders(table);
+            if (headers.length > 0 && this.isModelizedTable(headers)) {
+              this.setupTableInteractions(table, headers);
+            }
+          }
+          this.hydrateConsoFromSync(table);
         }
       });
     }
@@ -261,6 +282,7 @@
           
           // 🎯 Marquer la position de la table Modelised (3=Modelised)
           table.dataset.tablePosition = '3';
+          table.dataset.consoModelized = 'true';
           
           // 🎯 Timestamp de création pour protection contre cleanup prématuré
           table.dataset.createdTimestamp = Date.now().toString();
@@ -332,6 +354,11 @@
       return patterns[columnType] && patterns[columnType].test(headerText);
     }
 
+    isNonConformingConclusion(value) {
+      const normalized = (value || "").trim().toLowerCase();
+      return normalized === "non-satisfaisant" || normalized === "limitation";
+    }
+
     setupTableInteractions(table, headers) {
       const tbody = table.querySelector("tbody") || table;
       const rows = tbody.querySelectorAll("tr");
@@ -345,7 +372,9 @@
           const header = headers[cellIndex];
           if (!header) return;
 
-          // Supprimer les anciens event listeners
+          if (cell.dataset.consoInteractive === "true") return;
+
+          // Supprimer les anciens event listeners uniquement si nécessaire
           cell.replaceWith(cell.cloneNode(true));
           const newCell = row.children[cellIndex];
 
@@ -361,8 +390,14 @@
     }
 
     setupAssertionCell(cell) {
+      cell.dataset.consoInteractive = "true";
       cell.style.cursor = "pointer";
-      cell.style.backgroundColor = cell.style.backgroundColor || "#f8f9fa";
+      const currentVal = (cell.textContent || "").trim();
+      if (currentVal && currentVal !== "-") {
+        cell.style.backgroundColor = "#e8f5e8";
+      } else {
+        cell.style.backgroundColor = cell.style.backgroundColor || "#f8f9fa";
+      }
       cell.title = "Cliquez pour sélectionner une assertion";
 
       cell.addEventListener("click", (e) => {
@@ -377,7 +412,8 @@
             const parentTable = this.findParentTable(cell);
             if (parentTable) {
               debug.log("💾 Déclenchement sauvegarde depuis assertion");
-              this.saveTableData(parentTable);
+              this.saveTableDataNow(parentTable);
+              this.scheduleConsolidation(parentTable);
             } else {
               debug.warn("⚠️ Table parente non trouvée pour sauvegarde");
             }
@@ -678,8 +714,16 @@
     }
 
     setupConclusionCell(cell, table) {
+      cell.dataset.consoInteractive = "true";
       cell.style.cursor = "pointer";
-      cell.style.backgroundColor = cell.style.backgroundColor || "#f8f9fa";
+      const existingVal = (cell.textContent || "").trim();
+      if (this.isNonConformingConclusion(existingVal)) {
+        cell.style.backgroundColor = "#fee";
+      } else if (existingVal.toLowerCase() === "satisfaisant") {
+        cell.style.backgroundColor = "#efe";
+      } else {
+        cell.style.backgroundColor = cell.style.backgroundColor || "#f8f9fa";
+      }
       cell.title = "Cliquez pour sélectionner une conclusion";
 
       cell.addEventListener("click", (e) => {
@@ -690,24 +734,32 @@
           (value) => {
             cell.textContent = value;
 
-            if (value === "Non-Satisfaisant" || value === "Limitation") {
+            if (this.isNonConformingConclusion(value)) {
               cell.style.backgroundColor = "#fee";
               debug.log(`Conclusion défavorable sélectionnée: ${value}`);
-              this.scheduleConsolidation(table);
             } else {
               cell.style.backgroundColor = "#efe";
             }
+            this.scheduleConsolidation(table);
             // Sauvegarder après modification
             debug.log("💾 Déclenchement sauvegarde depuis conclusion");
-            this.saveTableData(table);
+            this.saveTableDataNow(table);
           },
         );
       });
     }
 
     setupCtrCell(cell) {
+      cell.dataset.consoInteractive = "true";
       cell.style.cursor = "pointer";
-      cell.style.backgroundColor = cell.style.backgroundColor || "#f8f9fa";
+      const existingCtr = (cell.textContent || "").trim();
+      if (existingCtr === "+") {
+        cell.style.backgroundColor = "#e8f5e8";
+      } else if (existingCtr === "-") {
+        cell.style.backgroundColor = "#fee8e8";
+      } else {
+        cell.style.backgroundColor = cell.style.backgroundColor || "#f8f9fa";
+      }
       cell.title = "Cliquez pour sélectionner un contrôle";
 
       cell.addEventListener("click", (e) => {
@@ -720,7 +772,7 @@
           const parentTable = this.findParentTable(cell);
           if (parentTable) {
             debug.log("💾 Déclenchement sauvegarde depuis CTR");
-            this.saveTableData(parentTable);
+            this.saveTableDataNow(parentTable);
           } else {
             debug.warn("⚠️ Table parente non trouvée pour sauvegarde");
           }
@@ -855,12 +907,30 @@
       this.dropdownVisible = false;
     }
 
+    hydrateConsoFromSync(table) {
+      if (!table || !window.claraverseSyncAPI?.getSavedConsolidation) return false;
+      const saved = window.claraverseSyncAPI.getSavedConsolidation(table);
+      if (saved && saved.simpleContent) {
+        const consoTable = this.findExistingConsoTable(table);
+        const consoCell = consoTable?.querySelector("td");
+        if (consoCell && consoCell.innerHTML !== saved.simpleContent) {
+          consoCell.innerHTML = saved.simpleContent;
+          consoCell.setAttribute("data-updated", "conso");
+          consoCell.setAttribute("data-type", "conso");
+          debug.log("✅ Table de consolidation restaurée depuis le serveur");
+          return true;
+        }
+      }
+      return false;
+    }
+
     createConsolidationTable(table) {
       const tableId = this.generateUniqueTableId(table);
       const existingConso = this.findExistingConsoTable(table);
       
       if (existingConso) {
         debug.log(`Table de consolidation existante trouvée pour ${tableId}`);
+        this.hydrateConsoFromSync(table);
         return;
       }
 
@@ -905,6 +975,9 @@
       // Insérer la table de consolidation
       this.insertConsoTable(table, consoTable);
       debug.log(`Table de consolidation créée avec ID: ${tableId}`);
+
+      // Restaurer immédiatement depuis le serveur si une consolidation existe déjà
+      this.hydrateConsoFromSync(table);
 
       // Notifier dev.js de la création de la nouvelle table
       this.notifyTableCreated(consoTable);
@@ -1051,7 +1124,7 @@
 
         if (
           assertion &&
-          (conclusion === "Non-Satisfaisant" || conclusion === "Limitation")
+          this.isNonConformingConclusion(conclusion)
         ) {
           data.processedRows++;
 
@@ -1087,8 +1160,7 @@
         message += `📊 DONNÉES BRUTES:\n`;
         consolidationData.rawData.forEach((row, index) => {
           if (
-            row.conclusion === "Non-Satisfaisant" ||
-            row.conclusion === "Limitation"
+            this.isNonConformingConclusion(row.conclusion)
           ) {
             message += `Ligne ${row.row}: ${row.assertion} | ${row.conclusion} | ${row.compte || "N/A"} | ${row.ecart}\n`;
           }
@@ -1145,7 +1217,7 @@
 
         if (
           assertion &&
-          (conclusion === "Non-Satisfaisant" || conclusion === "Limitation")
+          this.isNonConformingConclusion(conclusion)
         ) {
           if (!consolidation[assertion]) {
             consolidation[assertion] = { comptes: new Set(), total: 0 };
@@ -1180,7 +1252,7 @@
 
         if (
           assertion &&
-          (conclusion === "Non-Satisfaisant" || conclusion === "Limitation")
+          this.isNonConformingConclusion(conclusion)
         ) {
           if (!consolidation[assertion]) {
             consolidation[assertion] = { total: 0 };
@@ -1611,6 +1683,10 @@
                     
                     // 🎯 REPOSITIONNEMENT immédiat après mise à jour réussie
                     this.repositionResultatTable(potentialTable, table);
+                    this.notifyTableUpdate(potentialTable, "resultat-table-update");
+                    if (window.claraverseSyncAPI?.forceSaveTable) {
+                      window.claraverseSyncAPI.forceSaveTable(potentialTable);
+                    }
                     return true;
                 }
             }
@@ -1642,6 +1718,10 @@
             
             // 🎯 REPOSITIONNEMENT immédiat après mise à jour réussie
             this.repositionResultatTable(potentialTable, table);
+            this.notifyTableUpdate(potentialTable, "resultat-table-update");
+            if (window.claraverseSyncAPI?.forceSaveTable) {
+              window.claraverseSyncAPI.forceSaveTable(potentialTable);
+            }
             return true;
         }
         
@@ -1709,9 +1789,10 @@
         }
       }
 
-      // Stratégie 2: Chercher TOUTES les tables du document
-      const allTables = document.querySelectorAll("table");
-      debug.log(`🔍 Recherche globale: ${allTables.length} tables trouvées`);
+      // Stratégie 2: Chercher dans le même message d'abord, puis globalement
+      const messageRoot = table.closest("[data-message-id]") || document;
+      const allTables = messageRoot.querySelectorAll("table");
+      debug.log(`🔍 Recherche scopée: ${allTables.length} tables trouvées`);
 
       for (const potentialTable of allTables) {
         // S'assurer que ce n'est pas la table conso ou la table source
@@ -1729,7 +1810,7 @@
             headerText.includes("resultat") ||
             headerText.includes("résultat")
           ) {
-            debug.log("✓ Table Résultat trouvée via recherche globale (S2)");
+            debug.log("✓ Table Résultat trouvée via recherche scopée (S2)");
             if (applyResultatToTable(potentialTable)) return true;
             break;
           }
@@ -1900,6 +1981,12 @@
           debug.warn("⚠️ Parent introuvable, impossible de repositionner");
           return;
         }
+
+        // Ne pas déplacer la table si elle appartient à un autre wrapper React ([data-eaudit-table])
+        if (resultatTable.parentElement !== parent) {
+          debug.log("✅ Table Résultat conservée dans son wrapper React dédié");
+          return;
+        }
         
         // Vérifier si la table Résultat est déjà au bon endroit
         // Ordre attendu: Conso, puis Résultat, puis Modelised
@@ -1930,6 +2017,16 @@
     }
 
     setupGlobalEventListeners() {
+      // Hydrater les tables de consolidation dès que React signale que les données serveur sont prêtes
+      window.addEventListener("claraverse:sync:ready", () => {
+        const tables = this.findAllTables();
+        tables.forEach((tbl) => {
+          if (tbl.dataset.consoModelized === "true") {
+            this.hydrateConsoFromSync(tbl);
+          }
+        });
+      });
+
       // Fermer les dropdowns avec Escape
       document.addEventListener("keydown", (e) => {
         if (e.key === "Escape" && this.dropdownVisible) {
@@ -2282,6 +2379,15 @@
 
       debug.log("💾 Début sauvegarde consolidation");
 
+      // 1. Sauvegarder sur le serveur via le pont React si disponible
+      if (window.claraverseSyncAPI && window.claraverseSyncAPI.saveConsolidation) {
+        window.claraverseSyncAPI.saveConsolidation(table, {
+          fullContent: fullContent,
+          simpleContent: simpleContent,
+        });
+        debug.log("✅ Consolidation envoyée au backend serveur");
+      }
+
       const tableId = this.generateUniqueTableId(table);
       debug.log("🆔 ID pour consolidation:", tableId);
 
@@ -2312,6 +2418,11 @@
      */
     restoreTableData(table) {
       if (!table) return false;
+
+      // Quand le backend serveur (claraverseSyncAPI) est actif, il est la source de vérité
+      if (window.claraverseSyncAPI) {
+        return this.hydrateConsoFromSync(table);
+      }
 
       const tableId = table.dataset.tableId;
       if (!tableId) {

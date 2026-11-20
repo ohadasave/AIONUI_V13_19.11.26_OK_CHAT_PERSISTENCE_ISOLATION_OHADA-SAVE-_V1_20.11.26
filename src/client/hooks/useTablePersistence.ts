@@ -13,26 +13,51 @@ export interface SyncTableOptions {
   deferReactSync?: boolean;
 }
 
+export interface ConsoEntry {
+  fullContent: string;
+  simpleContent: string;
+  updatedAt: number;
+}
+
 interface UseTablePersistenceArgs {
   conversationId: string | undefined;
   messages: ChatMessage[];
   onMessageContentUpdated: (messageId: string, newContent: string) => void;
+  onMessageMetadataUpdated?: (messageId: string, metadataPatch: Record<string, unknown>) => void;
 }
 
-export function useTablePersistence({ conversationId, messages, onMessageContentUpdated }: UseTablePersistenceArgs) {
+export function useTablePersistence({ conversationId, messages, onMessageContentUpdated, onMessageMetadataUpdated }: UseTablePersistenceArgs) {
   const latestContentRef = useRef<Map<string, string>>(new Map());
+  const latestMetadataRef = useRef<Map<string, Record<string, unknown>>>(new Map());
   const pendingReactSyncRef = useRef<Map<string, string>>(new Map());
   const writeQueueRef = useRef<Map<string, Promise<void>>>(new Map());
   const onMessageContentUpdatedRef = useRef(onMessageContentUpdated);
   onMessageContentUpdatedRef.current = onMessageContentUpdated;
+  const onMessageMetadataUpdatedRef = useRef(onMessageMetadataUpdated);
+  onMessageMetadataUpdatedRef.current = onMessageMetadataUpdated;
 
   useEffect(() => {
-    const map = new Map<string, string>();
+    const contentMap = new Map<string, string>();
+    const metaMap = new Map<string, Record<string, unknown>>();
     for (const msg of messages) {
       const pending = pendingReactSyncRef.current.get(msg.id);
-      map.set(msg.id, pending ?? msg.content);
+      contentMap.set(msg.id, pending ?? msg.content);
+      const existingConso = latestMetadataRef.current.get(msg.id)?.consoData;
+      const serverConso = msg.metadata?.consoData;
+      if (existingConso || serverConso) {
+        metaMap.set(msg.id, {
+          ...(msg.metadata || {}),
+          consoData: {
+            ...((serverConso as Record<string, unknown>) || {}),
+            ...((existingConso as Record<string, unknown>) || {}),
+          },
+        });
+      } else if (msg.metadata) {
+        metaMap.set(msg.id, msg.metadata);
+      }
     }
-    latestContentRef.current = map;
+    latestContentRef.current = contentMap;
+    latestMetadataRef.current = metaMap;
   }, [messages]);
 
   const flushPendingReactSync = useCallback((messageId?: string) => {
@@ -52,8 +77,8 @@ export function useTablePersistence({ conversationId, messages, onMessageContent
     }
   }, []);
 
-  const persistMessageContent = useCallback(
-    async (messageId: string, newContent: string, silent = false): Promise<boolean> => {
+  const persistMessagePatch = useCallback(
+    async (messageId: string, payload: { content?: string; metadataPatch?: Record<string, unknown> }, silent = false): Promise<boolean> => {
       if (!conversationId) return false;
 
       const prevQueue = writeQueueRef.current.get(messageId) ?? Promise.resolve();
@@ -66,7 +91,7 @@ export function useTablePersistence({ conversationId, messages, onMessageContent
             const res = await authFetch(`/api/conversations/${conversationId}/messages/${messageId}`, {
               method: 'PATCH',
               headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ content: newContent }),
+              body: JSON.stringify(payload),
             });
             if (!res.ok) {
               throw new Error(`HTTP ${res.status}`);
@@ -77,7 +102,9 @@ export function useTablePersistence({ conversationId, messages, onMessageContent
             }
           } catch (err) {
             console.error('[TablePersistence] Erreur lors de la sauvegarde:', err);
-            Message.error('Impossible de sauvegarder les modifications du tableau');
+            if (!silent) {
+              Message.error('Impossible de sauvegarder les modifications du tableau');
+            }
           }
         });
 
@@ -151,13 +178,56 @@ export function useTablePersistence({ conversationId, messages, onMessageContent
         onMessageContentUpdatedRef.current(messageId, newContent);
       }
 
-      return persistMessageContent(messageId, newContent, silent);
+      return persistMessagePatch(messageId, { content: newContent }, silent);
     },
-    [conversationId, flushPendingReactSync, persistMessageContent]
+    [conversationId, flushPendingReactSync, persistMessagePatch]
   );
+
+  const saveConsolidation = useCallback(
+    async (modelisedTable: HTMLTableElement, data: { fullContent: string; simpleContent: string }): Promise<boolean> => {
+      if (!conversationId) return false;
+      const messageEl = findMessageElementForTable(modelisedTable);
+      if (!messageEl) return false;
+      const messageId = messageEl.getAttribute('data-message-id');
+      if (!messageId) return false;
+      const tableIndex = getTableIndexInMessage(modelisedTable, messageEl);
+      if (tableIndex < 0) return false;
+
+      const key = `table_${tableIndex}`;
+      const entry: ConsoEntry = {
+        fullContent: data.fullContent || '',
+        simpleContent: data.simpleContent || '',
+        updatedAt: Date.now(),
+      };
+
+      const prevMeta = latestMetadataRef.current.get(messageId) || {};
+      const prevConso = (prevMeta.consoData as Record<string, ConsoEntry> | undefined) || {};
+      const nextConsoData = { ...prevConso, [key]: entry };
+      latestMetadataRef.current.set(messageId, { ...prevMeta, consoData: nextConsoData });
+      onMessageMetadataUpdatedRef.current?.(messageId, { consoData: nextConsoData });
+
+      return persistMessagePatch(messageId, { metadataPatch: { consoData: { [key]: entry } } }, true);
+    },
+    [conversationId, persistMessagePatch]
+  );
+
+  const getSavedConsolidation = useCallback((modelisedTable: HTMLTableElement): ConsoEntry | null => {
+    const messageEl = findMessageElementForTable(modelisedTable);
+    if (!messageEl) return null;
+    const messageId = messageEl.getAttribute('data-message-id');
+    if (!messageId) return null;
+    const tableIndex = getTableIndexInMessage(modelisedTable, messageEl);
+    if (tableIndex < 0) return null;
+
+    const meta = latestMetadataRef.current.get(messageId);
+    const consoData = meta?.consoData as Record<string, ConsoEntry> | undefined;
+    return consoData?.[`table_${tableIndex}`] ?? null;
+  }, []);
 
   return {
     syncTable,
     flushPendingReactSync,
+    saveConsolidation,
+    getSavedConsolidation,
   };
 }

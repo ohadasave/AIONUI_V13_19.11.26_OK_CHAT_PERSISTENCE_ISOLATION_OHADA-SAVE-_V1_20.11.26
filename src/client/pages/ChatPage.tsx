@@ -9,6 +9,20 @@ import { authFetch } from '../context/AuthContext';
 import { useTablePersistence } from '../hooks/useTablePersistence';
 import type { ChatMessage, Conversation } from '../types';
 
+interface ClaraverseSyncBridge {
+  getCurrentSessionId: () => string;
+  forceSaveTable: (table: HTMLTableElement) => Promise<boolean>;
+  saveConsolidation: (modelisedTable: HTMLTableElement, data: { fullContent: string; simpleContent: string }) => Promise<boolean>;
+  getSavedConsolidation: (modelisedTable: HTMLTableElement) => { fullContent: string; simpleContent: string; updatedAt?: number } | null;
+  saveAllTables: () => Promise<void>;
+}
+
+declare global {
+  interface Window {
+    claraverseSyncAPI?: ClaraverseSyncBridge;
+  }
+}
+
 interface ChatPageProps {
   onConversationUpdated: () => Promise<void>;
   isDark: boolean;
@@ -21,6 +35,11 @@ function mergeMessagesById(existing: ChatMessage[], incoming: ChatMessage[]): Ch
   for (const msg of existing) map.set(msg.id, msg);
   for (const msg of incoming) map.set(msg.id, msg);
   return Array.from(map.values()).sort((a, b) => a.createdAt - b.createdAt);
+}
+
+function isModelisedDomTable(table: HTMLTableElement): boolean {
+  const headers = Array.from(table.querySelectorAll('thead th, thead td, tr:first-child th, tr:first-child td')).map((el) => (el.textContent || '').trim().toLowerCase());
+  return headers.some((h) => /^assertion$/i.test(h) || /^conclusion$/i.test(h) || /^ctr\d*$/i.test(h));
 }
 
 export const ChatPage: React.FC<ChatPageProps> = ({ onConversationUpdated, isDark }) => {
@@ -44,11 +63,80 @@ export const ChatPage: React.FC<ChatPageProps> = ({ onConversationUpdated, isDar
     setMessages((prev) => prev.map((msg) => (msg.id === messageId ? { ...msg, content: newContent } : msg)));
   }, []);
 
-  const { syncTable, flushPendingReactSync } = useTablePersistence({
+  const handleMessageMetadataUpdated = useCallback((messageId: string, metadataPatch: Record<string, unknown>) => {
+    setMessages((prev) =>
+      prev.map((msg) => {
+        if (msg.id !== messageId) return msg;
+        return {
+          ...msg,
+          metadata: {
+            ...(msg.metadata || {}),
+            ...metadataPatch,
+          },
+        };
+      })
+    );
+  }, []);
+
+  const { syncTable, flushPendingReactSync, saveConsolidation, getSavedConsolidation } = useTablePersistence({
     conversationId: id,
     messages,
     onMessageContentUpdated: handleMessageContentUpdated,
+    onMessageMetadataUpdated: handleMessageMetadataUpdated,
   });
+
+  useEffect(() => {
+    if (!id) return;
+
+    const bridge: ClaraverseSyncBridge = {
+      getCurrentSessionId: () => id,
+      forceSaveTable: async (table: HTMLTableElement) => {
+        if (!table) return false;
+        if (table.classList.contains('claraverse-conso-table')) {
+          const siblingTable = table.parentElement?.querySelector('table:not(.claraverse-conso-table)') as HTMLTableElement | null;
+          const cellHtml = table.querySelector('td')?.innerHTML || '';
+          if (!siblingTable || !cellHtml || cellHtml.includes('En attente de consolidation')) {
+            return false;
+          }
+          const existing = getSavedConsolidation(siblingTable);
+          return saveConsolidation(siblingTable, {
+            fullContent: existing?.fullContent || '',
+            simpleContent: cellHtml,
+          });
+        }
+        const deferReact = isModelisedDomTable(table);
+        return syncTable(table, { silent: true, deferReactSync: deferReact });
+      },
+      saveConsolidation: async (modelisedTable: HTMLTableElement, data: { fullContent: string; simpleContent: string }) => {
+        return saveConsolidation(modelisedTable, data);
+      },
+      getSavedConsolidation: (modelisedTable: HTMLTableElement) => {
+        return getSavedConsolidation(modelisedTable);
+      },
+      saveAllTables: async () => {
+        const container = messagesContainerRef.current;
+        if (!container) return;
+        const tables = Array.from(container.querySelectorAll('[data-message-id] table:not(.claraverse-conso-table)')) as HTMLTableElement[];
+        for (const tbl of tables) {
+          if (tbl.closest('.sample-results-container, .analysis-results-container')) continue;
+          await syncTable(tbl, { silent: true, deferReactSync: isModelisedDomTable(tbl) });
+        }
+      },
+    };
+
+    window.claraverseSyncAPI = bridge;
+
+    const timer = window.setTimeout(() => {
+      window.dispatchEvent(new CustomEvent('claraverse:sync:ready', { detail: { conversationId: id } }));
+    }, 80);
+
+    return () => {
+      window.clearTimeout(timer);
+      if (window.claraverseSyncAPI === bridge) {
+        delete window.claraverseSyncAPI;
+      }
+    };
+  }, [id, messages, syncTable, saveConsolidation, getSavedConsolidation]);
 
   const scrollToTop = useCallback(() => {
     messagesContainerRef.current?.scrollTo({ top: 0, behavior: 'smooth' });

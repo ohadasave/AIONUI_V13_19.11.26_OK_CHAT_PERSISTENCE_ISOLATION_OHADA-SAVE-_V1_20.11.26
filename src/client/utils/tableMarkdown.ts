@@ -41,8 +41,51 @@ export function extractCellText(cell: Element): string {
   return raw.replace(/\s+/g, ' ').trim();
 }
 
+function serializeInlineNodes(parent: Element): string {
+  let out = '';
+  parent.childNodes.forEach((node) => {
+    if (node.nodeType === Node.TEXT_NODE) {
+      out += (node.textContent || '').replace(/\s+/g, ' ');
+      return;
+    }
+    if (node.nodeType !== Node.ELEMENT_NODE) return;
+    const el = node as Element;
+    const tag = el.tagName.toUpperCase();
+    if (tag === 'BR') {
+      out += '<br>';
+      return;
+    }
+    if (tag === 'SELECT') {
+      out += ((el as HTMLSelectElement).value || '').trim();
+      return;
+    }
+    const inner = serializeInlineNodes(el);
+    if (!inner.trim()) return;
+    if (tag === 'STRONG' || tag === 'B') {
+      out += `**${inner.trim()}**`;
+    } else if (tag === 'EM' || tag === 'I') {
+      out += `*${inner.trim()}*`;
+    } else if (tag === 'P' || tag === 'DIV') {
+      out += `${inner.trim()}<br>`;
+    } else {
+      out += inner;
+    }
+  });
+  return out;
+}
+
 export function extractCellMarkdown(cell: Element): string {
-  const text = extractCellText(cell);
+  const select = cell.querySelector('select');
+  if (select) {
+    return (select.value || '').trim().replace(/(?<!\\)\|/g, '\\|');
+  }
+  const hasRichTags = Boolean(cell.querySelector('strong, b, em, i, br, p, div'));
+  const text = hasRichTags
+    ? serializeInlineNodes(cell)
+        .replace(/(?:\s*<br>\s*){3,}/gi, '<br><br>')
+        .replace(/(?:<br>)+$/i, '')
+        .trim()
+    : extractCellText(cell);
   return text.replace(/(?<!\\)\|/g, '\\|');
 }
 

@@ -1,0 +1,406 @@
+{
+  "users": [
+    {
+      "id": "user_default_admin",
+      "username": "ohada.save@gmail.com",
+      "passwordHash": "$2a$10$6tUauMgF4KaB9L0gUC0TVOJXTCik7BxkotRL42sN5zZvLLigWu6Oe",
+      "role": "admin",
+      "createdAt": 1795165226250
+    },
+    {
+      "id": "user_1795165793694_gqu1i",
+      "username": "AUDIT",
+      "passwordHash": "$2a$10$/J0OsW1dMkN2Lh2F8fGy1uW5XXm37Sk2wBPmyHmmp792VpLPOQojq",
+      "role": "user",
+      "createdAt": 1795165793804
+    },
+    {
+      "id": "user_1795167459070_j9wdq",
+      "username": "SEKA",
+      "passwordHash": "$2a$10$36P7W/VQiNGncHOjVs.gVeHB9prffsiZds8joRZ5MT32vJ00c4L3S",
+      "role": "user",
+      "createdAt": 1795167459198
+    }
+  ],
+  "conversations": [
+    {
+      "id": "conv_1795165806119_eiigf",
+      "userId": "user_1795165793694_gqu1i",
+      "name": "[Command] = Etape de mission",
+      "type": "n8n",
+      "createdAt": 1795165806119,
+      "updatedAt": 1795173857391
+    },
+    {
+      "id": "conv_1795165915325_0yw1z",
+      "userId": "user_1795165793694_gqu1i",
+      "name": "[Command] = Etape de mission",
+      "type": "n8n",
+      "createdAt": 1795165915325,
+      "updatedAt": 1795166318870
+    },
+    {
+      "id": "conv_1795166730973_wyebn",
+      "userId": "user_1795165793694_gqu1i",
+      "name": "[Command] = Programme de travail",
+      "type": "n8n",
+      "createdAt": 1795166730973,
+      "updatedAt": 1795166856279
+    },
+    {
+      "id": "conv_1795167469463_e876x",
+      "userId": "user_1795167459070_j9wdq",
+      "name": "[Command] = /Cartographie des risques",
+      "type": "n8n",
+      "createdAt": 1795167469463,
+      "updatedAt": 1795172647748
+    },
+    {
+      "id": "conv_1795174208611_nnp84",
+      "userId": "user_1795165793694_gqu1i",
+      "name": "[Demo] = Activate",
+      "type": "n8n",
+      "createdAt": 1795174208611,
+      "updatedAt": 1795174266554
+    },
+    {
+      "id": "conv_1795174394629_ak7dv",
+      "userId": "user_1795165793694_gqu1i",
+      "name": "[Command] = /feuille couverture",
+      "type": "n8n",
+      "createdAt": 1795174394629,
+      "updatedAt": 1795174454981
+    },
+    {
+      "id": "conv_1795175346591_4q6bw",
+      "userId": "user_1795165793694_gqu1i",
+      "name": "[Demo] = Activate",
+      "type": "n8n",
+      "createdAt": 1795175346591,
+      "updatedAt": 1795175388353
+    },
+    {
+      "id": "conv_1795175415514_bfms1",
+      "userId": "user_1795165793694_gqu1i",
+      "name": "[Command] = /feuille couverture",
+      "type": "n8n",
+      "createdAt": 1795175415514,
+      "updatedAt": 1795175458035
+    }
+  ],
+  "messages": [
+    {
+      "id": "msg_1795165806259_u_nth6",
+      "conversationId": "conv_1795165806119_eiigf",
+      "userId": "user_1795165793694_gqu1i",
+      "role": "user",
+      "content": "- [Command] = Etape de mission\n- [Processus] = rapprochements bancaires\n- [Etape précédente] = Cartographie des risques\n- [Etape de mission] = Collecte documentaire\n- [Modele] : Processus, document, Direction, operationnel\n- [Nb de lignes] = 30",
+      "createdAt": 1795165806259
+    },
+    {
+      "id": "msg_1795165876113_a_ar6x",
+      "conversationId": "conv_1795165806119_eiigf",
+      "userId": "user_1795165793694_gqu1i",
+      "role": "assistant",
+      "content": "| Rubrique | Description |\n| --- | --- |\n| Rubrique | Etape |\n| Description | Programme de travail |\n\n| Rubrique | Description |\n| --- | --- |\n| Rubrique | Normes |\n| Description | Norme 9.4 Plan d’audit interne, Norme 13.6 Programme de travail, Norme 13.3 Objectifs et périmètre de la mission, Norme 14.1 Collecte d’informations pour l’analyse et l’évaluation |\n\n| Rubrique | Description |\n| --- | --- |\n| Rubrique | Methode |\n| Description | Méthode des objectifs d'audit par les tâches clés |\n\n| Rubrique | Description | Description |\n| --- | --- | --- |\n| Rubrique | Reference | Reference |\n| Description | Prg-001 | Prg-001 |\n\n| no | tâches clés | Objet audité | contrôle audit | objectif audit |\n| --- | --- | --- | --- | --- |\n| 1 | Réception des relevés bancaires originaux | Relevés bancaires, Accusés de réception | Vérifier la réception régulière et complète de tous les relevés bancaires originaux pour la période auditée. S'assurer de la traçabilité de la réception. | Exhaustivité, Réalité |\n| 2 | Vérification de l'exhaustivité des relevés bancaires | Séquence des relevés bancaires, Registre de réception | Contrôler la séquence numérique des relevés bancaires reçus et l'absence de rupture. Rapprocher avec un registre interne de réception si existant. | Exhaustivité |\n| 3 | Enregistrement des opérations bancaires dans le journal de banque | Journal de banque, Pièces justificatives (avis de débit/crédit) | Sélectionner un échantillon d'opérations sur les relevés bancaires et vérifier leur enregistrement correct et en temps voulu dans le journal de banque. | Exhaustivité, Exactitude, Coupure |\n\n| No | Colonne 1 | Colonne 2 | Colonne 3 |\n| --- | --- | --- | --- |\n| 1 | - | - | - |\n| 2 | - | - | - |\n| 3 | - | - | - |\n| - | - | - | - | - |\n| - | - | - | - | - |\n| 4 | Saisie des écritures de banque en comptabilité | Grand Livre du compte banque, Journal de banque | Vérifier que toutes les opérations du journal de banque sont correctement reportées dans le Grand Livre du compte banque. | Exhaustivité, Exactitude |\n| 5 | Comparaison du solde comptable avec le solde bancaire | Grand Livre du compte banque, Relevé bancaire | Vérifier la comparaison systématique des soldes du compte banque en comptabilité avec les soldes des relevés bancaires à une date donnée. | Réalité, Exhaustivité |\n| 6 | Identification des opérations non encore comptabilisées par la banque | Opérations en attente (chèques émis non encaissés, remises non créditées) | Examiner la liste des opérations en attente et s'assurer qu'elles correspondent à des flux réels et sont correctement identifiées. | Réalité, Coupure |\n| 7 | Identification des opérations non encore comptabilisées par l'entreprise | Opérations bancaires non enregistrées (agios, commissions, virements reçus) | Sélectionner un échantillon d'opérations sur les relevés bancaires non présentes en comptabilité et vérifier leur justification et leur enregistrement ultérieur. | Exhaustivité, Exactitude |\n| 8 | Préparation de l'état de rapprochement bancaire | État de rapprochement bancaire | Vérifier la structure et la clarté de l'état de rapprochement bancaire, s'assurer qu'il présente distinctement les soldes de départ et les ajustements. | Présentation, Exactitude |\n| 9 | Justification des écarts de rapprochement | Pièces justificatives des écarts (avis de virement, chèques, notes de débit/crédit) | Pour chaque écart identifié, vérifier la présence et la pertinence d'une pièce justificative et sa conformité avec l'opération. | Exactitude, Réalité |\n| 10 | Enregistrement des écritures de régularisation | Journal des OD, Grand Livre | S'assurer que les écarts justifiés nécessitant une régularisation comptable sont enregistrés en temps voulu via des écritures d'opérations diverses (OD). | Exactitude, Coupure |\n| 11 | Validation de l'état de rapprochement bancaire | État de rapprochement bancaire signé | Vérifier que l'état de rapprochement est validé et signé par une personne indépendante de la saisie (ex: Chef Comptable, Trésorier). | Sécurité, Fiabilité |\n| 12 | Archivage des documents de rapprochement | Dossier de rapprochement bancaire | S'assurer que les relevés bancaires, les états de rapprochement et les pièces justificatives des écarts sont archivés de manière sécurisée et accessible. | Traçabilité, Disponibilité |\n| 13 | Suivi des opérations en suspens | Tableau de suivi des suspens | Vérifier l'existence et la mise à jour régulière d'un tableau de suivi des opérations en suspens, avec des dates de résolution prévues. | Exhaustivité, Suivi |\n| 14 | Analyse de l'ancienneté des suspens | Rapport d'ancienneté des suspens | Analyser l'ancienneté des suspens et identifier les éléments anormaux ou non résolus depuis longtemps. Demander des explications. | Pertinence, Réalité |\n| 15 | Contrôle de la séparation des tâches | Description de postes, Matrice des habilitations | Vérifier que la personne qui saisit les opérations bancaires n'est pas celle qui valide les rapprochements ou gère les encaissements/décaissements. | Sécurité, Prévention de la fraude |\n| 16 | Vérification des taux de change (pour comptes en devises) | Cours des devises, Écritures de réévaluation | Pour les comptes en devises, vérifier l'application correcte des taux de change et la comptabilisation des écarts de conversion. | Exactitude, Évaluation |\n| 17 | Contrôle des frais bancaires et agios | Relevés bancaires, Factures de frais bancaires, Conditions bancaires | Rapprocher les frais bancaires et agios facturés sur les relevés avec les conventions bancaires et les factures correspondantes. | Exactitude, Réalité |\n| 18 | Vérification des virements émis et reçus | Avis de virement, Ordres de virement, Relevés bancaires | Sélectionner un échantillon de virements et s'assurer de la concordance entre l'ordre de virement, l'avis bancaire et l'enregistrement comptable. | Réalité, Exactitude |\n| 19 | Contrôle des chèques émis | Souches de chèques, Registre des chèques, Relevés bancaires | Vérifier la numérotation des chèques émis, leur enregistrement et leur encaissement par la banque dans un délai raisonnable. | Exhaustivité, Réalité |\n| 20 | Contrôle des remises de chèques et espèces | Bordereaux de remise, Relevés bancaires, Journal de caisse | Rapprocher les bordereaux de remise avec les crédits sur les relevés bancaires et les enregistrements du journal de caisse. | Exhaustivité, Exactitude |\n| 21 | Vérification des cut-off (coupures) | Opérations de fin de période, Relevés bancaires de début de période suivante | S'assurer que les opérations de fin de période sont correctement imputées à l'exercice concerné, en examinant les relevés du début de l'exercice suivant. | Coupure |\n| 22 | Réconciliation des comptes interbancaires (si plusieurs banques) | États de rapprochement interbancaires | Si l'entreprise utilise plusieurs banques, vérifier la réconciliation des transferts entre ces comptes. | Exhaustivité, Exactitude |\n| 23 | Contrôle des autorisations de paiement | Ordres de paiement, Procédures d'autorisation | Vérifier que les paiements (virements, chèques) sont effectués sur la base d'autorisations conformes aux procédures internes. | Réalité, Validité |\n| 24 | Vérification de l'accès aux comptes bancaires en ligne | Liste des utilisateurs, Droits d'accès, Journal de connexion | S'assurer que les accès aux plateformes bancaires en ligne sont restreints et que les droits sont en adéquation avec les fonctions. | Sécurité, Confidentialité |\n| 25 | Examen des rapprochements manuels vs. automatisés | Logiciel de rapprochement, Procédures | Si un logiciel est utilisé, vérifier son paramétrage et la fiabilité des rapprochements automatiques. Tester les contrôles manuels résiduels. | Fiabilité, Exactitude |\n| 26 | Vérification des comptes bancaires dormants | Liste des comptes bancaires, Historique des mouvements | Identifier les comptes bancaires sans activité significative et s'assurer qu'ils sont justifiés ou clôturés. | Réalité, Optimisation |\n| 27 | Contrôle des virements permanents et prélèvements automatiques | Mandats de prélèvement, Ordres de virement permanent, Relevés bancaires | Vérifier la validité et la pertinence des virements permanents et prélèvements automatiques récurrents. | Réalité, Exactitude |\n| 28 | Revue des procédures de rapprochement bancaire | Procédure de rapprochement bancaire | Examiner la procédure existante pour s'assurer qu'elle est à jour, complète et communiquée aux acteurs concernés. | Conformité, Efficacité |\n| 29 | Formation et sensibilisation des équipes | Plans de formation, Compte-rendu de réunion | Vérifier que les équipes en charge des rapprochements sont formées aux procédures et sensibilisées aux risques. | Compétence, Maîtrise des risques |\n| 30 | Reporting des écarts significatifs à la direction | Rapports de trésorerie, Notes à la direction | S'assurer que les écarts importants ou les suspens anciens sont remontés à la direction pour décision et suivi. | Information financière, Gouvernance |\n| - | - | - | - | - |\n| 4 | Saisie des écritures de banque en comptabilité | Grand Livre du compte banque, Journal de banque | Vérifier que toutes les opérations du journal de banque sont correctement reportées dans le Grand Livre du compte banque. | Exhaustivité, Exactitude |\n| 5 | Comparaison du solde comptable avec le solde bancaire | Grand Livre du compte banque, Relevé bancaire | Vérifier la comparaison systématique des soldes du compte banque en comptabilité avec les soldes des relevés bancaires à une date donnée. | Réalité, Exhaustivité |\n| 6 | Identification des opérations non encore comptabilisées par la banque | Opérations en attente (chèques émis non encaissés, remises non créditées) | Examiner la liste des opérations en attente et s'assurer qu'elles correspondent à des flux réels et sont correctement identifiées. | Réalité, Coupure |\n| 7 | Identification des opérations non encore comptabilisées par l'entreprise | Opérations bancaires non enregistrées (agios, commissions, virements reçus) | Sélectionner un échantillon d'opérations sur les relevés bancaires non présentes en comptabilité et vérifier leur justification et leur enregistrement ultérieur. | Exhaustivité, Exactitude |\n| 8 | Préparation de l'état de rapprochement bancaire | État de rapprochement bancaire | Vérifier la structure et la clarté de l'état de rapprochement bancaire, s'assurer qu'il présente distinctement les soldes de départ et les ajustements. | Présentation, Exactitude |\n| 9 | Justification des écarts de rapprochement | Pièces justificatives des écarts (avis de virement, chèques, notes de débit/crédit) | Pour chaque écart identifié, vérifier la présence et la pertinence d'une pièce justificative et sa conformité avec l'opération. | Exactitude, Réalité |\n| 10 | Enregistrement des écritures de régularisation | Journal des OD, Grand Livre | S'assurer que les écarts justifiés nécessitant une régularisation comptable sont enregistrés en temps voulu via des écritures d'opérations diverses (OD). | Exactitude, Coupure |\n| 11 | Validation de l'état de rapprochement bancaire | État de rapprochement bancaire signé | Vérifier que l'état de rapprochement est validé et signé par une personne indépendante de la saisie (ex: Chef Comptable, Trésorier). | Sécurité, Fiabilité |\n| 12 | Archivage des documents de rapprochement | Dossier de rapprochement bancaire | S'assurer que les relevés bancaires, les états de rapprochement et les pièces justificatives des écarts sont archivés de manière sécurisée et accessible. | Traçabilité, Disponibilité |\n| 13 | Suivi des opérations en suspens | Tableau de suivi des suspens | Vérifier l'existence et la mise à jour régulière d'un tableau de suivi des opérations en suspens, avec des dates de résolution prévues. | Exhaustivité, Suivi |\n| 14 | Analyse de l'ancienneté des suspens | Rapport d'ancienneté des suspens | Analyser l'ancienneté des suspens et identifier les éléments anormaux ou non résolus depuis longtemps. Demander des explications. | Pertinence, Réalité |\n| 15 | Contrôle de la séparation des tâches | Description de postes, Matrice des habilitations | Vérifier que la personne qui saisit les opérations bancaires n'est pas celle qui valide les rapprochements ou gère les encaissements/décaissements. | Sécurité, Prévention de la fraude |\n| 16 | Vérification des taux de change (pour comptes en devises) | Cours des devises, Écritures de réévaluation | Pour les comptes en devises, vérifier l'application correcte des taux de change et la comptabilisation des écarts de conversion. | Exactitude, Évaluation |\n| 17 | Contrôle des frais bancaires et agios | Relevés bancaires, Factures de frais bancaires, Conditions bancaires | Rapprocher les frais bancaires et agios facturés sur les relevés avec les conventions bancaires et les factures correspondantes. | Exactitude, Réalité |\n| 18 | Vérification des virements émis et reçus | Avis de virement, Ordres de virement, Relevés bancaires | Sélectionner un échantillon de virements et s'assurer de la concordance entre l'ordre de virement, l'avis bancaire et l'enregistrement comptable. | Réalité, Exactitude |\n| 19 | Contrôle des chèques émis | Souches de chèques, Registre des chèques, Relevés bancaires | Vérifier la numérotation des chèques émis, leur enregistrement et leur encaissement par la banque dans un délai raisonnable. | Exhaustivité, Réalité |\n| 20 | Contrôle des remises de chèques et espèces | Bordereaux de remise, Relevés bancaires, Journal de caisse | Rapprocher les bordereaux de remise avec les crédits sur les relevés bancaires et les enregistrements du journal de caisse. | Exhaustivité, Exactitude |\n| 21 | Vérification des cut-off (coupures) | Opérations de fin de période, Relevés bancaires de début de période suivante | S'assurer que les opérations de fin de période sont correctement imputées à l'exercice concerné, en examinant les relevés du début de l'exercice suivant. | Coupure |\n| 22 | Réconciliation des comptes interbancaires (si plusieurs banques) | États de rapprochement interbancaires | Si l'entreprise utilise plusieurs banques, vérifier la réconciliation des transferts entre ces comptes. | Exhaustivité, Exactitude |\n| 23 | Contrôle des autorisations de paiement | Ordres de paiement, Procédures d'autorisation | Vérifier que les paiements (virements, chèques) sont effectués sur la base d'autorisations conformes aux procédures internes. | Réalité, Validité |\n| 24 | Vérification de l'accès aux comptes bancaires en ligne | Liste des utilisateurs, Droits d'accès, Journal de connexion | S'assurer que les accès aux plateformes bancaires en ligne sont restreints et que les droits sont en adéquation avec les fonctions. | Sécurité, Confidentialité |\n| 25 | Examen des rapprochements manuels vs. automatisés | Logiciel de rapprochement, Procédures | Si un logiciel est utilisé, vérifier son paramétrage et la fiabilité des rapprochements automatiques. Tester les contrôles manuels résiduels. | Fiabilité, Exactitude |\n| 26 | Vérification des comptes bancaires dormants | Liste des comptes bancaires, Historique des mouvements | Identifier les comptes bancaires sans activité significative et s'assurer qu'ils sont justifiés ou clôturés. | Réalité, Optimisation |\n| 27 | Contrôle des virements permanents et prélèvements automatiques | Mandats de prélèvement, Ordres de virement permanent, Relevés bancaires | Vérifier la validité et la pertinence des virements permanents et prélèvements automatiques récurrents. | Réalité, Exactitude |\n| 28 | Revue des procédures de rapprochement bancaire | Procédure de rapprochement bancaire | Examiner la procédure existante pour s'assurer qu'elle est à jour, complète et communiquée aux acteurs concernés. | Conformité, Efficacité |\n| 29 | Formation et sensibilisation des équipes | Plans de formation, Compte-rendu de réunion | Vérifier que les équipes en charge des rapprochements sont formées aux procédures et sensibilisées aux risques. | Compétence, Maîtrise des risques |\n| 30 | Reporting des écarts significatifs à la direction | Rapports de trésorerie, Notes à la direction | S'assurer que les écarts importants ou les suspens anciens sont remontés à la direction pour décision et suivi. | Information financière, Gouvernance |",
+      "metadata": {
+        "format": "array_output",
+        "totalItems": 1,
+        "endpoint": "https://2dl3ntnj.rpcld.co/webhook/template"
+      },
+      "createdAt": 1795165876113
+    },
+    {
+      "id": "msg_1795165915483_u_1zur",
+      "conversationId": "conv_1795165915325_0yw1z",
+      "userId": "user_1795165793694_gqu1i",
+      "role": "user",
+      "content": "- [Command] = Etape de mission\n- [Processus] = rapprochements bancaires\n- [Etape précédente] = Questionnaire prise de connaissance\n- [Etape de mission] = Cartographie des processus\n- [Modele] : Cycle, Processus, sous processus, operations\n- [Nb de lignes] = 30",
+      "createdAt": 1795165915483
+    },
+    {
+      "id": "msg_1795166040621_a_8ti3",
+      "conversationId": "conv_1795165915325_0yw1z",
+      "userId": "user_1795165793694_gqu1i",
+      "role": "assistant",
+      "content": "🌐 **Erreur de connexion n8n**\n\nEndpoint ciblé : `https://2dl3ntnj.rpcld.co/webhook/template`\n\n**Détail :** `HTTP 524 <none> - {\"type\":\"https://developers.cloudflare.com/support/troubleshooting/http-status-codes/cloudflare-5xx-errors/error-524/\",\"title\":\"Error 524: A timeout occurred\",\"status\":524,\"detail\":\"The origin web server did not return a complete response within the 120-second Proxy Read Timeout window. The connecti`\n\n*Astuce : vérifiez que le webhook n8n est actif et accessible depuis ce serveur, ou utilisez le menu **Démarrer** pour envoyer une commande structurée.*",
+      "metadata": {
+        "format": "error",
+        "endpoint": "https://2dl3ntnj.rpcld.co/webhook/template",
+        "error": "HTTP 524 <none> - {\"type\":\"https://developers.cloudflare.com/support/troubleshooting/http-status-codes/cloudflare-5xx-errors/error-524/\",\"title\":\"Error 524: A timeout occurred\",\"status\":524,\"detail\":\"The origin web server did not return a complete response within the 120-second Proxy Read Timeout window. The connecti"
+      },
+      "createdAt": 1795166040621
+    },
+    {
+      "id": "msg_1795166193701_u_jrn3",
+      "conversationId": "conv_1795165915325_0yw1z",
+      "userId": "user_1795165793694_gqu1i",
+      "role": "user",
+      "content": "- [Command] = Programme de travail\n- [Processus] = STOCK\n- [Nb de lignes] = 25",
+      "createdAt": 1795166193701
+    },
+    {
+      "id": "msg_1795166318870_a_tsk7",
+      "conversationId": "conv_1795165915325_0yw1z",
+      "userId": "user_1795165793694_gqu1i",
+      "role": "assistant",
+      "content": "🌐 **Erreur de connexion n8n**\n\nEndpoint ciblé : `https://2dl3ntnj.rpcld.co/webhook/template`\n\n**Détail :** `HTTP 524 <none> - {\"type\":\"https://developers.cloudflare.com/support/troubleshooting/http-status-codes/cloudflare-5xx-errors/error-524/\",\"title\":\"Error 524: A timeout occurred\",\"status\":524,\"detail\":\"The origin web server did not return a complete response within the 120-second Proxy Read Timeout window. The connecti`\n\n*Astuce : vérifiez que le webhook n8n est actif et accessible depuis ce serveur, ou utilisez le menu **Démarrer** pour envoyer une commande structurée.*",
+      "metadata": {
+        "format": "error",
+        "endpoint": "https://2dl3ntnj.rpcld.co/webhook/template",
+        "error": "HTTP 524 <none> - {\"type\":\"https://developers.cloudflare.com/support/troubleshooting/http-status-codes/cloudflare-5xx-errors/error-524/\",\"title\":\"Error 524: A timeout occurred\",\"status\":524,\"detail\":\"The origin web server did not return a complete response within the 120-second Proxy Read Timeout window. The connecti"
+      },
+      "createdAt": 1795166318870
+    },
+    {
+      "id": "msg_1795166377909_u_sm0e",
+      "conversationId": "conv_1795165806119_eiigf",
+      "userId": "user_1795165793694_gqu1i",
+      "role": "user",
+      "content": "- [Command] = Etape de mission\n- [Processus] = rapprochements bancaires\n- [Etape précédente] = Cartographie des risques\n- [Etape de mission] = Collecte documentaire\n- [Modele] : Processus, document, Direction, operationnel\n- [Nb de lignes] = 30",
+      "createdAt": 1795166377909
+    },
+    {
+      "id": "msg_1795166503047_a_fu7z",
+      "conversationId": "conv_1795165806119_eiigf",
+      "userId": "user_1795165793694_gqu1i",
+      "role": "assistant",
+      "content": "🌐 **Erreur de connexion n8n**\n\nEndpoint ciblé : `https://2dl3ntnj.rpcld.co/webhook/template`\n\n**Détail :** `HTTP 524 <none> - {\"type\":\"https://developers.cloudflare.com/support/troubleshooting/http-status-codes/cloudflare-5xx-errors/error-524/\",\"title\":\"Error 524: A timeout occurred\",\"status\":524,\"detail\":\"The origin web server did not return a complete response within the 120-second Proxy Read Timeout window. The connecti`\n\n*Astuce : vérifiez que le webhook n8n est actif et accessible depuis ce serveur, ou utilisez le menu **Démarrer** pour envoyer une commande structurée.*",
+      "metadata": {
+        "format": "error",
+        "endpoint": "https://2dl3ntnj.rpcld.co/webhook/template",
+        "error": "HTTP 524 <none> - {\"type\":\"https://developers.cloudflare.com/support/troubleshooting/http-status-codes/cloudflare-5xx-errors/error-524/\",\"title\":\"Error 524: A timeout occurred\",\"status\":524,\"detail\":\"The origin web server did not return a complete response within the 120-second Proxy Read Timeout window. The connecti"
+      },
+      "createdAt": 1795166503047
+    },
+    {
+      "id": "msg_1795166731115_u_2il3",
+      "conversationId": "conv_1795166730973_wyebn",
+      "userId": "user_1795165793694_gqu1i",
+      "role": "user",
+      "content": "- [Command] = Programme de travail\n- [Processus] = inventaire de caisse\n- [Nb de lignes] = 25",
+      "createdAt": 1795166731115
+    },
+    {
+      "id": "msg_1795166856279_a_nj4f",
+      "conversationId": "conv_1795166730973_wyebn",
+      "userId": "user_1795165793694_gqu1i",
+      "role": "assistant",
+      "content": "🌐 **Erreur de connexion n8n**\n\nEndpoint ciblé : `https://2dl3ntnj.rpcld.co/webhook/template`\n\n**Détail :** `HTTP 524 <none> - {\"type\":\"https://developers.cloudflare.com/support/troubleshooting/http-status-codes/cloudflare-5xx-errors/error-524/\",\"title\":\"Error 524: A timeout occurred\",\"status\":524,\"detail\":\"The origin web server did not return a complete response within the 120-second Proxy Read Timeout window. The connecti`\n\n*Astuce : vérifiez que le webhook n8n est actif et accessible depuis ce serveur, ou utilisez le menu **Démarrer** pour envoyer une commande structurée.*",
+      "metadata": {
+        "format": "error",
+        "endpoint": "https://2dl3ntnj.rpcld.co/webhook/template",
+        "error": "HTTP 524 <none> - {\"type\":\"https://developers.cloudflare.com/support/troubleshooting/http-status-codes/cloudflare-5xx-errors/error-524/\",\"title\":\"Error 524: A timeout occurred\",\"status\":524,\"detail\":\"The origin web server did not return a complete response within the 120-second Proxy Read Timeout window. The connecti"
+      },
+      "createdAt": 1795166856279
+    },
+    {
+      "id": "msg_1795167469599_u_mj0x",
+      "conversationId": "conv_1795167469463_e876x",
+      "userId": "user_1795167459070_j9wdq",
+      "role": "user",
+      "content": "- [Command] = /Cartographie des risques\n- [Processus] = Sécurité trésorerie\n- [Nb de lignes] = 30",
+      "createdAt": 1795167469599
+    },
+    {
+      "id": "msg_1795167594742_a_4uwl",
+      "conversationId": "conv_1795167469463_e876x",
+      "userId": "user_1795167459070_j9wdq",
+      "role": "assistant",
+      "content": "🌐 **Erreur de connexion n8n**\n\nEndpoint ciblé : `https://2dl3ntnj.rpcld.co/webhook/template`\n\n**Détail :** `HTTP 524 <none> - {\"type\":\"https://developers.cloudflare.com/support/troubleshooting/http-status-codes/cloudflare-5xx-errors/error-524/\",\"title\":\"Error 524: A timeout occurred\",\"status\":524,\"detail\":\"The origin web server did not return a complete response within the 120-second Proxy Read Timeout window. The connecti`\n\n*Astuce : vérifiez que le webhook n8n est actif et accessible depuis ce serveur, ou utilisez le menu **Démarrer** pour envoyer une commande structurée.*",
+      "metadata": {
+        "format": "error",
+        "endpoint": "https://2dl3ntnj.rpcld.co/webhook/template",
+        "error": "HTTP 524 <none> - {\"type\":\"https://developers.cloudflare.com/support/troubleshooting/http-status-codes/cloudflare-5xx-errors/error-524/\",\"title\":\"Error 524: A timeout occurred\",\"status\":524,\"detail\":\"The origin web server did not return a complete response within the 120-second Proxy Read Timeout window. The connecti"
+      },
+      "createdAt": 1795167594742
+    },
+    {
+      "id": "msg_1795171224841_u_vsx4",
+      "conversationId": "conv_1795165806119_eiigf",
+      "userId": "user_1795165793694_gqu1i",
+      "role": "user",
+      "content": "- [Command] = /Cartographie des risques\n- [Processus] = Sécurité trésorerie\n- [Nb de lignes] = 30",
+      "createdAt": 1795171224841
+    },
+    {
+      "id": "msg_1795171280038_a_5t2o",
+      "conversationId": "conv_1795165806119_eiigf",
+      "userId": "user_1795165793694_gqu1i",
+      "role": "assistant",
+      "content": "| Rubrique | Description |\n| --- | --- |\n| Etape de mission | Cartographie des risques |\n| Norme | 13.2 Évaluation des risques dans le cadre de la mission |\n| Méthode | Méthode des risques par les objectifs de contrôle et les tests d'audit |\n| Reference | Cartographie-001 |\n\n| no | operationnel | Risques | Probabilite | Impact | Criticite | objectif de controle | document | controle audit |\n| --- | --- | --- | --- | --- | --- | --- | --- | --- |\n| 1 | Caissier / Superviseur Caisse | Risque de détournement d'espèces (si l'inventaire de caisse n'est pas réalisé de manière contradictoire). | Moyen | Eleve | Eleve | Assurer la réalité et l'exhaustivité du solde de caisse physique. | Procès-Verbal (PV) d'Inventaire de Caisse | Sélectionner un échantillon de PV d'inventaire et vérifier la présence des signatures du caissier et du superviseur (contrôle contradictoire). |\n| 2 | Superviseur Caisse / Comptable | Risque que les écarts de caisse (positifs ou négatifs) ne soient pas justifiés ou fassent l'objet d'une dissimulation. | Eleve | Moyen | Eleve | Garantir la traçabilité et la résolution des anomalies de caisse. | Fiche de Justification d'Écart de Caisse | Vérifier que pour tout écart, une Fiche de Justification a été établie, validée par le N+2 et traitée comptablement. |\n| 3 | Caissier / Trésorier | Risque de perte financière directe (vol ou braquage) dû au dépassement du seuil d'encaisse maximum autorisé. | Faible | Eleve | Moyen | Protéger les actifs physiques et minimiser l'exposition au risque de perte. | Procédure de Sécurité de Caisse, Registre des Remises | Vérifier le solde de caisse quotidien et s'assurer qu'il n'y a pas de dépassement du plafond d'encaisse défini par la procédure. |\n| 4 | Direction / Audit Interne | Risque que l'absence de contrôles inopinés favorise l'installation de pratiques frauduleuses sur le long terme. | Eleve | Eleve | Eleve | Maintenir un niveau de dissuasion et de surveillance adéquat. | PV de Contrôle Inopiné | Examiner le planning des contrôles inopinés et vérifier la réalisation effective et la formalisation des PV par une personne indépendante. |\n| 5 | Comptable | Risque de non-rapprochement entre le solde comptable et le solde physique de caisse (Assertion d'Existence). | Eleve | Moyen | Eleve | Garantir la fiabilité du solde de caisse présenté dans les états financiers. | État de Rapprochement Comptable/Physique | Vérifier la fréquence et la formalisation des états de rapprochement entre le solde du Grand Livre et le solde physique inventorié. |\n| 6 | Caissier | Risque d'erreur de comptage lors de l'inventaire physique (Assertion d'Exactitude). | Eleve | Faible | Moyen | Assurer la précision du décompte des espèces. | PV d'Inventaire Détaillé | Re-performer le comptage physique d'un échantillon de caisses lors d'une visite inopinée et comparer le résultat avec le solde théorique. |\n| 7 | Caissier | Risque de non-exhaustivité des encaissements (omission d'enregistrement de recettes avant l'inventaire). | Moyen | Eleve | Eleve | Assurer que toutes les recettes sont enregistrées immédiatement et intégralement. | Bordereau de Versement Initial, Journal de Caisse | Vérifier que les bordereaux de versement initiaux sont établis immédiatement après la réception des fonds et qu'ils sont numérotés séquentiellement. |\n| 8 | Superviseur Caisse | Risque de décaissements frauduleux ou non autorisés (dépenses fictives) avant l'inventaire. | Moyen | Moyen | Moyen | Assurer la validité et l'autorisation des sorties de caisse. | Bon de Caisse (BC), Pièce Justificative | Sélectionner un échantillon de Bons de Caisse et vérifier la présence de l'autorisation du responsable désigné (N+1) avant le paiement. |\n| 9 | Caissier / SI | Risque de manipulation des données du système de caisse pour masquer un écart lors de l'inventaire. | Faible | Eleve | Moyen | Garantir l'intégrité des données transactionnelles. | Journal de Logs du Système de Caisse | Analyser le journal de logs pour détecter les modifications manuelles ou les accès non autorisés aux enregistrements de caisse autour de la date d'inventaire. |\n| 10 | Direction Générale | Risque d'absence de séparation des tâches formelle (le caissier détient, enregistre et contrôle) permettant la dissimulation de fraudes. | Eleve | Eleve | Eleve | Prévenir la fraude par collusion ou dissimulation. | Organigramme, Procédure de Caisse | Interviewer les acteurs et examiner les fiches de poste pour s'assurer que les fonctions de détention physique, d'enregistrement comptable et de contrôle sont distinctes. |\n| 11 | Caissier | Risque de non-enregistrement immédiat des encaissements (Assertion de Période). | Moyen | Faible | Faible | Assurer l'enregistrement en temps opportun de toutes les transactions de caisse. | Journal de Caisse, Bordereau de Versement | Observer le processus d'encaissement et vérifier que les enregistrements sont effectués sans délai. |\n| 12 | Superviseur Caisse | Risque de non-validation des bordereaux de versement avant remise en banque. | Faible | Moyen | Faible | Assurer l'intégrité des fonds remis en banque. | Bordereau de Remise en Banque | Vérifier la présence de la signature du superviseur sur les bordereaux de remise en banque. |\n| 13 | Comptable | Risque d'imputation comptable erronée des mouvements de caisse (Assertion de Classification). | Moyen | Moyen | Moyen | Assurer la correcte affectation comptable des opérations de caisse. | Pièces Comptables, Grand Livre | Sélectionner un échantillon d'écritures de caisse et vérifier leur imputation aux bons comptes. |\n| 14 | Caissier | Risque de falsification des pièces justificatives de décaissement. | Faible | Eleve | Moyen | Assurer l'authenticité des pièces justificatives de dépenses. | Factures, Reçus, Bons de Caisse | Examiner l'originalité des pièces justificatives et rechercher des signes de modification ou de falsification. |\n| 15 | Responsable Trésorerie | Risque de non-optimisation des flux de trésorerie (excès de liquidités en caisse). | Faible | Moyen | Faible | Optimiser la gestion des liquidités et minimiser les coûts d'opportunité. | Reporting de Trésorerie, Budgets | Analyser les soldes de caisse moyens et comparer avec les besoins opérationnels et les politiques de placement. |\n| 16 | Responsable Sécurité | Risque de défaillance des systèmes de sécurité (alarmes, caméras) non détectée. | Faible | Eleve | Moyen | Assurer le bon fonctionnement et la maintenance des dispositifs de sécurité. | Rapports de Maintenance, Registre des Incidents | Vérifier la réalisation des tests périodiques des systèmes de sécurité et la traçabilité des interventions de maintenance. |\n| 17 | Caissier | Risque d'erreur de rendu de monnaie aux clients (impact sur la satisfaction client et les écarts de caisse). | Eleve | Faible | Moyen | Assurer l'exactitude des transactions avec les clients. | Ticket de Caisse, Réclamations Clients | Observer les opérations de rendu de monnaie et analyser les réclamations clients liées aux erreurs de caisse. |\n| 18 | Superviseur Caisse | Risque de non-respect des procédures de clôture de caisse quotidienne. | Moyen | Faible | Faible | Assurer la fiabilité des soldes de caisse quotidiens. | Check-list de Clôture de Caisse, PV de Clôture | Vérifier que la check-list de clôture est dûment remplie et signée chaque jour par le caissier et le superviseur. |\n| 19 | Comptable | Risque de non-concordance entre le journal de caisse et le grand livre (Assertion d'Exhaustivité/Réalité). | Moyen | Moyen | Moyen | Garantir l'intégrité des enregistrements comptables de caisse. | Journal de Caisse, Grand Livre | Effectuer un rapprochement entre les totaux du journal de caisse et les mouvements du compte de caisse dans le grand livre. |\n| 20 | Direction Financière | Risque d'absence de politique claire de gestion de la trésorerie caisse (définition des seuils, fréquences d'inventaire). | Faible | Eleve | Moyen | Établir un cadre de référence pour la gestion et la sécurité de la caisse. | Politique de Trésorerie, Procédures Internes | Examiner la politique de trésorerie et s'assurer qu'elle couvre tous les aspects de la gestion de la caisse. |\n| 21 | Caissier | Risque d'acceptation de faux billets ou de monnaie contrefaite. | Faible | Moyen | Faible | Prévenir les pertes dues à l'acceptation de monnaie non valide. | Procédure de Vérification des Billets, Appareil de Détection | Vérifier la présence et l'utilisation effective des appareils de détection de faux billets et la formation du personnel. |\n| 22 | Superviseur Caisse | Risque de non-supervision adéquate des caissiers (manque de contrôle de premier niveau). | Moyen | Moyen | Moyen | Assurer une surveillance continue des opérations de caisse. | Rapports de Supervision, Fiches de Contrôle | Examiner les rapports de supervision et les fiches de contrôle remplies par le superviseur pour évaluer la fréquence et la qualité des revues. |\n| 23 | Trésorier | Risque de non-sécurisation des fonds lors des transferts de caisse à banque. | Faible | Eleve | Moyen | Minimiser les risques de vol ou de perte pendant le transport des fonds. | Procédure de Remise de Fonds, Contrats de Transport de Fonds | Vérifier l'application des procédures de sécurisation des transferts (ex: recours à des transporteurs de fonds, accompagnement). |\n| 24 | Audit Interne | Risque d'absence de revue périodique des procédures de sécurité de caisse. | Faible | Moyen | Faible | Assurer l'actualisation et la pertinence des procédures de contrôle interne. | Rapports d'Audit, Procédures Mises à Jour | Vérifier la date de dernière mise à jour des procédures de caisse et la prise en compte des évolutions réglementaires ou organisationnelles. |\n| 25 | Caissier | Risque de perte de documents justificatifs de caisse. | Moyen | Faible | Faible | Assurer la conservation et l'archivage sécurisé des pièces de caisse. | Registres d'Archivage, Procédure d'Archivage | Vérifier le respect de la procédure d'archivage des pièces de caisse et la traçabilité des documents. |\n| 26 | Comptable | Risque de non-détection des erreurs de calcul dans les brouillards de caisse. | Moyen | Faible | Faible | Assurer l'exactitude des calculs des soldes de caisse. | Brouillard de Caisse, Feuilles de Calcul | Re-performer les calculs d'un échantillon de brouillards de caisse pour vérifier leur exactitude. |\n| 27 | Superviseur Caisse | Risque de non-formation ou de formation insuffisante des nouveaux caissiers aux procédures de sécurité. | Faible | Moyen | Faible | Assurer la compétence du personnel en charge de la caisse. | Plan de Formation, Attestations de Formation | Vérifier que les nouveaux caissiers ont suivi une formation adéquate aux procédures de caisse et de sécurité. |\n| 28 | Direction Financière | Risque de non-adéquation des assurances couvrant les risques de caisse (vol, incendie). | Faible | Eleve | Moyen | Assurer une couverture adéquate des risques financiers liés à la caisse. | Contrats d'Assurance, Rapports d'Évaluation des Risques | Examiner les polices d'assurance et s'assurer que les montants couverts sont suffisants au regard des risques identifiés. |\n| 29 | Caissier / Client | Risque de litige avec un client concernant un montant encaissé ou un rendu de monnaie. | Moyen | Faible | Faible | Minimiser les litiges et préserver la relation client. | Ticket de Caisse, Registre des Réclamations | Vérifier la traçabilité des transactions et la gestion des réclamations clients liées à la caisse. |\n| 30 | Service Informatique | Risque de défaillance du système d'information de caisse (panne, cyberattaque) entraînant une indisponibilité des opérations. | Faible | Eleve | Moyen | Assurer la continuité des opérations de caisse en cas de défaillance SI. | Plan de Continuité d'Activité (PCA), Rapports de Tests | Vérifier l'existence et la pertinence du PCA pour les opérations de caisse et la réalisation de tests réguliers. |",
+      "metadata": {
+        "format": "array_output",
+        "totalItems": 1,
+        "endpoint": "https://2dl3ntnj.rpcld.co/webhook/template"
+      },
+      "createdAt": 1795171280038
+    },
+    {
+      "id": "msg_1795171364780_u_ajgh",
+      "conversationId": "conv_1795167469463_e876x",
+      "userId": "user_1795167459070_j9wdq",
+      "role": "user",
+      "content": "- [Command] = Etape de mission\n- [Processus] = PERSONNEL\n- [Etape précédente] = Cartographie des risques\n- [Etape de mission] = Referentiel de controle interne\n- [Modele] : Processus, Tache clé, objectif de contrôle, risques, contrôles clé\n- [Nb de lignes] = 30\n- [Command] = /Cartographie des risques\n- [Processus] = Sécurité trésorerie\n- [Nb de lignes] = 30",
+      "createdAt": 1795171364780
+    },
+    {
+      "id": "msg_1795171489902_a_rcn9",
+      "conversationId": "conv_1795167469463_e876x",
+      "userId": "user_1795167459070_j9wdq",
+      "role": "assistant",
+      "content": "🌐 **Erreur de connexion n8n**\n\nEndpoint ciblé : `https://2dl3ntnj.rpcld.co/webhook/template`\n\n**Détail :** `HTTP 524 <none> - {\"type\":\"https://developers.cloudflare.com/support/troubleshooting/http-status-codes/cloudflare-5xx-errors/error-524/\",\"title\":\"Error 524: A timeout occurred\",\"status\":524,\"detail\":\"The origin web server did not return a complete response within the 120-second Proxy Read Timeout window. The connecti`\n\n*Astuce : vérifiez que le webhook n8n est actif et accessible depuis ce serveur, ou utilisez le menu **Démarrer** pour envoyer une commande structurée.*",
+      "metadata": {
+        "format": "error",
+        "endpoint": "https://2dl3ntnj.rpcld.co/webhook/template",
+        "error": "HTTP 524 <none> - {\"type\":\"https://developers.cloudflare.com/support/troubleshooting/http-status-codes/cloudflare-5xx-errors/error-524/\",\"title\":\"Error 524: A timeout occurred\",\"status\":524,\"detail\":\"The origin web server did not return a complete response within the 120-second Proxy Read Timeout window. The connecti"
+      },
+      "createdAt": 1795171489902
+    },
+    {
+      "id": "msg_1795172596472_u_6go4",
+      "conversationId": "conv_1795167469463_e876x",
+      "userId": "user_1795167459070_j9wdq",
+      "role": "user",
+      "content": "- [Command] = Programme de travail\n- [Processus] =budget\n- [Nb de lignes] = 25",
+      "createdAt": 1795172596472
+    },
+    {
+      "id": "msg_1795172599018_a_3zm4",
+      "conversationId": "conv_1795167469463_e876x",
+      "userId": "user_1795167459070_j9wdq",
+      "role": "assistant",
+      "content": "⚠️ Le workflow n8n (`https://2dl3ntnj.rpcld.co/webhook/template`) a renvoyé une réponse vide.",
+      "metadata": {
+        "format": "empty",
+        "endpoint": "https://2dl3ntnj.rpcld.co/webhook/template"
+      },
+      "createdAt": 1795172599018
+    },
+    {
+      "id": "msg_1795172645282_u_wrdt",
+      "conversationId": "conv_1795167469463_e876x",
+      "userId": "user_1795167459070_j9wdq",
+      "role": "user",
+      "content": "- [Command] = /Cartographie des risques\n- [Processus] = Sécurité trésorerie\n- [Nb de lignes] = 30",
+      "createdAt": 1795172645282
+    },
+    {
+      "id": "msg_1795172647748_a_sxbr",
+      "conversationId": "conv_1795167469463_e876x",
+      "userId": "user_1795167459070_j9wdq",
+      "role": "assistant",
+      "content": "⚠️ Le workflow n8n (`https://2dl3ntnj.rpcld.co/webhook/template`) a renvoyé une réponse vide.",
+      "metadata": {
+        "format": "empty",
+        "endpoint": "https://2dl3ntnj.rpcld.co/webhook/template"
+      },
+      "createdAt": 1795172647748
+    },
+    {
+      "id": "msg_1795173855643_u_4njq",
+      "conversationId": "conv_1795165806119_eiigf",
+      "userId": "user_1795165793694_gqu1i",
+      "role": "user",
+      "content": "- [Demo] = Activate\n- [Command] = /feuille couverture\n- [Processus] = Trésorerie\n- [test] = AA200\n- [reference] = Caisse\n- [Nb de lignes] = 10",
+      "createdAt": 1795173855643
+    },
+    {
+      "id": "msg_1795173857391_a_cpih",
+      "conversationId": "conv_1795165806119_eiigf",
+      "userId": "user_1795165793694_gqu1i",
+      "role": "assistant",
+      "content": "🌐 **Erreur de connexion n8n**\n\nEndpoint ciblé : `https://2dl3ntnj.rpcld.co/webhook/template`\n\n**Détail :** `HTTP 500 Internal Server Error - {\"message\":\"Error in workflow\"}`\n\n*Astuce : vérifiez que le webhook n8n est actif et accessible depuis ce serveur, ou utilisez le menu **Démarrer** pour envoyer une commande structurée.*",
+      "metadata": {
+        "format": "error",
+        "endpoint": "https://2dl3ntnj.rpcld.co/webhook/template",
+        "error": "HTTP 500 Internal Server Error - {\"message\":\"Error in workflow\"}"
+      },
+      "createdAt": 1795173857391
+    },
+    {
+      "id": "msg_1795174208856_u_ei9q",
+      "conversationId": "conv_1795174208611_nnp84",
+      "userId": "user_1795165793694_gqu1i",
+      "role": "user",
+      "content": "- [Demo] = Activate\n- [Command] = /feuille couverture\n- [Processus] = Trésorerie\n- [test] = AA040\n- [reference] = Rapprochements\n- [Nb de lignes] = 10",
+      "createdAt": 1795174208856
+    },
+    {
+      "id": "msg_1795174266553_a_jx6p",
+      "conversationId": "conv_1795174208611_nnp84",
+      "userId": "user_1795165793694_gqu1i",
+      "role": "assistant",
+      "content": "| Client | Exercice | Preparer | Reviewer |\n| --- | --- | --- | --- |\n| XXX | XXX | XXX | XXX |\n\n| Etape de mission | Test | Reference | Nature de test |\n| --- | --- | --- | --- |\n| Programme de contrôle des comptes | AA040 | Rapprochements | Confirmation bancaire |\n\n| OBJECTIFS |\n| --- |\n| S'assurer de l'existence, de l'exactitude et de la fiabilité des soldes bancaires inscrits à l'actif et au passif du bilan par le rapprochement entre les réponses aux confirmations bancaires directes, les états de rapprochement bancaire et la comptabilité générale. |\n\n| no | travaux a effectuer |\n| --- | --- |\n| 1 | Obtenir la balance générale des comptes bancaires (classe 512), les états de rapprochement bancaire à la clôture, les relevés bancaires de fin d'exercice et les réponses aux confirmations bancaires directes. |\n| 2 | Rapprocher pour chaque compte bancaire le solde confirmé par la banque (SOLDE BANQUE) ajusté des suspens débit et crédit (BANQUE RAPPROCHE) avec le solde comptable (SOLDE ENTREPRISE) ajusté des suspens débit et crédit (SOLDE RAPPROCHE). |\n| 3 | Recalculer les écarts éventuels entre le solde banque rapproché et le solde entreprise rapproché, vérifier le dénouement des éléments en rapprochement sur l'exercice suivant et s'assurer de l'absence de suspens anciens non justifiés. |\n| 3 | Recalculer les écarts éventuels entre le solde banque rapproché et le solde entreprise rapproché, vérifier le dénouement des éléments en rapprochement sur l'exercice suivant et s'assurer de l'absence de suspens anciens non justifiés. |\n| 4 | Contrôler l'exhaustivité, la séparation des exercices et l'évaluation des soldes bancaires (y compris les comptes en devises et intérêts courus) au regard des confirmations bancaires reçues directement. |\n| 5 | Conclure sur la réalité, l'exactitude et la correcte présentation des soldes de trésorerie banque dans les états financiers. |\n\n| Résultats des tests |\n| --- |\n|  |\n\n| No | Compte | INTITULE | SOLDE BANQUE (**) | SUSPENS DEBIT (Banque) | SUSPENS CREDIT (Banque) | BANQUE RAPPROCHE | SOLDE ENTREPRISE (*) | SUSPENS DEBIT (Entreprise) | SUSPENS CREDIT (Entreprise) | SOLDE RAPPROCHE | Ecart | Assertion | CTR 1 | CTR 2 | CTR 3 | Description | Conclusion |\n| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |\n|  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |\n|  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |\n|  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |\n|  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |\n|  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |\n|  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |\n|  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |\n|  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |\n|  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |\n|  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |\n\n| no | Cross references | Document | Client | Exercice |\n| --- | --- | --- | --- | --- |\n| 1 | [A01] | Lead Sheet Trésorerie — Comptes Banques (512) | XXX | XXX |\n| 2 | [A02] | Réponses aux confirmations bancaires directes (circularisation) | XXX | XXX |\n| 3 | [A03] | États de rapprochement bancaire et relevés bancaires de clôture | XXX | XXX |\n| 4 | [A04] | Balance Générale et Grand-Livre des comptes 512 | XXX | XXX |\n\n| Légende | Symboles |\n| --- | --- |\n| Contrôle positif (sans anomalie) | + |\n| Contrôle négatif (anomalie relevée) | - |\n| Non applicable | x / N/A |\n\n| no | Superviseur | Preparer |\n| --- | --- | --- |\n| 1 |  |  |\n| 2 |  |  |\n| 3 |  |  |",
+      "metadata": {
+        "format": "array_output",
+        "totalItems": 1,
+        "endpoint": "https://2dl3ntnj.rpcld.co/webhook/template"
+      },
+      "createdAt": 1795174266554
+    },
+    {
+      "id": "msg_1795174394812_u_rdql",
+      "conversationId": "conv_1795174394629_ak7dv",
+      "userId": "user_1795165793694_gqu1i",
+      "role": "user",
+      "content": "- [Command] = /feuille couverture\n- [Processus] = Trésorerie\n- [test] = AA200\n- [reference] = Caisse\n- [Nb de lignes] = 10\n- [Demo] = Activate",
+      "createdAt": 1795174394812
+    },
+    {
+      "id": "msg_1795174454981_a_isib",
+      "conversationId": "conv_1795174394629_ak7dv",
+      "userId": "user_1795165793694_gqu1i",
+      "role": "assistant",
+      "content": "| Client | Exercice | Preparer | Reviewer |\n| --- | --- | --- | --- |\n| FILTRACI | 2025 | KMP | JFK |\n\n| Etape de mission | Normes | Methode | Test | Reference | Nature de test |\n| --- | --- | --- | --- | --- | --- |\n| Feuille couverture | Norme 14.2 Analyses et constats potentiels de la mission | Méthode du rapprochement par les soldes de caisse | AA200 | Caisse | Rapprochement |\n\n| OBJECTIFS |\n| --- |\n| 1. Obtenir la balance générale au 31/12 et l'ensemble des procès-verbaux (PV) d'inventaire physique de caisse de clôture. |\n| 2. Rapprocher pour chaque compte de caisse le solde comptable de la Balance Générale (Solde BG) avec le solde physique inventorié (Solde PV). |\n| 3. Analyser les écarts identifiés, vérifier les pièces justificatives et évaluer les impacts sur les assertions d'audit. |\n| 4. Conclure sur la réalité, l'exhaustivité et l'exactitude des soldes de caisse présentés dans les états financiers. |\n\n| no | travaux a effectuer |\n| --- | --- |\n| 1 | Vérifier l'existence et la conformité formelle (date, signatures contradictoires) du PV d'inventaire physique de caisse à la clôture. |\n| 2 | Rapprocher le solde comptable issu de la Balance Générale (Solde BG) avec le montant du comptage physique figurant sur le PV (Solde PV) et recalculer l'écart. |\n| 3 | Vérifier la justification probante et la régularisation comptable de tout écart identifié entre la comptabilité et l'inventaire physique. |\n\n| Résultats des tests |\n| --- |\n|  |\n\n| No | Compte | Libelle compte | Solde BG | Solde PV (*) | Ecart | Assertion | CTR 1 | CTR 2 | CTR 3 | Description | Conclusion |\n| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |\n| 1 | 571100 | Caisse Centrale Siège | 2 450 000 | 2 450 000 | 0 |  | + | + | + | Concordance exacte entre la balance générale et le PV d'inventaire contradictoire pour un montant de 2 450 000 FCFA. | Satisfaisant |\n| 2 | 571200 | Caisse Menues Dépenses | 850 000 | 850 000 | 0 |  | + | + | + | Aucune anomalie relevée : le solde de 850 000 FCFA en comptabilité correspond exactement au comptage physique validé. | Satisfaisant |\n| 3 | 571300 | Caisse Recettes Agence Plateau | 1 320 000 | 1 270 000 | 50 000 | Validite | + | - | - | Manquant en caisse de 50 000 FCFA non justifié : le solde comptable de 1 320 000 FCFA excède l'existant physique de 1 270 000 FCFA. | Non-satisfaisant |\n| 4 | 571400 | Caisse Agence Zone Industrielle | 415 000 | 415 000 | 0 |  | + | + | + | PV d'inventaire conforme et rapprochement sans écart sur le solde de 415 000 FCFA. | Satisfaisant |\n| 5 | 571500 | Caisse Secondaire Logistique | 600 000 | 625 000 | -25 000 | Exhaustivite | + | - | - | Excédent de caisse de 25 000 FCFA dû à un encaissement client présent physiquement mais non enregistré en comptabilité (600 000 FCFA en BG contre 625 000 FCFA au PV). | Non-satisfaisant |\n| 6 | 571600 | Caisse Direction Générale | 1 900 000 | 1 900 000 | 0 |  | + | + | + | Rapprochement satisfaisant à hauteur de 1 900 000 FCFA avec PV signé conjointement par le caissier et le chef comptable. | Satisfaisant |\n| 7 | 571700 | Caisse Chantier Nord | 310 000 | 0 | 310 000 | Evaluation | - | N/A | - | Absence de PV d'inventaire physique au 31/12 pour justifier le solde comptable de 310 000 FCFA ; impossibilité de vérifier la réalité de l'encaisse. | Limitation |\n| 8 | 571800 | Caisse Régie Achats | 740 000 | 740 000 | 0 |  | + | + | + | Solde de 740 000 FCFA intégralement justifié par le procès-verbal de comptage physique de clôture. | Satisfaisant |\n| 9 | 571900 | Caisse Succursale Sud | 520 000 | 500 000 | 20 000 | Comptabilisation | + | - | - | Écart de 20 000 FCFA entre le solde BG (520 000 FCFA) et le PV (500 000 FCFA) lié à un bon de caisse provisoire payé mais non imputé en comptabilité. | Non-satisfaisant |\n| 10 | 571950 | Caisse Timbres et Valeurs | 180 000 | 180 000 | 0 |  | + | + | + | Aucune anomalie constatée : inventaire physique et balance générale alignés à 180 000 FCFA. | Satisfaisant |\n\n| no | Cross references | Document | Client | Exercice |\n| --- | --- | --- | --- | --- |\n| 1 | [A01] | Lead Sheet Trésorerie — Comptes 571 (Grand-Livre et Balance Générale) | FILTRACI | 2025 |\n| 2 | [A02] | Procès-verbaux d'inventaire physique de caisse au 31/12/2025 | FILTRACI | 2025 |\n| 3 | [A03] | Brouillards de caisse et bons de caisse provisoires de clôture | FILTRACI | 2025 |\n\n| Légende | Symboles |\n| --- | --- |\n| Contrôle positif (sans anomalie) | + |\n| Contrôle négatif (anomalie relevée) | - |\n| Non applicable | x / N/A |\n\n| no | Superviseur | Preparer |\n| --- | --- | --- |\n| 1 | Vérifier le suivi de régularisation des écarts relevés sur les caisses 571300, 571500 et 571900. | Bons d'entrée/sortie demandés au chef comptable pour proposition d'ajustement. |\n| 2 | Documenter la limitation sur la caisse 571700 en vue de l'impact éventuel sur l'opinion. | Relance effectuée auprès du responsable Chantier Nord ; absence de PV confirmée par écrit. |\n| 3 | Revue des travaux effectuée, conclusion validée sous réserve de la mise à jour du mémo de synthèse. | Mémo de synthèse trésorerie mis à jour avec la liste des écarts. |\n\n| Explication |\n| --- |\n| Ligne 1 (571100) : L'écart est nul (2 450 000 - 2 450 000 = 0), aucune assertion n'est affectée, les 3 contrôles sont positifs (+), d'où la conclusion Satisfaisant. |\n| Ligne 2 (571200) : L'écart est nul (850 000 - 850 000 = 0), aucune assertion en anomalie, pointages CTR 1 à CTR 3 à (+), concluant à un test Satisfaisant. |\n| Ligne 3 (571300) : L'écart positif de 50 000 (Solde BG > Solde PV) traduit un manquant physique remettant en cause l'assertion de Validité ; CTR 1 est (+) mais CTR 2 et CTR 3 sont (-), d'où la conclusion Non-satisfaisant. |\n| Ligne 4 (571400) : L'écart est nul (415 000 - 415 000 = 0), aucune assertion n'est renseignée et tous les contrôles sont (+), justifiant une conclusion Satisfaisant. |\n| Ligne 5 (571500) : L'écart négatif de -25 000 (Solde BG < Solde PV) révèle des espèces non comptabilisées impactant l'assertion d'Exhaustivité ; CTR 2 et CTR 3 sont (-), ce qui entraîne la conclusion Non-satisfaisant. |\n| Ligne 6 (571600) : L'écart nul (1 900 000 - 1 900 000 = 0) avec PV conforme valide les trois contrôles (+), sans anomalie d'assertion, conduisant à Satisfaisant. |\n| Ligne 7 (571700) : L'absence de PV produit (Solde PV = 0 face à Solde BG = 310 000) rend CTR 1 (-), CTR 2 (N/A) et CTR 3 (-) ; l'assertion d'Évaluation du solde ne peut être confirmée, d'où une conclusion de Limitation. |\n| Ligne 8 (571800) : L'écart est nul (740 000 - 740 000 = 0), aucune assertion affectée, CTR 1, CTR 2 et CTR 3 sont (+), donc conclusion Satisfaisant. |\n| Ligne 9 (571900) : L'écart de 20 000 résulte d'une pièce de dépense non enregistrée affectant l'assertion de Comptabilisation ; CTR 2 et CTR 3 sont (-), justifiant la conclusion Non-satisfaisant. |\n| Ligne 10 (571950) : L'écart est nul (180 000 - 180 000 = 0), aucune assertion n'est altérée et les pointages CTR 1 à CTR 3 sont (+), aboutissant à une conclusion Satisfaisant. |",
+      "metadata": {
+        "format": "array_output",
+        "totalItems": 1,
+        "endpoint": "https://2dl3ntnj.rpcld.co/webhook/template"
+      },
+      "createdAt": 1795174454981
+    },
+    {
+      "id": "msg_1795175346788_u_7fbv",
+      "conversationId": "conv_1795175346591_4q6bw",
+      "userId": "user_1795165793694_gqu1i",
+      "role": "user",
+      "content": "- [Demo] = Activate\n- [Command] = /feuille couverture\n- [Processus] = VENTES\n- [test] = BB040\n- [reference] = Rapprochement CA\n- [Nb de lignes] = 10",
+      "createdAt": 1795175346788
+    },
+    {
+      "id": "msg_1795175388353_a_ni08",
+      "conversationId": "conv_1795175346591_4q6bw",
+      "userId": "user_1795165793694_gqu1i",
+      "role": "assistant",
+      "content": "| Client | Exercice | Preparer | Reviewer |\n| --- | --- | --- | --- |\n| XXX | XXX | XXX | XXX |\n\n| Etape de mission | Test | Reference | Nature de test |\n| --- | --- | --- | --- |\n| Programme de contrôle des comptes | BB040 | Rapprochement CA | Rapprochement |\n\n| OBJECTIFS |\n| --- |\n| 1. Obtenir la balance générale des comptes de produits (classe 70) et l'état récapitulatif du chiffre d'affaires issu du système de facturation. |\n| 2. S'assurer de la concordance entre le chiffre d'affaires comptabilisé en balance générale et le chiffre d'affaires issu des états commerciaux. |\n| 3. Analyser et justifier tout écart identifié entre les soldes comptables et les documents commerciaux. |\n| 4. Conclure sur l'exhaustivité, la réalité et l'exactitude du chiffre d'affaires comptabilisé. |\n\n| no | travaux a effectuer |\n| --- | --- |\n| 1 | Obtenir la balance générale (comptes 70) ainsi que le récapitulatif des ventes (journal de facturation et avoirs) pour la période auditée. |\n| 2 | Rapprocher pour chaque compte de ventes le solde figurant en balance générale avec le montant total issu des documents de facturation. |\n| 3 | Recalculer l'écart éventuel (Solde balance - Solde document) et vérifier les pièces justificatives expliquant les différences constatées. |\n| 4 | Vérifier l'imputation comptable correcte et le respect de la séparation des exercices pour les opérations présentant un écart. |\n| 5 | Documenter les résultats des vérifications et formuler une conclusion sur la fiabilité du chiffre d'affaires. |\n\n| Résultats des tests |\n| --- |\n|  |\n\n| No | Compte | Libelle compte | Solde balance | Solde document | Ecart | Assertion | CTR 1 | CTR 2 | CTR 3 | Description | Conclusion |\n| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |\n|  |  |  |  |  |  |  |  |  |  |  |  |\n|  |  |  |  |  |  |  |  |  |  |  |  |\n|  |  |  |  |  |  |  |  |  |  |  |  |\n|  |  |  |  |  |  |  |  |  |  |  |  |\n|  |  |  |  |  |  |  |  |  |  |  |  |\n|  |  |  |  |  |  |  |  |  |  |  |  |\n|  |  |  |  |  |  |  |  |  |  |  |  |\n|  |  |  |  |  |  |  |  |  |  |  |  |\n|  |  |  |  |  |  |  |  |  |  |  |  |\n|  |  |  |  |  |  |  |  |  |  |  |  |\n\n| no | Cross references | Document | Client | Exercice |\n| --- | --- | --- | --- | --- |\n| 1 | [B01] | Lead Sheet Ventes — Comptes 70 (Grand-Livre) | XXX | XXX |\n| 2 | [B02] | Balance Générale — Comptes de produits (Classe 70) | XXX | XXX |\n| 3 | [B03] | État récapitulatif de facturation et journal des ventes | XXX | XXX |\n\n| Légende | Symboles |\n| --- | --- |\n| Contrôle positif (sans anomalie) | + |\n| Contrôle négatif (anomalie relevée) | - |\n| Non applicable | x / N/A |\n\n| no | Superviseur | Preparer |\n| --- | --- | --- |\n| 1 |  |  |\n| 2 |  |  |\n| 3 |  |  |",
+      "metadata": {
+        "format": "array_output",
+        "totalItems": 1,
+        "endpoint": "https://2dl3ntnj.rpcld.co/webhook/template"
+      },
+      "createdAt": 1795175388353
+    },
+    {
+      "id": "msg_1795175415715_u_dapb",
+      "conversationId": "conv_1795175415514_bfms1",
+      "userId": "user_1795165793694_gqu1i",
+      "role": "user",
+      "content": "- [Command] = /feuille couverture\n- [Processus] = Trésorerie\n- [test] = AA200\n- [reference] = Caisse\n- [Nb de lignes] = 7\n- [Demo] = Activate",
+      "createdAt": 1795175415715
+    },
+    {
+      "id": "msg_1795175458035_a_zw86",
+      "conversationId": "conv_1795175415514_bfms1",
+      "userId": "user_1795165793694_gqu1i",
+      "role": "assistant",
+      "content": "| Client | Exercice | Preparer | Reviewer |\n| --- | --- | --- | --- |\n| XXX | 2025 | XXX | XXX |\n\n| Etape de mission | Test | Reference | Nature de test |\n| --- | --- | --- | --- |\n| Programme de contrôle des comptes | AA200 | Caisse | Rapprochement |\n\n| OBJECTIFS |\n| --- |\n| 1. Obtenir la Balance Générale (comptes de classe 57) et les procès-verbaux d'inventaire physique de caisse à la clôture. |\n| 2. S'assurer de la réalité physique des existants en caisse et de la régularité formelle des procès-verbaux d'inventaire (signatures contradictoires). |\n| 3. Vérifier l'exactitude et la concordance entre le solde comptable issu de la Balance Générale et le solde physique inventorié. |\n| 4. Analyser les écarts identifiés, évaluer l'impact sur les assertions d'audit et conclure sur la fiabilité des soldes de caisse. |\n\n| no | travaux a effectuer |\n| --- | --- |\n| 1 | Obtenir la Balance Générale et les procès-verbaux d'inventaire physique de caisse à la clôture et vérifier la présence des signatures contradictoires. |\n| 2 | Rapprocher le solde comptable de la Balance Générale (Solde BG) avec le solde physique du procès-verbal d'inventaire (Solde PV (*)) pour chaque compte de caisse. |\n| 3 | Recalculer l'écart éventuel (Solde BG - Solde PV (*)), examiner les justificatifs des écarts et conclure sur le contrôle. |\n\n| Résultats des tests |\n| --- |\n|  |\n\n| No | Compte | Libelle compte | Solde BG | Solde PV (*) | Ecart | Assertion | CTR 1 | CTR 2 | CTR 3 | Description | Conclusion |\n| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |\n| 1 | 571100 | Caisse Principale Siège | 2 500 000 | 2 500 000 | 0 |  | + | + | + | Rapprochement conforme : le solde de la Balance Générale (2 500 000 FCFA) concorde exactement avec le PV d'inventaire physique dûment signé. Aucun écart relevé. | Satisfaisant |\n| 2 | 571200 | Caisse Secondaire Dépenses | 450 000 | 425 000 | 25 000 | Validite | + | - | - | Manquant de caisse non justifié de 25 000 FCFA (Solde BG de 450 000 FCFA supérieur au PV physique de 425 000 FCFA), traduisant une surévaluation de l'actif de trésorerie ou des dépenses non comptabilisées. | Non-satisfaisant |\n| 3 | 571300 | Caisse Agence Plateau | 1 200 000 | 1 200 000 | 0 |  | + | + | + | Solde BG de 1 200 000 FCFA identique au montant figurant sur le PV d'inventaire physique contradictoire au 31/12. Contrôles de forme et de fond conformes. | Satisfaisant |\n| 4 | 571400 | Caisse Agence Zone Industrielle | 875 000 | 890 000 | -15 000 | Exhaustivite | + | - | - | Excédent de caisse de 15 000 FCFA (Solde BG de 875 000 FCFA inférieur au PV physique de 890 000 FCFA) provenant d'un encaissement client non enregistré en comptabilité avant la clôture. | Non-satisfaisant |\n| 5 | 571500 | Caisse Menues Dépenses | 150 000 | 150 000 | 0 |  | + | + | + | Concordance totale entre le solde BG (150 000 FCFA) et le PV d'inventaire de caisse co-signé par le caissier et le responsable comptable. | Satisfaisant |\n| 6 | 571600 | Caisse Chantier Nord | 600 000 | 0 | 600 000 | Validite | - | - | N/A | Absence de PV d'inventaire physique de caisse à la clôture pour un solde comptable de 600 000 FCFA, entraînant une impossibilité de vérifier la réalité physique des espèces. | Limitation |\n| 7 | 571700 | Caisse Devises (contre-valeur) | 3 100 000 | 3 050 000 | 50 000 | Evaluation | + | - | - | Écart de valorisation de 50 000 FCFA (Solde BG de 3 100 000 FCFA contre un PV réévalué à 3 050 000 FCFA) dû à l'application d'un cours de change erroné à la clôture. | Non-satisfaisant |\n\n| no | Cross references | Document | Client | Exercice |\n| --- | --- | --- | --- | --- |\n| 1 | [A01] | Lead Sheet Trésorerie — Comptes 571 (Grand-Livre) | XXX | 2025 |\n| 2 | [A02] | Procès-verbaux d'inventaire physique de caisse à la clôture | XXX | 2025 |\n| 3 | [A03] | Balance Générale au 31/12/2025 — Classe 57 | XXX | 2025 |\n\n| Légende | Symboles |\n| --- | --- |\n| Contrôle positif | + |\n| Contrôle négatif | - |\n| Non applicable | x / N/A |\n\n| no | Superviseur | Preparer |\n| --- | --- | --- |\n| 1 |  |  |\n| 2 |  |  |\n| 3 |  |  |\n\n| Explication |\n| --- |\n| Ligne 1 (571100) : L'écart est nul (2 500 000 - 2 500 000 = 0), aucune assertion n'est affectée, tous les contrôles (CTR 1 à CTR 3) sont pointés '+' et la conclusion est logiquement 'Satisfaisant'. |\n| Ligne 2 (571200) : L'écart positif de 25 000 (Solde BG > Solde PV) signifie que le solde comptable est supérieur à l'existant physique, impactant l'assertion 'Validite'. Le PV existe (CTR 1 '+') mais le rapprochement et la justification échouent (CTR 2 '-' et CTR 3 '-'), d'où la conclusion 'Non-satisfaisant'. |\n| Ligne 3 (571300) : L'écart est nul (1 200 000 - 1 200 000 = 0), aucune anomalie sur les assertions n'est détectée, les pointages CTR 1 à CTR 3 sont '+' et la conclusion est 'Satisfaisant'. |\n| Ligne 4 (571400) : L'écart négatif de -15 000 (Solde BG < Solde PV) indique que des fonds présents en caisse ne sont pas comptabilisés, mettant en cause l'assertion 'Exhaustivite'. CTR 1 est '+', mais CTR 2 et CTR 3 sont '-', justifiant la conclusion 'Non-satisfaisant'. |\n| Ligne 5 (571500) : L'écart est nul (150 000 - 150 000 = 0), aucune assertion n'est remise en cause, les trois contrôles CTR 1 à CTR 3 sont '+' et la conclusion est 'Satisfaisant'. |\n| Ligne 6 (571600) : Le PV d'inventaire est manquant (Solde PV = 0 face à un Solde BG de 600 000), générant un écart de 600 000 sur l'assertion 'Validite'. L'absence de pièce probante rend CTR 1 et CTR 2 '-' et CTR 3 'N/A', conduisant à une conclusion de 'Limitation'. |\n| Ligne 7 (571700) : L'écart de 50 000 sur une caisse en devises résulte d'une erreur de conversion au taux de clôture, affectant l'assertion 'Evaluation'. CTR 1 est '+' (PV disponible), mais CTR 2 et CTR 3 sont '-', ce qui conduit à la conclusion 'Non-satisfaisant'. |",
+      "metadata": {
+        "format": "array_output",
+        "totalItems": 1,
+        "endpoint": "https://2dl3ntnj.rpcld.co/webhook/template"
+      },
+      "createdAt": 1795175458035
+    }
+  ]
+}
