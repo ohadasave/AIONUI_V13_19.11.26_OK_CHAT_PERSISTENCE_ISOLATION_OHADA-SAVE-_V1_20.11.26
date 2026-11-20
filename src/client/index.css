@@ -1,0 +1,186 @@
+@import '@arco-design/web-react/dist/css/arco.css';
+@import 'tailwindcss';
+@custom-variant dark (&:where(.dark, .dark *));
+
+html,
+body,
+#root {
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  padding: 0;
+}
+
+.eaudit-scrollbar {
+  scrollbar-width: auto;
+  scrollbar-color: #9ca3af #f1f5f9;
+  scrollbar-gutter: stable;
+}
+
+.eaudit-scrollbar::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+.eaudit-scrollbar::-webkit-scrollbar-track {
+  background: #f1f5f9;
+}
+
+.eaudit-scrollbar::-webkit-scrollbar-thumb {
+  background: #9ca3af;
+  border-radius: 9999px;
+  border: 2px solid #f1f5f9;
+}
+
+.eaudit-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: #6b1102;
+}
+
+.dark .eaudit-scrollbar {
+  scrollbar-color: #4b5563 #111827;
+}
+
+.dark .eaudit-scrollbar::-webkit-scrollbar-track {
+  background: #111827;
+}
+
+.dark .eaudit-scrollbar::-webkit-scrollbar-thumb {
+  background: #4b5563;
+  border: 2px solid #111827;
+}
+
+.dark .eaudit-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: #9ca3af;
+}
+
+/* Claraverse / E-audit Table Styles (#6b1102 burgundy header) */
+.eaudit-prose table {
+  border-collapse: separate !important;
+  border-spacing: 0 !important;
+  width: 100%;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow:
+    0 10px 20px 0 rgba(0, 0, 0, 0.12),
+    0 4px 8px 0 rgba(0, 0, 0, 0.08);
+  font-size: 13.5px;
+}
+
+.dark .eaudit-prose table {
+  border-color: #374151;
+}
+
+.eaudit-prose table thead {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+.eaudit-prose table th {
+  padding: 11px 14px;
+  text-align: left;
+  background-color: #6b1102 !important;
+  color: #ffffff !important;
+  font-weight: 600;
+  border-right: 1px solid rgba(255, 255, 255, 0.2);
+  white-space: normal;
+  word-wrap: break-word;
+  line-height: 1.45;
+  vertical-align: top;
+}
+
+.eaudit-prose table th:last-child {
+  border-right: none;
+}
+
+.eaudit-prose table td {
+  padding: 10px 14px;
+  border-bottom: 1px solid #e5e7eb;
+  border-right: 1px solid #f1f5f9;
+  white-space: normal;
+  word-wrap: break-word;
+  line-height: 1.5;
+  vertical-align: top;
+}
+
+.dark .eaudit-prose table td {
+  border-bottom-color: #374151;
+  border-right-color: #1f2937;
+}
+
+.eaudit-prose table tbody tr {
+  transition: background-color 0.15s ease;
+}
+
+.eaudit-prose table tbody tr:hover {
+  background-color: #f9fafb;
+}
+
+.dark .eaudit-prose table tbody tr:hover {
+  background-color: #1f2937;
+}
+
+.eaudit-prose table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.eaudit-prose p {
+  margin: 0.5rem 0;
+  line-height: 1.65;
+}
+
+.eaudit-prose h1,
+.eaudit-prose h2,
+.eaudit-prose h3 {
+  font-weight: 600;
+  margin: 0.9rem 0 0.45rem;
+}
+
+.eaudit-prose ul,
+.eaudit-prose ol {
+  margin: 0.4rem 0;
+  padding-left: 1.25rem;
+}
+
+.eaudit-prose a {
+  color: #6b1102;
+  text-decoration: underline;
+}
+
+.dark .eaudit-prose a {
+  color: #ff6b5b;
+}
+
+.contextual-active-cell {
+  background: rgba(107, 17, 2, 0.08) !important;
+  outline: 2px solid #6b1102 !important;
+  outline-offset: -2px !important;
+}
+
+.dark .contextual-active-cell {
+  background: rgba(255, 107, 91, 0.14) !important;
+  outline: 2px solid #ff6b5b !important;
+}
+
+.eaudit-table-select {
+  width: 100%;
+  min-width: 110px;
+  padding: 5px 8px;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  background: #ffffff;
+  color: #111827;
+  font-size: 12.5px;
+  cursor: pointer;
+}
+
+.dark .eaudit-table-select {
+  border-color: #4b5563;
+  background: #1f2937;
+  color: #f3f4f6;
+}
+
+.claraverse-dropdown {
+  color: #1f2937;
+}

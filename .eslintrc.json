@@ -4,7 +4,7 @@
     "es6": true,
     "node": true
   },
-  "extends": ["eslint:recommended", "plugin:@typescript-eslint/eslint-recommended", "plugin:@typescript-eslint/recommended", "plugin:import/recommended", "plugin:import/electron", "plugin:import/typescript", "prettier"],
+  "extends": ["eslint:recommended", "plugin:@typescript-eslint/eslint-recommended", "plugin:@typescript-eslint/recommended", "prettier"],
   "settings": {},
   "plugins": ["@typescript-eslint", "prettier"],
   "parser": "@typescript-eslint/parser",
@@ -13,7 +13,6 @@
   },
   "rules": {
     "prettier/prettier": "error",
-    "import/no-unresolved": "off",
     "@typescript-eslint/member-delimiter-style": [
       "error",
       {
@@ -69,7 +68,6 @@
     "@typescript-eslint/no-unnecessary-type-constraint": "warn",
     "no-constant-condition": "warn",
     "no-empty-pattern": "warn",
-    "import/no-named-as-default-member": "warn",
     "@typescript-eslint/no-floating-promises": "error",
     "@typescript-eslint/await-thenable": "error"
   },

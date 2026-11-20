@@ -14,6 +14,17 @@ Thumbs.db
 public/
 resources/
 docs/
-config/webpack/
 scripts/
-src/agent/gemini/cli/
+Doc_*/
+Doc */
+Migration*/
+n8n-server*/
+skills/
+examples/
+assistant/
+src/adapter/
+src/agent/
+src/channels/
+electron.vite.config*.mjs
+electron.vite.config.ts
+playwright.config.ts
